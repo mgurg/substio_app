@@ -2,7 +2,7 @@ services:
   web:
     build:
       context: .
-#      dockerfile: Dockerfile
+      #      dockerfile: Dockerfile
       dockerfile: dev.Dockerfile
       args:
         - "UID=${UID:-1000}"
@@ -18,22 +18,23 @@ services:
         max-size: "10m"
         max-file: "5"
     restart: no
-#    depends_on:
-#      db:
-#        condition: service_healthy # Disable this if you are using an external Postgres database
-#  db:
-#    image: postgres:17
-#    healthcheck:
-#      test: pg_isready -U postgres -h localhost
-#      interval: 2s
-#      timeout: 2s
-#      retries: 10
-#    expose:
-#      - 5432
-#    ports:
-#      - "5432:5432"
-#    environment:
-#      - POSTGRES_USER=postgres
-#      - POSTGRES_PASSWORD=postgres
-#      - POSTGRES_DB=pg_db
-#    restart: no
+    depends_on:
+      db:
+        condition: service_healthy # Disable this if you are using an external Postgres database
+  db:
+    image: postgres:17
+    container_name: substio_app_db
+    healthcheck:
+      test: pg_isready -U postgres -h localhost
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pg_db
+    restart: no

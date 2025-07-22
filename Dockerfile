@@ -28,8 +28,8 @@ USER appuser
 
 # Install the application dependencies.
 COPY --chown=appuser:appuser ./app /src/app
-#COPY --chown=appuser:appuser ./migrations /src/migrations
-#COPY --chown=appuser:appuser ./alembic.ini /src/alembic.ini
+COPY --chown=appuser:appuser ./migrations /src/migrations
+COPY --chown=appuser:appuser ./alembic.ini /src/alembic.ini
 
 EXPOSE 5000
 
