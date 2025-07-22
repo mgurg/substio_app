@@ -1,0 +1,50 @@
+[project]
+name = "substio-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.116.1",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.4.0",
+    "ruff>=0.12.0",
+]
+
+[tool.ruff.lint]
+preview = true
+select = [
+    "FAST",
+    "ASYNC",
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+    'Q',
+    'RUF100',
+    'C90', # is too complex ({complexity} > {max_complexity})
+    'UP', #  upgrade syntax for newer versions of the language.
+]
+ignore = [
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "W191", # indentation contains tabs
+]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+exclude = ["migrations"]
+
+[tool.ruff.format]
+#quote-style = "single"
+#indent-style = "tab"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-third-party = ["fastapi", "pydantic", "starlette", "sqlalchemy"]
