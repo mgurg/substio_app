@@ -1,13 +1,17 @@
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import declarative_base
 
 from app.config import get_settings
 
 settings = get_settings()
 
 echo = False
-
-print(settings.DB_POSTGRES_URL.unicode_string())
 
 engine = create_async_engine(
     settings.DB_POSTGRES_URL.unicode_string(),
@@ -16,12 +20,10 @@ engine = create_async_engine(
     pool_recycle=280,
 )
 
-SessionLocal = async_sessionmaker(engine, autocommit=False, autoflush=False)
-
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         try:
             yield session
@@ -32,5 +34,4 @@ async def get_db() -> AsyncSession:
             await session.close()
 
 
-# metadata = sa.MetaData(schema="tenant")
 Base = declarative_base()

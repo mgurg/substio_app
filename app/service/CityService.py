@@ -6,8 +6,8 @@ from starlette.status import (
     HTTP_404_NOT_FOUND,
 )
 
-from app.models.models import City
-from app.repository.CityRepo import CityRepo
+from app.database.models.models import City
+from app.database.repository.CityRepo import CityRepo
 
 
 class CityService:
