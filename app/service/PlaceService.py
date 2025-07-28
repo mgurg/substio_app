@@ -6,8 +6,8 @@ from starlette.status import (
     HTTP_404_NOT_FOUND,
 )
 
-from app.models.models import Place
-from app.repository.PlaceRepo import PlaceRepo
+from app.database.models.models import Place
+from app.database.repository.PlaceRepo import PlaceRepo
 
 
 class PlaceService:

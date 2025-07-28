@@ -1,10 +1,16 @@
 # Substio_APP
 
 ## Places
- - courthouse
+ - courthouse (https://dane.gov.pl/pl/dataset/985,lista-sadow-powszechnych/resource/67369/table)
  - prison
  - police
- - 
+
+```bash
+cd tools
+uv run offers.py
+cd ..
+```
+
 
 ## Docker
 

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.controller.offers import offer_router
 from app.controller.places import place_router
 
 origins = ["http://localhost", "http://localhost:8080", "*"]
@@ -23,6 +24,7 @@ def create_application() -> FastAPI:
         max_age=86400,
     )
 
+    app.include_router(offer_router, prefix="/offers", tags=["OFFERS"])
     app.include_router(place_router, prefix="/places", tags=["PLACE"])
 
     return app

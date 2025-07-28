@@ -1,14 +1,14 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
-from sqlalchemy import and_, select, update
+from sqlalchemy import Sequence, and_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import BaseModel
+from app.database.models.models import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
 
 
-class GenericRepo(Generic[T]):
+class GenericRepo[T]:
     def __init__(self, session: AsyncSession, model: type[T]):
         """
         Initializes the repository with the given session and model.
@@ -19,7 +19,7 @@ class GenericRepo(Generic[T]):
         self.session = session
         self.model = model
 
-    async def get_all(self) -> list[T]:
+    async def get_all(self) -> Sequence[T]:
         """
         Retrieves all objects from the database.
 
@@ -78,11 +78,11 @@ class GenericRepo(Generic[T]):
             await self.session.commit()  # await commit
         return obj
 
-    async def filter(self, page: int = 1, per_page: int = 10, **kwargs: dict[str, Any]) -> list[T]:
+    async def filter(self, page: int = 1, per_page: int = 10, **kwargs: dict[str, Any]) -> Sequence[T]:
         """
         Filters objects based on the given keyword arguments and paginate the result.
         """
-        offset = (page) * per_page
+        offset = (page - 1) * per_page
         filters = [getattr(self.model, k) == v for k, v in kwargs.items()]
         query = select(self.model).where(and_(*filters)).limit(per_page).offset(offset)
         result = await self.session.execute(query)  # await the query
