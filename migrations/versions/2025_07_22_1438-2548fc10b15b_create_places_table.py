@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.create_table(
         "places",
         sa.Column("id", sa.INTEGER(), sa.Identity(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column("uuid", sa.VARCHAR(length=36), autoincrement=False, nullable=True),
+        sa.Column('uuid', sa.UUID(), nullable=False),
         sa.Column('name', sa.TEXT(), nullable=False),
         sa.Column('name_ascii', sa.TEXT(), nullable=False),
         sa.Column('category', sa.TEXT(), nullable=False),

@@ -18,6 +18,23 @@ class Settings(BaseSettings):
         DB_NAME=os.getenv("DB_DATABASE"),
     )
 
+    API_KEY_OPENAI: str = os.getenv("API_KEY_OPENAI")
+    OPENAI_MODEL: str = "gpt-4.1-nano"
+
+    SYSTEM_PROMPT: str = """
+    Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:
+
+    - `location`: Typ instytucji – wybierz jedną z: "sąd" (SR,SO,SA), "policja" (MPP,KMP), "prokuratura". Ustaw `null`, jeśli nie można określić.
+    - `location_full_name`: Pełna nazwa instytucji, np. "Sąd Rejonowy dla Warszawy-Mokotowa", lub `null`.
+    - `date`: Lista dat zastępstwa w formacie **RRRR-MM-DD (np. 2025-07-30)**. Jeśli podana jest tylko jedna, zwróć listę z jednym elementem. Jeśli brak – `null`.
+    - `time`: Lista godzin zastępstwa w formacie  **HH:MM** (24-godzinny format, np. 13:45). Jeśli brak – `null`.
+    - `description`: Krótkie streszczenie charakteru sprawy lub kontekstu. **Usuń email** jeżeli występuje.
+    - `target_audience`: Lista grup docelowych – wybierz spośród: "adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski". Jeśli brak informacji – `null`.
+    - `email`: Adres e-mail, jeśli występuje w opisie. Jeśli nie ma – `null`.
+
+    Zwróć dane w formacie JSON zgodnym ze schematem.
+    """
+
     model_config = SettingsConfigDict(
         env_prefix="", env_file_encoding="utf-8", env_file=f"{APP_DIR}/.env", extra="allow"
     )

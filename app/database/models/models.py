@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Numeric, String, Table, Text, Time
+from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Numeric, String, Table, Text, Time, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -76,8 +76,8 @@ class Offer(BaseModel):
     visible: Mapped[bool | None] = mapped_column(Boolean())
     added_at: Mapped[datetime | None] = mapped_column(DateTime())
     valid_to: Mapped[datetime | None] = mapped_column(DateTime())
-    created_at: Mapped[datetime | None] = mapped_column(DateTime())
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime())
+    updated_at: Mapped[DateTime | None] = mapped_column(DateTime(), default=func.now(), onupdate=func.now())
+    created_at: Mapped[DateTime | None] = mapped_column(DateTime(), default=func.now())
 
     legal_roles: Mapped[list[LegalRole]] = relationship(
         back_populates="offers",

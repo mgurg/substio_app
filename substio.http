@@ -1,0 +1,54 @@
+### POST RAW OFFER 1
+POST http://{{host}}/offers
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "author": "Tomasz Duda",
+  "raw_data": "#SO Łodzi Fotokopia R.pr. , adw - faktura VAT Zlecenie wykonania fotokopii akt karnych (dochodzenie) dołączonych do akt sprawy cywilnej. Prosze o kontakt osoby, które mogą wykonać fotokopię w następnym tygodniu - 28 lipca- 1 sierpnia. Prosze o kontakt priv że wskazaniem stawki. Pozdrawiam r.pr r.pr 8w7YaReQ.com r.pr XcefP7wfg6ly2kXz1g8RdG47NQ5CSo o e r e L r M n a All reactions: 1 1",
+  "author_uid": "https://www.facebook.com/groups/409628462539734/user/100000711832509",
+  "offer_uid": "https://www.facebook.com/groups/zleceniaprawne/posts/3139498279552725",
+  "timestamp": "2025-07-24T13:41:31.799Z",
+  "source": "bot"
+}
+
+### POST RAW OFFER 2
+POST http://{{host}}/offers
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "author": "Magdalena Kordeczka-Bok",
+  "raw_data": "#zastępstwo #gorzówwielkopolski SR w Gorzowie Wielkopolskim 14.08.2025 r., godz. 14:00 posiedzenie w sprawie o ustalenie kontaktów FV propozycje ze stawką proszę na priv All reactions: 1 1 1 comment",
+  "author_uid": "https://www.facebook.com/groups/409628462539734/user/1287028027",
+  "offer_uid": "https://www.facebook.com/groups/zleceniaprawne/posts/3139474952888391",
+  "timestamp": "2025-07-24T12:15:31.799Z",
+  "source": "bot"
+}
+
+
+###
+GET http://{{host}}/offers/
+
+###
+GET http://{{host}}/offers/raw
+
+
+### Parse with AI
+@offer_uuid =19e5f25d-ac5e-4623-87b4-21e00fa85635
+GET http://{{host}}/offers/parse/{{offer_uuid}}
+
+
+### UPDATE OFFER
+PATCH http://{{host}}/offers/parse/{{offer_uuid}}
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "place_name" : "SO SO",
+  "status" : "processed"
+}
+

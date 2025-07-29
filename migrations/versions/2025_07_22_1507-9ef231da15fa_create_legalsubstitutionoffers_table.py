@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.create_table(
         'offers',
         sa.Column("id", sa.INTEGER(), sa.Identity(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column("uuid", sa.VARCHAR(length=36), autoincrement=False, nullable=True),
+        sa.Column('uuid', sa.UUID(), nullable=False),
         sa.Column('place_id', sa.TEXT(), nullable=True),
         sa.Column('place_name', sa.TEXT(), nullable=True),
         sa.Column('email', sa.TEXT(), nullable=True),

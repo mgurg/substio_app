@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.create_table(
         'legal_roles',
         sa.Column("id", sa.INTEGER(), sa.Identity(), autoincrement=True, nullable=False, primary_key=True),
-        sa.Column('uuid', postgresql.UUID(as_uuid=True), nullable=False, default=uuid4),
+        sa.Column('uuid', sa.UUID(), nullable=False),
         sa.Column('name', sa.TEXT(), nullable=False),
         sa.Column('symbol', sa.TEXT(), nullable=False),
     )
