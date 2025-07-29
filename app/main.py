@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.status import HTTP_200_OK
 
 from app.controller.offers import offer_router
 from app.controller.places import place_router
@@ -36,3 +37,13 @@ app = create_application()
 @app.get("/")
 async def read_root():
     return {"Hello": "World!"}
+
+
+@app.get("/health",
+         status_code=HTTP_200_OK,
+         tags=["healthcheck"],
+         summary="Perform a Health Check",
+         response_description="Return HTTP Status Code 200 (OK)"
+         )
+async def health_check():
+    return {"status": "healthy"}
