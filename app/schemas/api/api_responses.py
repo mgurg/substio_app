@@ -20,14 +20,11 @@ class SubstitutionOffer(BaseModel):
         if v is None or v == "":
             return None
 
-        # Check if it's a string and contains @ sign
         if isinstance(v, str):
-            # Basic check for @ sign
-            if "@" not in v:
-                logger.warning(f"Invalid email format detected (no @ sign): {v}, setting to None")
+            if '@' not in v or '.' not in v:
+                logger.warning(f"Invalid email format detected (no @ sign or dot): {v}, setting to None")
                 return None
 
-            # Additional check for basic email structure
             parts = v.split("@")
             if len(parts) != 2 or not parts[0] or not parts[1]:
                 logger.warning(f"Invalid email format detected: {v}, setting to None")
@@ -40,6 +37,7 @@ class UsageDetails(BaseModel):
     completion_tokens: int
     total_tokens: int
     elapsed_time: float
+
 
 class ParseResponse(BaseModel):
     success: bool
