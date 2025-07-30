@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
-from app.database.models.enums import SourceType, OfferStatus
+from app.database.models.enums import OfferStatus, SourceType
 
 
 class OfferAdd(BaseModel):

@@ -10,10 +10,10 @@ class SubstitutionOffer(BaseModel):
     date: list[str] | None = None
     time: list[str] | None = None
     description: str | None = None
-    target_audience: list[Literal["adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski"]] | None = None
+    legal_roles: list[Literal["adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski"]] | None = None
     email: EmailStr | None = None
 
-    @field_validator('email', mode='before')
+    @field_validator("email", mode="before")
     @classmethod
     def validate_email(cls, v):
         """Validate email and set to None if invalid format."""
@@ -21,7 +21,7 @@ class SubstitutionOffer(BaseModel):
             return None
 
         if isinstance(v, str):
-            if '@' not in v or '.' not in v:
+            if "@" not in v or "." not in v:
                 logger.warning(f"Invalid email format detected (no @ sign or dot): {v}, setting to None")
                 return None
 
@@ -31,6 +31,7 @@ class SubstitutionOffer(BaseModel):
                 return None
 
         return v
+
 
 class UsageDetails(BaseModel):
     prompt_tokens: int

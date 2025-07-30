@@ -1,19 +1,19 @@
 import json
 import time
 from typing import Annotated
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 from fastapi import Depends, HTTPException
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy import Sequence
-from starlette.status import HTTP_409_CONFLICT, HTTP_404_NOT_FOUND
+from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 from app.config import get_settings
 from app.database.models.enums import OfferStatus
 from app.database.models.models import Offer
 from app.database.repository.OfferRepo import OfferRepo
-from app.schemas.api.api_responses import SubstitutionOffer, ParseResponse, UsageDetails
+from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import OfferAdd, OfferUpdate
 
 settings = get_settings()
@@ -28,7 +28,7 @@ class OfferService:
     - `date`: Lista dat zastępstwa w formacie **RRRR-MM-DD (np. 2025-07-30)**. Jeśli podana jest tylko jedna, zwróć listę z jednym elementem. Jeśli brak – `null`.
     - `time`: Lista godzin zastępstwa w formacie  **HH:MM** (24-godzinny format, np. 13:45). Jeśli brak – `null`.
     - `description`: Krótkie streszczenie charakteru sprawy lub kontekstu. **Usuń email** jeżeli występuje.
-    - `target_audience`: Lista grup docelowych – wybierz spośród: "adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski". Jeśli brak informacji – `null`.
+    - `legal_roles`: Lista grup docelowych – wybierz spośród: "adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski". Jeśli brak informacji – `null`.
     - `email`: Adres e-mail, jeśli występuje w opisie. Jeśli nie ma – `null`.
 
     Zwróć dane w formacie JSON zgodnym ze schematem.
@@ -41,12 +41,12 @@ class OfferService:
         self.offer_repo = offer_repo
 
     async def create(self, offer: OfferAdd) -> None:
-        db_company = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
-        if db_company:
+        db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
+        if db_offer:
             raise HTTPException(status_code=HTTP_409_CONFLICT,
                                 detail=f"Offer with {offer.offer_uid} already exists")
 
-        city_data = {
+        offer_data = {
             "uuid": str(uuid4()),
             "author": offer.author,
             "author_uid": offer.author_uid,
@@ -56,7 +56,7 @@ class OfferService:
             "source": offer.source
         }
 
-        await self.offer_repo.create(**city_data)
+        await self.offer_repo.create(**offer_data)
         return None
 
     async def parse_raw(self, offer_uuid: UUID) -> ParseResponse:
@@ -68,10 +68,9 @@ class OfferService:
         try:
             # Use async OpenAI client
             client = AsyncOpenAI(api_key=settings.API_KEY_OPENAI)
-            from openai.types.chat import ChatCompletionMessageParam
 
             t = time.process_time()
-            response = await client.chat.completions.create(  # Add await
+            response = await client.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": settings.SYSTEM_PROMPT},
@@ -103,8 +102,8 @@ class OfferService:
             logger.info(
                 f"Tokens prompt: {usage_info.prompt_tokens}, "
                 f"completion: {usage_info.completion_tokens}, "
-                f"total: {usage_info.total_tokens}, "  # Added missing comma
-                f"took: {usage_info.elapsed_time:.3f} seconds"  # Better formatting
+                f"total: {usage_info.total_tokens}, "
+                f"took: {usage_info.elapsed_time:.3f} seconds"
             )
 
             return ParseResponse(success=True, data=validated, usage=usage_info)
@@ -136,9 +135,6 @@ class OfferService:
         await self.offer_repo.update(db_offer.id, **update_data)
 
         return None
-
-
-
 
     async def read_raw(self, offset: int,
                        limit: int,
