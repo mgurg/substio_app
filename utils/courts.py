@@ -1,6 +1,5 @@
 import csv
 import json
-import re
 
 
 def split_addresses_outside_brackets(address_string):
@@ -34,6 +33,39 @@ def split_addresses_outside_brackets(address_string):
 
     # Return at least one empty string if no addresses found
     return addresses if addresses else ['']
+
+
+def extract_address_and_department(address_with_dept):
+    """
+    Extract address and department from a string like "Pl. Kopernika 2 (Biuro Podawcze, Czytelnia)"
+    Returns tuple: (clean_address, department_or_none)
+    """
+    if not address_with_dept:
+        return '', None
+
+    address_with_dept = address_with_dept.strip()
+
+    # Find the first opening parenthesis
+    paren_start = address_with_dept.find('(')
+
+    if paren_start == -1:
+        # No parentheses found - return address as is, department as None
+        return address_with_dept, None
+
+    # Find the last closing parenthesis
+    paren_end = address_with_dept.rfind(')')
+
+    if paren_end == -1 or paren_end <= paren_start:
+        # Malformed parentheses - return address as is
+        return address_with_dept, None
+
+    # Extract address (everything before first parenthesis)
+    address = address_with_dept[:paren_start].strip()
+
+    # Extract department (everything between parentheses)
+    department = address_with_dept[paren_start + 1:paren_end].strip()
+
+    return address, department if department else None
 
 
 def process_csv_to_json(csv_file_path, json_file_path):
@@ -84,7 +116,12 @@ def process_csv_to_json(csv_file_path, json_file_path):
                 # Create a record for each address
                 for address in addresses:
                     record = base_row.copy()
-                    record['Ulica'] = address
+
+                    # Extract clean address and department
+                    clean_address, department = extract_address_and_department(address)
+                    record['Ulica'] = clean_address
+                    record['Department'] = department
+
                     extracted_data.append(record)
 
         # Save as JSON file
@@ -117,13 +154,17 @@ def main():
                 print(json.dumps(data[0], ensure_ascii=False, indent=2))
 
             # Show example of address splitting if available
-            multiple_address_records = [record for record in data if '(' in record.get('Ulica', '')]
+            multiple_address_records = [record for record in data if record.get('Department') is not None]
             if multiple_address_records:
-                print(f"\nExample of address splitting (showing records with same court name):")
+                print(f"\nExample of address and department extraction:")
                 court_name = multiple_address_records[0].get('Nazwa sądu', '')
                 same_court_records = [r for r in data if r.get('Nazwa sądu', '') == court_name][:3]
                 for i, record in enumerate(same_court_records):
-                    print(f"Record {i + 1}: {record.get('Ulica', '')}")
+                    print(f"Record {i + 1}:")
+                    print(f"  Address: {record.get('Ulica', '')}")
+                    print(f"  Department: {record.get('Department', 'None')}")
+            else:
+                print(f"\nNo records with departments found in the sample.")
     except:
         pass
 
