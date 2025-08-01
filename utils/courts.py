@@ -1,12 +1,15 @@
 import csv
 import json
+import re
 import time
 
 from geopy import Nominatim
 from geopy.exc import GeocoderTimedOut
+from loguru import logger
 
 # Setup local Nominatim
-geolocator = Nominatim(user_agent="erGeocoder", domain="localhost:7070", scheme="http")
+# geolocator = Nominatim(user_agent="erGeocoder", domain="localhost:7070", scheme="http")
+geolocator = Nominatim(user_agent="erGeocoder")
 
 FIELD_NAME_MAP = {
     "Typ": "type",
@@ -21,19 +24,26 @@ FIELD_NAME_MAP = {
 }
 
 
-def geolocate_address(street, city, postcode):
+def geolocate_address(name, street, city, postcode):
     try:
+        time.sleep(1.1)
         # Use first postal code only, if multiple
         postcode = postcode.split(",")[0].strip()
 
-        query = f"{street}, {postcode} {city}, Poland"
+        # Check if the postcode is valid for Poland (format: dd-ddd)
+        if re.fullmatch(r"\d{2}-\d{3}", postcode):
+            query = f"{street}, {postcode} {city}, Poland"
+        else:
+            query = f"{street}, {city}, Poland"
+
         location = geolocator.geocode(query, timeout=10)
+        if not location:
+            logger.warning(f"No location found for `{name}`,address: {query}")
+            return None, None
         if location:
             return location.latitude, location.longitude
     except GeocoderTimedOut:
-        print(f"Timeout during geolocation: {street}, {city}")
-        time.sleep(1)
-        return geolocate_address(street, city, postcode)  # retry once
+        logger.error(f"Timeout during geolocation: `{name}`, {street}, {city}")
     return None, None
 
 
@@ -159,9 +169,9 @@ def process_csv_to_json(csv_file_path, json_file_path):
                     record["department"] = department
 
                     # Geolocate
-                    # lat, lon = geolocate_address(clean_address, record['city'], record['postal_code'])
-                    # record['lat'] = lat
-                    # record['lon'] = lon
+                    lat, lon = geolocate_address(record["name"], clean_address, record["city"], record["postal_code"])
+                    record["lat"] = lat
+                    record["lon"] = lon
 
                     record["category"] = "court"
                     record["website"] = "https://" + record["email"].split("@")[-1] if record.get("email") else None
@@ -209,9 +219,12 @@ def main():
                     print(f"  Department: {record.get('Department', 'None')}")
             else:
                 print("\nNo records with departments found in the sample.")
-    except:
-        pass
+    except Exception as e:
+        logger.error(f"Error processing file: {str(e)}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nInterrupted by user. Exiting gracefully.")
