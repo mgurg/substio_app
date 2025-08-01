@@ -4,7 +4,7 @@ import json
 
 def split_addresses_outside_brackets(address_string):
     """
-    Split addresses on commas that are not inside brackets.
+    Split addresses on commas or semicolons that are not inside brackets.
     Returns a list of individual addresses.
     """
     if not address_string:
@@ -19,8 +19,8 @@ def split_addresses_outside_brackets(address_string):
             bracket_count += 1
         elif char == ')':
             bracket_count -= 1
-        elif char == ',' and bracket_count == 0:
-            # Found a comma outside brackets - this is a separator
+        elif (char == ',' or char == ';') and bracket_count == 0:
+            # Found a comma or semicolon outside brackets - this is a separator
             addresses.append(current_address.strip())
             current_address = ''
             continue
