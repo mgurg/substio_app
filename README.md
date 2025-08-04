@@ -94,3 +94,8 @@ TRUNCATE TABLE locations RESTART IDENTITY CASCADE;
 ```bash
 bunx repomix --style markdown --ignore "**/*.log,tmp/,Readme.md,uv.lock"
 ```
+### Truncate PG data
+
+```postgresql
+TRUNCATE TABLE places RESTART IDENTITY CASCADE ;
+```

@@ -1,8 +1,8 @@
-from typing import Annotated
+from typing import Annotated, Sequence
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.db import get_db
@@ -19,6 +19,22 @@ class PlaceRepo(GenericRepo[Place]):
 
     async def get_by_uuid(self, uuid: UUID) -> Place | None:
         query = select(self.Model).where(self.Model.uuid == uuid)
+
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_partial_name(self, name: str) -> Sequence[Place]:
+        query = select(self.Model).where(func.lower(self.Model.name_ascii).ilike(f"%{name}%")).limit(5)
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_by_name_and_street(self, name: str, street: str) -> Place | None:
+        query = select(self.Model).where(
+            and_(
+                func.lower(self.Model.name) == name.lower(),
+                self.Model.street_name == street
+            )
+        )
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()

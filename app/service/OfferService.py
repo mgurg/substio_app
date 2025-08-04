@@ -15,6 +15,7 @@ from app.database.models.models import Offer
 from app.database.repository.OfferRepo import OfferRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import OfferAdd, OfferUpdate
+from app.schemas.rest.responses import RawOfferIndexResponse
 
 settings = get_settings()
 
@@ -156,3 +157,8 @@ class OfferService:
                                                             OfferStatus.ACCEPTED, search, [])
 
         return db_offers, count
+
+    async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+
+        return db_offer

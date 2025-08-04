@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.db import Base
-from app.database.models.enums import OfferStatus, SourceType
+from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
 
 
 class BaseModel(Base):
@@ -46,11 +46,41 @@ offers_legal_roles_link = Table(
 class Place(BaseModel):
     __tablename__ = "places"
     uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str | None] = mapped_column(Text())
+    name_ascii: Mapped[str | None] = mapped_column(Text())
+    department: Mapped[str | None] = mapped_column(Text())
+    category: Mapped[PlaceCategory] = mapped_column(Enum(PlaceCategory))
+    type: Mapped[str | None] = mapped_column(Text())
+    street_name: Mapped[str | None] = mapped_column(Text())
+    street_number: Mapped[str | None] = mapped_column(Text())
+    city: Mapped[str] = mapped_column(Text())
+    state_province: Mapped[str | None] = mapped_column(Text())
+    postal_code: Mapped[str | None] = mapped_column(Text())
+
+    lat: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lon: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    website: Mapped[str | None] = mapped_column(Text())
+    email: Mapped[str | None] = mapped_column(Text())
+    country_code: Mapped[str | None] = mapped_column(Text())
+    national_number: Mapped[str | None] = mapped_column(Text())
+    epuap: Mapped[str | None] = mapped_column(Text())
 
 
 class City(BaseModel):
     __tablename__ = "cities"
     uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str]
+    name_ascii: Mapped[str]
+    lat: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lon: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lat_min: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lon_min: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lat_max: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lon_max: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    population: Mapped[int | None]
+    importance: Mapped[float | None]
+    category: Mapped[str] = mapped_column(String(16))
+    region: Mapped[str | None] = mapped_column(String(64))
 
 
 class Offer(BaseModel):
