@@ -11,11 +11,12 @@ from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 from app.config import get_settings
 from app.database.models.enums import OfferStatus
-from app.database.models.models import Offer
+from app.database.models.models import Offer, LegalRole
+from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import OfferAdd, OfferUpdate
-from app.schemas.rest.responses import RawOfferIndexResponse
+from app.schemas.rest.responses import RawOfferIndexResponse, LegalRoleIndexResponse
 
 settings = get_settings()
 
@@ -37,9 +38,11 @@ class OfferService:
 
     def __init__(
             self,
-            offer_repo: Annotated[OfferRepo, Depends()]
+            offer_repo: Annotated[OfferRepo, Depends()],
+            legal_role_repo: Annotated[LegalRoleRepo, Depends()]
     ) -> None:
         self.offer_repo = offer_repo
+        self.legal_role_repo = legal_role_repo
 
     async def create(self, offer: OfferAdd) -> None:
         db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
@@ -162,3 +165,6 @@ class OfferService:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
         return db_offer
+
+    async def get_legal_roles(self):
+        return await self.legal_role_repo.get_all()

@@ -1,5 +1,5 @@
 from datetime import datetime
-from decimal import ROUND_DOWN, Decimal
+from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 

@@ -65,6 +65,8 @@ class Place(BaseModel):
     national_number: Mapped[str | None] = mapped_column(Text())
     epuap: Mapped[str | None] = mapped_column(Text())
 
+    offers: Mapped[list["Offer"]] = relationship(back_populates="place")
+
 
 class City(BaseModel):
     __tablename__ = "cities"
@@ -82,6 +84,8 @@ class City(BaseModel):
     category: Mapped[str] = mapped_column(String(16))
     region: Mapped[str | None] = mapped_column(String(64))
 
+    offers: Mapped[list["Offer"]] = relationship(back_populates="city")
+
 
 class Offer(BaseModel):
     __tablename__ = "offers"
@@ -93,8 +97,13 @@ class Offer(BaseModel):
     source: Mapped[SourceType] = mapped_column(Enum(SourceType))
     status: Mapped[OfferStatus] = mapped_column(Enum(OfferStatus), default=OfferStatus.NEW)
 
-    place_id: Mapped[str | None] = mapped_column(Text())
-    place_name: Mapped[str | None] = mapped_column(Text())
+    # Foreign keys
+    place_id: Mapped[int | None] = mapped_column(ForeignKey("places.id", ondelete="SET NULL"), nullable=True)
+    city_id: Mapped[int | None] = mapped_column(ForeignKey("cities.id", ondelete="SET NULL"), nullable=True)
+
+    place: Mapped[Place | None] = relationship(back_populates="offers")
+    city: Mapped[City | None] = relationship(back_populates="offers")
+
     email: Mapped[str | None] = mapped_column(Text())
     url: Mapped[str | None] = mapped_column(Text())
     date: Mapped[Date | None] = mapped_column(Date())

@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import select, Sequence, func, desc
+from sqlalchemy import Sequence, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.db import get_db

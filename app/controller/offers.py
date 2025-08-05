@@ -1,13 +1,15 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Any, Coroutine
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.database.models.enums import OfferStatus
+from app.database.models.models import LegalRole
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import OfferAdd, OfferUpdate
-from app.schemas.rest.responses import OffersPaginated, RawOfferIndexResponse, RawOffersPaginated
+from app.schemas.rest.responses import OffersPaginated, RawOfferIndexResponse, RawOffersPaginated, \
+    LegalRoleIndexResponse
 from app.service.OfferService import OfferService
 
 offer_router = APIRouter()
@@ -57,6 +59,11 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
 @offer_router.get("/raw/{offer_uuid}")
 async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> RawOfferIndexResponse:
     return await offer_service.get_raw(offer_uuid)
+
+
+@offer_router.get("/legal_roles")
+async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:
+    return await offer_service.get_legal_roles()
 
 
 @offer_router.get("/parse/{offer_uuid}")

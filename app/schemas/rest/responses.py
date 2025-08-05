@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.database.models.enums import SourceType, PlaceCategory
+from app.database.models.enums import PlaceCategory, SourceType
 
 
 class BaseResponse(BaseModel):
@@ -15,6 +15,9 @@ class BaseResponse(BaseModel):
 class StandardResponse(BaseResponse):
     ok: bool
 
+class LegalRoleIndexResponse(BaseResponse):
+    uuid: UUID
+    name: str
 
 class OfferIndexResponse(BaseResponse):
     uuid: UUID

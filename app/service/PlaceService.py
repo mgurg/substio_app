@@ -1,18 +1,18 @@
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import Depends, HTTPException
 from loguru import logger
 from starlette.status import (
     HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT,
 )
 
 from app.common.text_utils import sanitize_name
-from app.database.models.models import Place, City
+from app.database.models.models import City, Place
 from app.database.repository.CityRepo import CityRepo
 from app.database.repository.PlaceRepo import PlaceRepo
-from app.schemas.rest.requests import PlaceAdd, CityAdd
+from app.schemas.rest.requests import CityAdd, PlaceAdd
 
 
 class PlaceService:
@@ -36,7 +36,7 @@ class PlaceService:
         db_place = await self.place_repo.get_by_name_and_street(place_add.name, place_add.street)
         if db_place:
             logger.warning(f"Place `{place_add.name}` already exists as {db_place.uuid}")
-            raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Place `{place_add.name}` already exists")
+            # raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Place `{place_add.name}` already exists")
 
         place = {
             "uuid": str(uuid4()),
@@ -58,8 +58,8 @@ class PlaceService:
     async def create_city(self, city: CityAdd) -> None:
         db_city = await self.city_repo.get_by_name(city.city_name)
         if db_city:
-            logger.warning(f"City `{city.name}` already exists as {db_city.uuid}")
-            raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"City `{city.name}` already exists")
+            logger.warning(f"City `{city.city_name}` already exists as {db_city.uuid}")
+            # raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"City `{city.city_name}` already exists")
 
         city_data = {
             "uuid": str(uuid4()),
@@ -85,6 +85,6 @@ class PlaceService:
         sanitized_name = sanitize_name(city_name)
         return await self.city_repo.get_by_partial_name(sanitized_name)
 
-    async def get_facilities(self, city_name: str) -> Sequence[Place]:
+    async def get_facilities(self, city_name: str, place_type: str | None = None) -> Sequence[Place]:
         sanitized_name = sanitize_name(city_name)
-        return await self.place_repo.get_by_partial_name(sanitized_name)
+        return await self.place_repo.get_by_partial_name(sanitized_name, place_type)

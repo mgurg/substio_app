@@ -1,4 +1,5 @@
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
@@ -23,8 +24,13 @@ class PlaceRepo(GenericRepo[Place]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_partial_name(self, name: str) -> Sequence[Place]:
-        query = select(self.Model).where(func.lower(self.Model.name_ascii).ilike(f"%{name}%")).limit(5)
+    async def get_by_partial_name(self, name: str, facility_type: str | None = None) -> Sequence[Place]:
+        conditions = [func.lower(self.Model.name_ascii).ilike(f"%{name.lower()}%")]
+
+        if facility_type:
+            conditions.append(self.Model.type == facility_type)
+
+        query = select(self.Model).where(and_(*conditions)).limit(5)
         result = await self.session.execute(query)
         return result.scalars().all()
 

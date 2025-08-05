@@ -27,8 +27,8 @@ async def create_city(place_service: placeServiceDependency, city: CityAdd):
 
 
 @place_router.get("/facility/{place_name}")
-async def get_facilities(place_service: placeServiceDependency, place_name: str) -> list[PlaceIndexResponse]:
-    return await place_service.get_facilities(place_name)
+async def get_facilities(place_service: placeServiceDependency, place_name: str, place_type: str | None = None) -> list[PlaceIndexResponse]:
+    return await place_service.get_facilities(place_name, place_type)
 
 
 @place_router.get("/city/{city_name}")
