@@ -16,6 +16,7 @@ class Settings(BaseSettings):
         username=os.getenv("DB_USERNAME"),
         password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")) if os.getenv("DB_PORT") else None,
         path=os.getenv("DB_DATABASE"),
     )
 

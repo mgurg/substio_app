@@ -27,6 +27,7 @@ dev-dependencies = [
     "overpy>=0.7",
     "pytest>=8.4.0",
     "ruff>=0.12.0",
+    "testcontainers>=4.12.0",
 ]
 
 [tool.ruff.lint]
