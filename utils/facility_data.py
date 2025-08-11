@@ -76,19 +76,19 @@ class PolandFacilityFetcher:
 
             # Process nodes
             for node in result.nodes:
-                facility = self._extract_facility_data(node, "node")
+                facility = self._extract_facility_data(node, "node", facility_type)
                 if facility:
                     facilities.append(facility)
 
             # Process ways
             for way in result.ways:
-                facility = self._extract_facility_data(way, "way")
+                facility = self._extract_facility_data(way, "way", facility_type)
                 if facility:
                     facilities.append(facility)
 
             # Process relations
             for relation in result.relations:
-                facility = self._extract_facility_data(relation, "relation")
+                facility = self._extract_facility_data(relation, "relation", facility_type)
                 if facility:
                     facilities.append(facility)
 
@@ -99,78 +99,88 @@ class PolandFacilityFetcher:
             logger.error(f"Error fetching data: {e}")
             raise
 
-    def _extract_facility_data(self, element, element_type: str) -> dict[str, Any] | None:
-        """Extract relevant data from an OSM element."""
+    def _extract_facility_data(self, element, element_type: str, facility_type: str) -> dict[str, Any] | None:
         tags = element.tags
 
-        # Get coordinates
-        if element_type == "node":
+        facility_name = tags.get("name")
+        if not facility_name:
+            return None
+
+        # Coordinates
+        if element_type == "node" and hasattr(element, "lat") and hasattr(element, "lon"):
             lat, lon = element.lat, element.lon
         elif hasattr(element, "center_lat") and hasattr(element, "center_lon"):
             lat, lon = element.center_lat, element.center_lon
         else:
-            lat, lon = None, None
+            lat = lon = None
 
-        # Extract names in different languages
-        names = {key: value for key, value in tags.items() if key.startswith("name:")}
-
-        # Extract contact information
-        contact_info = {}
-        for key in ["phone", "mobile", "fax", "email", "website"]:
-            if key in tags:
-                contact_info[key] = tags[key]
-            elif f"contact:{key}" in tags:
-                contact_info[key] = tags[f"contact:{key}"]
-
-        # Extract address information with Polish-specific fields
-        address = {}
-        address_keys = ["addr:street", "addr:housenumber", "addr:postcode",
-                        "addr:city", "addr:state", "addr:country"]
-        for key in address_keys:
-            if key in tags:
-                address[key.replace("addr:", "")] = tags[key]
-
-        # Early return if address is empty
-        if not address:
+        if lat is None or lon is None:
             return None
 
-        # Add Polish administrative divisions
-        polish_admin = {}
-        admin_keys = ["is_in:province", "is_in:county", "is_in:commune",
-                      "addr:province", "addr:county", "addr:state"]
-        for key in admin_keys:
-            if key in tags:
-                polish_admin[key] = tags[key]
+        lat = float(lat)
+        lon = float(lon)
 
-        facility_data = {
-            "id": element.id,
-            "element_type": element_type,
-            "name": tags.get("name"),
-            "official_name": tags.get("official_name"),
-            "amenity": tags.get("amenity"),
-            "office": tags.get("office"),
-            "government": tags.get("government"),
-            "operator": tags.get("operator"),
-            "operator_type": tags.get("operator:type"),
-            "police_type": tags.get("police:type") if "police" in tags.get("amenity", "") else None,
-            "coordinates": {
-                "lat": str(lat) if lat else None,
-                "lon": str(lon) if lon else None
-            },
-            "address": address if address else None,
-            "polish_admin": polish_admin if polish_admin else None,
-            "contact": contact_info if contact_info else None,
-            "names": names if names else None,
-            "opening_hours": tags.get("opening_hours"),
-            "website": tags.get("website"),
-            "wikipedia": tags.get("wikipedia"),
-            "wikidata": tags.get("wikidata"),
-            "description": tags.get("description"),
-            "note": tags.get("note"),
-            "all_tags": dict(tags)  # Keep all original tags for reference
+        # Name-based type mapping
+        name = tags.get("name", "").lower()
+        type_code = None
+
+        police_types = {
+            "komenda powiatowa policji": "KPP",
+            "komenda miejska policji": "KMP",
+            "komenda główna policji": "KGP",
+            "komisariat policji": "KP",
+            "posterunek policji": "PP",
+            "komenda wojewódzka policji": "KWP"
         }
 
-        return facility_data
+        prosecutor_types = {
+            "prokuratura okręgowa": "PO",
+            "prokuratura rejonowa": "PR",
+            "prokuratura generalna": "PG"
+        }
+
+        if facility_type == "police":
+            for key, val in police_types.items():
+                if key in name:
+                    type_code = val
+                    break
+            if not type_code:
+                type_code = "POL"
+        elif facility_type == "prosecutor":
+            for key, val in prosecutor_types.items():
+                if key in name:
+                    type_code = val
+                    break
+            if not type_code:
+                type_code = "PRO"
+
+        # Address parts
+        street = tags.get("addr:street")
+        housenumber = tags.get("addr:housenumber")
+        postal_code = tags.get("addr:postcode")
+        city = tags.get("addr:city")
+        street_full = f"{street} {housenumber}".strip() if street or housenumber else None
+
+        # Contact
+        phone = tags.get("phone") or tags.get("contact:phone")
+        email = tags.get("email") or tags.get("contact:email")
+        website = tags.get("website") or tags.get("contact:website")
+
+        return {
+            "type": type_code,
+            "name": facility_name,
+            "street": street_full,
+            "postal_code": postal_code,
+            "city": city,
+            "phone": phone,
+            "email": email,
+            "epuap": None,
+            "department": None,
+            "lat": lat,
+            "lon": lon,
+            "category": facility_type,
+            "website": website,
+        }
 
     def save_to_json(self, data: list[dict[str, Any]], filename: str,
                      facility_type: str) -> None:
@@ -195,29 +205,21 @@ class PolandFacilityFetcher:
         logger.info(f"Data saved to {filename}")
 
     def get_facility_statistics(self, data: list[dict[str, Any]]) -> dict[str, Any]:
-        """Generate basic statistics about the fetched facilities."""
         if not data:
             return {"total": 0}
 
         stats = {
             "total": len(data),
             "with_names": sum(1 for f in data if f.get("name")),
-            "with_coordinates": sum(1 for f in data if f["coordinates"]["lat"] and f["coordinates"]["lon"]),
-            "with_phone": sum(1 for f in data if f.get("contact") and f["contact"].get("phone")),
-            "with_address": sum(1 for f in data if f.get("address")),
-            "by_element_type": {},
-            "by_operator": {}
+            "with_coordinates": sum(1 for f in data if f.get("lat") and f.get("lon")),
+            "with_phone": sum(1 for f in data if f.get("phone")),
+            "with_address": sum(1 for f in data if f.get("street") and f.get("city")),
+            "by_type": {}
         }
 
-        # Count by element type
         for facility in data:
-            element_type = facility.get("element_type", "unknown")
-            stats["by_element_type"][element_type] = stats["by_element_type"].get(element_type, 0) + 1
-
-        # Count by operator
-        for facility in data:
-            operator = facility.get("operator", "unknown")
-            stats["by_operator"][operator] = stats["by_operator"].get(operator, 0) + 1
+            type_ = facility.get("type", "unknown")
+            stats["by_type"][type_] = stats["by_type"].get(type_, 0) + 1
 
         return stats
 
@@ -235,7 +237,7 @@ def main():
     for key, value in fetcher.FACILITY_TYPES.items():
         print(f"  {key}: {value['name']} / {value['name_en']}")
 
-    facility_type = input("\nWybierz typ placówki / Select facility type: ").strip().lower()
+    facility_type = input("\nSelect facility type: ").strip().lower()
     if facility_type not in fetcher.FACILITY_TYPES:
         print("Invalid facility type.")
         return
@@ -264,28 +266,12 @@ def main():
 
         print(f"\nData saved to: {filename}")
 
-        # Show sample data
-        if data:
-            print("\nSample facility:")
-            sample = data[0]
-            print(f"  Name: {sample.get('name', 'N/A')}")
-            print(f"  Type: {sample.get('amenity') or sample.get('office') or sample.get('government')}")
-            if sample["coordinates"]["lat"]:
-                print(f"  Location: {sample['coordinates']['lat']}, {sample['coordinates']['lon']}")
-            if sample.get("address"):
-                addr = sample["address"]
-                street = f"{addr.get('street', '')} {addr.get('housenumber', '')}".strip()
-                city = addr.get("city", "")
-                if street or city:
-                    print(f" Address: {street}, {city}")
-            if sample.get("polish_admin"):
-                admin = sample["polish_admin"]
-                if admin:
-                    print(f"  Administrative unit: {list(admin.values())[0]}")
-
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}", exc_info=True)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nInterrupted by user. Exiting gracefully.")

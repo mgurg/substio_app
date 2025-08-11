@@ -1,15 +1,13 @@
-from typing import Annotated, Literal, Any, Coroutine
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.database.models.enums import OfferStatus
-from app.database.models.models import LegalRole
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import OfferAdd, OfferUpdate
-from app.schemas.rest.responses import OffersPaginated, RawOfferIndexResponse, RawOffersPaginated, \
-    LegalRoleIndexResponse
+from app.schemas.rest.responses import LegalRoleIndexResponse, OffersPaginated, RawOfferIndexResponse, RawOffersPaginated
 from app.service.OfferService import OfferService
 
 offer_router = APIRouter()

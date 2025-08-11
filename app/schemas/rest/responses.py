@@ -1,11 +1,11 @@
-from datetime import datetime
+import datetime as dt
 from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.database.models.enums import PlaceCategory, SourceType
+from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
 
 
 class BaseResponse(BaseModel):
@@ -15,12 +15,41 @@ class BaseResponse(BaseModel):
 class StandardResponse(BaseResponse):
     ok: bool
 
+
 class LegalRoleIndexResponse(BaseResponse):
     uuid: UUID
     name: str
 
+
+class RolesResponse(BaseResponse):
+    uuid: UUID
+    name: str
+
+
+class PlaceResponse(BaseResponse):
+    uuid: UUID
+    name: str
+    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+
+class CityResponse(BaseResponse):
+    uuid: UUID
+    name: str
+    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+
 class OfferIndexResponse(BaseResponse):
     uuid: UUID
+    author: str
+    description: str
+    email: EmailStr | None
+    url: str | None
+    place: PlaceResponse | None = None
+    city: CityResponse | None = None
+    legal_roles: list[RolesResponse]
+    date: dt.date | None = None
+    hour: dt.time | None = None
+    valid_to: dt.datetime |None = None
 
 
 class RawOfferIndexResponse(BaseResponse):
@@ -30,7 +59,17 @@ class RawOfferIndexResponse(BaseResponse):
     offer_uid: str
     raw_data: str
     source: SourceType
-    added_at: datetime
+    author: str | None = None
+    description: str | None = None
+    email: EmailStr | None
+    url: str | None
+    place: PlaceResponse | None = None
+    city: CityResponse | None = None
+    legal_roles: list[RolesResponse]
+    date: dt.date | None = None
+    hour: dt.time | None = None
+    status: OfferStatus | None = None
+    added_at: dt.datetime
 
 
 class OffersPaginated(BaseResponse):

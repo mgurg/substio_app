@@ -97,6 +97,9 @@ class Offer(BaseModel):
     source: Mapped[SourceType] = mapped_column(Enum(SourceType))
     status: Mapped[OfferStatus] = mapped_column(Enum(OfferStatus), default=OfferStatus.NEW)
 
+    place_name: Mapped[str | None] = mapped_column(String(1024))
+    city_name: Mapped[str | None] = mapped_column(String(1024))
+
     # Foreign keys
     place_id: Mapped[int | None] = mapped_column(ForeignKey("places.id", ondelete="SET NULL"), nullable=True)
     city_id: Mapped[int | None] = mapped_column(ForeignKey("cities.id", ondelete="SET NULL"), nullable=True)

@@ -139,6 +139,7 @@ def process_csv_to_json(csv_file_path, json_file_path):
             # Use tab as delimiter
             reader = csv.DictReader(csvfile, delimiter="\t")
 
+            id_counter = 1
             for row in reader:
                 # First, extract the base data
                 base_row = {}
@@ -175,6 +176,8 @@ def process_csv_to_json(csv_file_path, json_file_path):
 
                     record["category"] = "court"
                     record["website"] = "https://" + record["email"].split("@")[-1] if record.get("email") else None
+                    record["id"] = id_counter
+                    id_counter += 1
 
                     extracted_data.append(record)
 

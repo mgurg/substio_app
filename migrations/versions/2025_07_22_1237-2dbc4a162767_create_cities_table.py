@@ -1,4 +1,4 @@
-"""create cities table
+"""create Cities table
 
 Revision ID: 2dbc4a162767
 Revises: 

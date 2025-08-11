@@ -1,4 +1,4 @@
-"""create places table
+"""create Places table
 
 Revision ID: 2548fc10b15b
 Revises: 2dbc4a162767

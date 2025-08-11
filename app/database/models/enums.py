@@ -9,7 +9,7 @@ class SourceType(Enum):
 class OfferStatus(Enum):
     NEW = "new"
     DRAFT = "draft"
-    PROCESSED = "processed"
+    POSTPONED = "postponed"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     ACTIVE = "active"

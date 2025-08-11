@@ -34,8 +34,9 @@ class OfferRepo(GenericRepo[Offer]):
 
         return query
 
-    async def get_by_uuid(self, uuid: UUID) -> Offer | None:
+    async def get_by_uuid(self, uuid: UUID, load_relations: list[str] | str = None) -> Offer | None:
         query = select(self.Model).where(self.Model.uuid == uuid)
+        query = self._apply_relationship_loading(query, load_relations)
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()

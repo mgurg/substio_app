@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from fastapi import Depends, HTTPException
 from loguru import logger
 from starlette.status import (
-    HTTP_404_NOT_FOUND,
+    HTTP_404_NOT_FOUND, HTTP_409_CONFLICT,
 )
 
 from app.common.text_utils import sanitize_name
@@ -42,6 +42,7 @@ class PlaceService:
             "uuid": str(uuid4()),
             "type": place_add.type,
             "name": place_add.name,
+            "department": place_add.department,
             "name_ascii": sanitize_name(place_add.name),
             "category": place_add.category,
             "street_name": place_add.street,
@@ -56,10 +57,10 @@ class PlaceService:
         return None
 
     async def create_city(self, city: CityAdd) -> None:
-        db_city = await self.city_repo.get_by_name(city.city_name)
+        db_city = await self.city_repo.get_by_name_and_region(city.city_name, city.state)
         if db_city:
-            logger.warning(f"City `{city.city_name}` already exists as {db_city.uuid}")
-            # raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"City `{city.city_name}` already exists")
+            logger.warning(f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
+            raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"City `{city.city_name} - {city.state}` already exists")
 
         city_data = {
             "uuid": str(uuid4()),

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     )
 
     API_KEY_OPENAI: str | None = os.getenv("API_KEY_OPENAI")
-    OPENAI_MODEL: str = "gpt-4.1-nano"
+    OPENAI_MODEL: str = "gpt-5-nano"
 
     SYSTEM_PROMPT: str = """
     Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:

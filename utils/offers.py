@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 from loguru import logger
 from requests import RequestException
 
-load_dotenv()
+load_dotenv(".env")
+BASE_API_URL = os.getenv("BACKED_DEV_HOST", "http://localhost:5000")
 
 
 @dataclass
@@ -27,7 +28,6 @@ class FacebookPost:
 
 
 class FacebookPageParser:
-    BASE_API_URL: str = os.getenv("BACKED_DEV_HOST")
 
     def __init__(self, input_dir: str = "input", output_dir: str = "output"):
         self.input_dir = input_dir
@@ -205,7 +205,7 @@ class FacebookPageParser:
                 author_link=author_link,
                 post_link=post_link,
                 delay=delay,
-                timestamp=timestamp,
+                timestamp=timestamp.replace("_", ":"),
                 posinset=posinset
             )
 
@@ -297,13 +297,12 @@ class FacebookPageParser:
 
             try:
                 response = requests.post(
-                    "{self.BASE_API_URL}/offers/raw",
+                    f"{BASE_API_URL}/offers/raw",
                     headers=headers,
                     json=payload,
                     timeout=30
                 )
 
-                # Check if request was successful
                 response.raise_for_status()
 
             except RequestException as e:
@@ -347,4 +346,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nInterrupted by user. Exiting gracefully.")

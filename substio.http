@@ -47,7 +47,7 @@ GET http://{{host}}/offers/parse/{{offer_uuid}}
 
 
 ### UPDATE OFFER
-PATCH http://{{host}}/offers/parse/{{offer_uuid}}
+PATCH http://{{host}}/offers/{{offer_uuid}}
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
@@ -57,3 +57,77 @@ Content-Type: application/json
   "status" : "processed"
 }
 
+### POST PLACE
+POST http://localhost:5000/places/
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "type": "SR",
+  "name": "Sąd Rejonowy  w Toruniu",
+  "street": "Władysława Warneńczyka 1",
+  "postal_code": "87-100",
+  "city": "Toruń",
+  "phone": "(56) 67 76 000",
+  "email": "boi@torun.sr.gov.pl",
+  "epuap": "/4366rhdvkf/SkrytkaESP",
+  "department": null,
+  "lat": 53.02010611668269,
+  "lon": 18.611988824718757,
+  "category": "court",
+  "website": "https://torun.sr.gov.pl",
+  "id": 78
+}
+
+
+### POST CITY
+POST http://localhost:5000/places/city
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+    {
+      "city_name": "Mieścisko",
+      "lat": 52.7436655,
+      "lon": 17.3294668,
+      "population": "Mieścisko",
+      "postal_code": "62-290",
+      "category": "town",
+      "region": null,
+      "country": "pl",
+      "geo_names": [
+        {
+          "name": "Mieścisko",
+          "lang": "pl"
+        },
+        {
+          "name": "Mietschisko",
+          "lang": "de"
+        }
+      ],
+      "latitude": "52.7436655",
+      "longitude": "17.3294668",
+      "lat_min": "52.7232284",
+      "lat_max": "52.7574196",
+      "lon_min": "17.2929901",
+      "lon_max": "17.3671306",
+      "importance": 0.4148731875253311,
+      "state": "Wielkopolskie",
+      "postcode": "62-290",
+      "ISO3166-2-lvl4": "PL-30"
+    }
+
+### GET CITY
+GET http://{{host}}/places/city/ako
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+
+
+### GET FACILITY
+GET http://{{host}}/places/facility/ako
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json

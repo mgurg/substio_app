@@ -1,4 +1,4 @@
-from typing import Annotated
+from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID
 
@@ -23,3 +23,9 @@ class LegalRoleRepo(GenericRepo[LegalRole]):
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    async def get_by_uuids(self, uuids: list[UUID]) -> Sequence[LegalRole]:
+        query = select(self.Model).where(self.Model.uuid.in_(uuids))
+
+        result = await self.session.execute(query)
+        return result.scalars().all()

@@ -19,7 +19,10 @@ class OfferAdd(BaseModel):
 
 
 class OfferUpdate(BaseModel):
-    place_uuid: UUID | None = None
+    facility_uuid: UUID | None = None
+    facility_name: str | None = None
+    city_uuid: UUID | None = None
+    city_name: str | None = None
     place_name: str | None = None
     email: EmailStr | None = None
     url: str | None = None
@@ -30,7 +33,7 @@ class OfferUpdate(BaseModel):
     invoice: bool | None = None
     visible: bool | None = None
     status: OfferStatus | None = None
-    legal_roles: list[str] | None = None
+    roles: list[UUID] | None = None
 
 
 class PlaceAdd(BaseModel):
