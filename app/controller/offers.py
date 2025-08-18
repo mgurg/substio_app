@@ -1,13 +1,13 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.database.models.enums import OfferStatus
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import OfferAdd, OfferUpdate
-from app.schemas.rest.responses import LegalRoleIndexResponse, OffersPaginated, RawOfferIndexResponse, RawOffersPaginated
+from app.schemas.rest.responses import ImportResult, LegalRoleIndexResponse, OffersPaginated, RawOfferIndexResponse, RawOffersPaginated
 from app.service.OfferService import OfferService
 
 offer_router = APIRouter()
@@ -22,6 +22,11 @@ async def create_raw_offer(offer_service: offerServiceDependency, offer_add: Off
     return None
 
 
+@offer_router.post("/import")
+async def import_raw_offers(offer_service: offerServiceDependency, file: UploadFile = File(...),) -> ImportResult:
+    return await offer_service.upload(file)
+
+
 @offer_router.patch("/{offer_uuid}", status_code=HTTP_204_NO_CONTENT)
 async def update_offer(offer_service: offerServiceDependency, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
     return await offer_service.update(offer_uuid, offer_update)
@@ -34,8 +39,25 @@ async def get_all_offers(offer_service: offerServiceDependency,
                          offset: int = 0,
                          field: Literal["name", "created_at"] = "created_at",
                          order: Literal["asc", "desc"] = "asc",
+                         lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
+                         lon: Annotated[float | None, Query(ge=-180, le=180)] = None,
+                         distance_km: Annotated[float | None, Query(gt=0, le=1000)] = None,
+                         legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
+                         invoice: Annotated[bool | None, Query()] = None,
                          ) -> OffersPaginated:
-    db_offers, count = await offer_service.read(offset, limit, field, order, search)
+
+    location_params = [lat, lon, distance_km]
+    if any(param is not None for param in location_params) and not all(param is not None for param in location_params):
+        raise HTTPException(
+            status_code=400,
+            detail="lat, lon, and distance_km must all be provided together for location filtering"
+        )
+
+    db_offers, count = await offer_service.read(
+        offset, limit, field, order, search,
+        lat=lat, lon=lon, distance_km=distance_km,
+        legal_role_uuids=legal_role_uuids, invoice=invoice
+    )
 
     return OffersPaginated(data=db_offers, count=count, offset=offset, limit=limit)
 

@@ -1,28 +1,78 @@
 import json
+import re
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
 from openai import AsyncOpenAI
 from sqlalchemy import Sequence
-from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 from app.config import get_settings
-from app.database.models.enums import OfferStatus
+from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 from app.database.repository.CityRepo import CityRepo
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
-from app.schemas.rest.requests import OfferAdd, OfferUpdate
-from app.schemas.rest.responses import RawOfferIndexResponse
+from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferUpdate
+from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse
 
 settings = get_settings()
+
+TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
+
+
+def extract_timestamp_from_filename(filename: str) -> datetime:
+    """
+    Extract timestamp from filename format: YYYYMMDD_HHMMSS.json
+    Example: 20250819_110812.json -> 2025-08-19 11:08:12
+
+    Falls back to the current datetime if parsing fails.
+    """
+    try:
+        base_name = Path(filename).stem
+        match = TIMESTAMP_PATTERN.search(base_name)
+        if not match:
+            return datetime.now()
+
+        return datetime.strptime(
+            f"{match.group(1)}_{match.group(2)}", "%Y%m%d_%H%M%S"
+        )
+    except Exception:
+        return datetime.now()
+
+
+def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferAdd":
+    """
+    Convert a FacebookPost model into an OfferAdd object.
+    Falls back to the filename timestamp or current datetime if date_posted is missing/invalid.
+    """
+    timestamp = datetime.now()
+
+    if post.date_posted:
+        try:
+            timestamp = datetime.fromisoformat(post.date_posted)
+        except ValueError:
+            if filename:
+                timestamp = extract_timestamp_from_filename(filename)
+    elif filename:
+        timestamp = extract_timestamp_from_filename(filename)
+
+    return OfferAdd(
+        raw_data=post.post_content,
+        author=post.user_name,
+        author_uid=post.user_profile_url,
+        offer_uid=post.post_url,
+        timestamp=timestamp,
+        source=SourceType.BOT,
+    )
 
 
 class OfferService:
@@ -51,6 +101,47 @@ class OfferService:
         self.place_repo = place_repo
         self.city_repo = city_repo
         self.legal_role_repo = legal_role_repo
+
+    async def upload(self, file: UploadFile) -> ImportResult:
+        if not file.filename.endswith(".json"):
+            raise HTTPException(status_code=400, detail="File must be a JSON file")
+
+        try:
+            content = await file.read()
+            json_data = json.loads(content.decode("utf-8"))
+
+            if not isinstance(json_data, list):
+                raise HTTPException(status_code=400, detail="JSON file must contain an array of posts")
+
+            import_result = ImportResult(
+                total_records=len(json_data),
+                imported_records=0,
+                skipped_records=0,
+                errors=[]
+            )
+
+            for i, post_data in enumerate(json_data, start=1):
+                try:
+                    post = FacebookPost.model_validate(post_data)
+                    offer = parse_facebook_post_to_offer(post, file.filename)
+                    await self.create(offer)
+                    import_result.imported_records += 1
+
+                except HTTPException as e:
+                    if e.status_code == 409:
+                        import_result.skipped_records += 1
+                        import_result.errors.append(f"Record {i + 1}: {e.detail}")
+                    else:
+                        import_result.errors.append(f"Record {i + 1}: {e.detail}")
+                except Exception as e:
+                    import_result.errors.append(f"Record {i + 1}: {str(e)}")
+
+            return import_result
+
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid JSON file")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}") from e
 
     async def create(self, offer: OfferAdd) -> None:
         db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
@@ -151,8 +242,8 @@ class OfferService:
                 local_dt = combined.replace(tzinfo=warsaw_tz)
                 utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
                 db_offer.valid_to = utc_dt
-            except ValueError:
-                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid date/hour format")
+            except ValueError as e:
+                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid date/hour format") from e
         else:
             utc_now = datetime.now(tz=ZoneInfo("UTC"))
             db_offer.valid_to = utc_now + timedelta(days=4)
@@ -200,9 +291,20 @@ class OfferService:
                    limit: int,
                    sort_column: str,
                    sort_order: str,
-                   search: str | None = None) -> tuple[Sequence[Offer], int]:
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order,
-                                                            OfferStatus.ACCEPTED, search, ["legal_roles", "place", "city"])
+                   search: str | None = None,
+                   lat: float | None = None,
+                   lon: float | None = None,
+                   distance_km: float | None = None,
+                   legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
+                   invoice: bool | None = None) -> tuple[Sequence[Offer], int]:
+
+        db_offers, count = await self.offer_repo.get_offers(
+            offset, limit, sort_column, sort_order,
+            OfferStatus.ACCEPTED, search, ["legal_roles", "place", "city"],
+            lat=lat, lon=lon, distance_km=distance_km,
+            legal_role_uuids=legal_role_uuids, invoice=invoice
+        )
+        return db_offers, count
 
         return db_offers, count
 

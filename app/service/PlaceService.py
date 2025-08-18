@@ -5,7 +5,8 @@ from uuid import UUID, uuid4
 from fastapi import Depends, HTTPException
 from loguru import logger
 from starlette.status import (
-    HTTP_404_NOT_FOUND, HTTP_409_CONFLICT,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
 )
 
 from app.common.text_utils import sanitize_name

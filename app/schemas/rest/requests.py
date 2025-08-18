@@ -18,6 +18,28 @@ class OfferAdd(BaseModel):
     source: SourceType
 
 
+class FacebookPost(BaseModel):
+    user_name: str = Field(..., alias="User Name")
+    user_profile_url: str = Field(..., alias="User Profile URL")
+    post_url: str = Field(..., alias="Post URL")
+    post_content: str = Field(..., alias="Post Content")
+    date_posted: str | None = Field(None, alias="Date Posted")
+    number_of_shares: int | None = Field(None, alias="Number of Shares")
+    number_of_comments: int | None = Field(None, alias="Number of Comments")
+    number_of_likes: int | None = Field(None, alias="Number of Likes")
+    attachments: str | None = Field(None, alias="Attachments")
+    group_url: str | None = Field(None, alias="Group URL")
+    number_of_group_members: str | None = Field(
+        None, alias="Number of Group Members"
+    )
+
+    model_config = {
+        "populate_by_name": True,  # allows usage of both alias and pythonic names
+        "str_strip_whitespace": True,
+        "extra": "ignore",  # ignore unknown fields
+    }
+
+
 class OfferUpdate(BaseModel):
     facility_uuid: UUID | None = None
     facility_name: str | None = None
