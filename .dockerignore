@@ -1,24 +1,273 @@
-.git
-.gitignore
-README.md
-Dockerfile
-.dockerignore
-.pytest_cache
-.coverage
-.venv
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
 env/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+pyvenv.cfg
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.spyderproject
+.spyproject
+.ropeproject
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+*.md
+.readthedocs.yml
+
+# Testing
 .coverage
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
+.cache/
+nosetests.xml
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+tests/
+test/
+__tests__/
+*.test.py
+*.spec.py
+
+# Linting and formatting
+.flake8
+.pylintrc
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.black/
+.isort.cfg
+setup.cfg
+tox.ini
+#pyproject.toml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# FastAPI specific
+.pytest_cache/
+__pycache__/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+database.db
+
+# Logs
+#logs/
+#*.log
+#log/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+site-packages/
+
+# Unit test / coverage reports
+.coverage
+.pytest_cache/
+.tox/
+.coverage.*
+coverage.*
 .cache
 nosetests.xml
 coverage.xml
 *.cover
-*.log
-.nyc_output
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Local development
+requirements-dev.txt
+dev-requirements.txt
+.env.example
+.env.sample
+
+# Alembic (database migrations)
+# alembic.ini
+migrations/versions/*.pyc
+
+# Redis dump file
+dump.rdb
+
+# Temporary folders
+tmp/
+temp/
+.tmp/
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Kubernetes
+k8s/
+*.yaml
+*.yml
+
+# Terraform
+*.tf
+*.tfstate
+*.tfvars
+
+# Static files (if using static file serving)
+static/
+media/
+
+# Backup files
+*.bak
+*.backup
+
+# Profiling data
+.prof
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*

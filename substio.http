@@ -1,0 +1,148 @@
+### POST RAW OFFER 1
+POST http://{{host}}/offers/raw
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "author": "Tomasz Duda",
+  "raw_data": "#SO Łodzi Fotokopia R.pr. , adw - faktura VAT Zlecenie wykonania fotokopii akt karnych (dochodzenie) dołączonych do akt sprawy cywilnej. Prosze o kontakt osoby, które mogą wykonać fotokopię w następnym tygodniu - 28 lipca- 1 sierpnia. Prosze o kontakt priv że wskazaniem stawki. Pozdrawiam r.pr r.pr 8w7YaReQ.com r.pr XcefP7wfg6ly2kXz1g8RdG47NQ5CSo o e r e L r M n a All reactions: 1 1",
+  "author_uid": "/user/100000711832509",
+  "offer_uid": "/posts/3139498279552725",
+  "timestamp": "2025-07-24T13:41:31.799Z",
+  "source": "bot"
+}
+
+### POST RAW OFFER 2
+POST http://{{host}}/offers/raw
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "author": "Magdalena Kordeczka-Bok",
+  "raw_data": "#zastępstwo #gorzówwielkopolski SR w Gorzowie Wielkopolskim 14.08.2025 r., godz. 14:00 posiedzenie w sprawie o ustalenie kontaktów FV propozycje ze stawką proszę na priv All reactions: 1 1 1 comment",
+  "author_uid": "/user/1287028027",
+  "offer_uid": "/posts/3139474952888391",
+  "timestamp": "2025-07-24T12:15:31.799Z",
+  "source": "bot"
+}
+
+
+###
+GET http://{{host}}/offers?offset=0&limit=3&limit=3&legal_role_uuids=f4724dc9-5763-44ac-b2b8-ccd5ab04e9e9
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+
+###
+GET http://{{host}}/offers?offset=0&limit=3&limit=3&invoice=true
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+
+###
+GET http://{{host}}/offers?offset=0&limit=3&limit=3&lat=52.40&lon=16.9&distance_km=5
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+
+###
+GET http://{{host}}/offers/raw
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+### Parse with AI
+@offer_uuid =19e5f25d-ac5e-4623-87b4-21e00fa85635
+GET http://{{host}}/offers/parse/{{offer_uuid}}
+
+
+### UPDATE OFFER
+PATCH http://{{host}}/offers/{{offer_uuid}}
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "place_name" : "SO SO",
+  "status" : "processed"
+}
+
+### POST PLACE
+POST http://localhost:5000/places/
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "type": "SR",
+  "name": "Sąd Rejonowy  w Toruniu",
+  "street": "Władysława Warneńczyka 1",
+  "postal_code": "87-100",
+  "city": "Toruń",
+  "phone": "(56) 67 76 000",
+  "email": "boi@torun.sr.gov.pl",
+  "epuap": "/4366rhdvkf/SkrytkaESP",
+  "department": null,
+  "lat": 53.02010611668269,
+  "lon": 18.611988824718757,
+  "category": "court",
+  "website": "https://torun.sr.gov.pl",
+  "id": 78
+}
+
+
+### POST CITY
+POST http://localhost:5000/places/city
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+    {
+      "city_name": "Mieścisko",
+      "lat": 52.7436655,
+      "lon": 17.3294668,
+      "population": "Mieścisko",
+      "postal_code": "62-290",
+      "category": "town",
+      "region": null,
+      "country": "pl",
+      "geo_names": [
+        {
+          "name": "Mieścisko",
+          "lang": "pl"
+        },
+        {
+          "name": "Mietschisko",
+          "lang": "de"
+        }
+      ],
+      "latitude": "52.7436655",
+      "longitude": "17.3294668",
+      "lat_min": "52.7232284",
+      "lat_max": "52.7574196",
+      "lon_min": "17.2929901",
+      "lon_max": "17.3671306",
+      "importance": 0.4148731875253311,
+      "state": "Wielkopolskie",
+      "postcode": "62-290",
+      "ISO3166-2-lvl4": "PL-30"
+    }
+
+### GET CITY
+GET http://{{host}}/places/city/ako
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+
+
+### GET FACILITY
+GET http://{{host}}/places/facility/ako
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json

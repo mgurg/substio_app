@@ -1,4 +1,4 @@
-"""create cities table
+"""create Cities table
 
 Revision ID: 2dbc4a162767
 Revises: 
@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.create_table(
         "cities",
         sa.Column("id", sa.INTEGER(), sa.Identity(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column("uuid", sa.VARCHAR(length=36), autoincrement=False, nullable=True),
+        sa.Column('uuid', sa.UUID(), nullable=False),
         sa.Column('name', sa.TEXT(), nullable=False),
         sa.Column('name_ascii', sa.TEXT(), nullable=False),
         sa.Column('lat', sa.Numeric(precision=10, scale=7), nullable=True, index=True),

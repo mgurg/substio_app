@@ -1,0 +1,123 @@
+import datetime as dt
+from decimal import Decimal
+from typing import Annotated
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
+
+
+class BaseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StandardResponse(BaseResponse):
+    ok: bool
+
+
+class LegalRoleIndexResponse(BaseResponse):
+    uuid: UUID
+    name: str
+
+
+class RolesResponse(BaseResponse):
+    uuid: UUID
+    name: str
+
+
+class PlaceResponse(BaseResponse):
+    uuid: UUID
+    name: str
+    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+
+
+class CityResponse(BaseResponse):
+    uuid: UUID
+    name: str
+    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+
+
+class OfferIndexResponse(BaseResponse):
+    uuid: UUID
+    author: str
+    description: str
+    email: EmailStr | None
+    url: str | None
+    place: PlaceResponse | None = None
+    city: CityResponse | None = None
+    legal_roles: list[RolesResponse]
+    date: dt.date | None = None
+    hour: dt.time | None = None
+    valid_to: dt.datetime | None = None
+
+
+class RawOfferIndexResponse(BaseResponse):
+    uuid: UUID
+    author: str
+    author_uid: str
+    offer_uid: str
+    raw_data: str
+    source: SourceType
+    author: str | None = None
+    description: str | None = None
+    email: EmailStr | None
+    url: str | None
+    place: PlaceResponse | None = None
+    city: CityResponse | None = None
+    legal_roles: list[RolesResponse]
+    date: dt.date | None = None
+    hour: dt.time | None = None
+    status: OfferStatus | None = None
+    added_at: dt.datetime
+
+
+class OffersPaginated(BaseResponse):
+    data: list[OfferIndexResponse]
+    count: int
+    limit: int
+    offset: int
+
+
+class RawOffersPaginated(BaseResponse):
+    data: list[RawOfferIndexResponse]
+    count: int
+    limit: int
+    offset: int
+
+
+class PlaceIndexResponse(BaseResponse):
+    uuid: UUID
+    category: PlaceCategory
+    name: str
+    street_name: str | None = None
+    postal_code: str | None = None
+    city: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    department: str | None = None
+    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    website: str | None = None
+
+
+class CityIndexResponse(BaseResponse):
+    uuid: UUID
+    name: str | None = None
+    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
+    # lat_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # South Latitude
+    # lat_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # North Latitude
+    # lon_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # West Longitude
+    # lon_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # East Longitude
+    # importance: float | None
+    # state: str | None
+
+
+class ImportResult(BaseModel):
+    total_records: int
+    imported_records: int
+    skipped_records: int
+    errors: list[str]

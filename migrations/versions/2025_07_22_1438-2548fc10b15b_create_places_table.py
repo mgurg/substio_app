@@ -1,4 +1,4 @@
-"""create places table
+"""create Places table
 
 Revision ID: 2548fc10b15b
 Revises: 2dbc4a162767
@@ -21,17 +21,24 @@ def upgrade() -> None:
     op.create_table(
         "places",
         sa.Column("id", sa.INTEGER(), sa.Identity(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column("uuid", sa.VARCHAR(length=36), autoincrement=False, nullable=True),
-        sa.Column('name', sa.TEXT(), nullable=False),
-        sa.Column('name_ascii', sa.TEXT(), nullable=False),
-        sa.Column('category', sa.TEXT(), nullable=False),
+        sa.Column('uuid', sa.UUID(), nullable=False),
+        sa.Column('category', sa.TEXT(), nullable=True),
+        sa.Column('type', sa.TEXT(), nullable=True),
+        sa.Column('name', sa.TEXT(), nullable=True),
+        sa.Column('name_ascii', sa.TEXT(), nullable=True),
+        sa.Column('department', sa.TEXT(), nullable=True),
         sa.Column('lat', sa.Numeric(precision=10, scale=7), nullable=True, index=True),
         sa.Column('lon', sa.Numeric(precision=10, scale=7), nullable=True, index=True),
         sa.Column('street_name', sa.TEXT(), nullable=True),
         sa.Column('street_number', sa.TEXT(), nullable=True),
-        sa.Column('city', sa.TEXT(), nullable=False),
+        sa.Column('city', sa.TEXT(), nullable=True),
         sa.Column('state_province', sa.TEXT(), nullable=True),
         sa.Column('postal_code', sa.TEXT(), nullable=True),
+        sa.Column('country_code', sa.TEXT(), nullable=True),
+        sa.Column('national_number', sa.TEXT(), nullable=True),
+        sa.Column('email', sa.TEXT(), nullable=True),
+        sa.Column('website', sa.TEXT(), nullable=True),
+        sa.Column('epuap', sa.TEXT(), nullable=True),
     )
 
 

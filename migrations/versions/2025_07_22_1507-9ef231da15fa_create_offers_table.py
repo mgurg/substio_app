@@ -1,4 +1,4 @@
-"""create LegalSubstitutionOffers table
+"""create Offers table
 
 Revision ID: 9ef231da15fa
 Revises: 2548fc10b15b
@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = '9ef231da15fa'
@@ -21,9 +22,11 @@ def upgrade() -> None:
     op.create_table(
         'offers',
         sa.Column("id", sa.INTEGER(), sa.Identity(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column("uuid", sa.VARCHAR(length=36), autoincrement=False, nullable=True),
-        sa.Column('place_id', sa.TEXT(), nullable=True),
+        sa.Column('uuid', sa.UUID(), nullable=False),
+        sa.Column('place_id', sa.INTEGER(), sa.ForeignKey('places.id', ondelete='SET NULL'), nullable=True),
         sa.Column('place_name', sa.TEXT(), nullable=True),
+        sa.Column('city_id', sa.INTEGER(), sa.ForeignKey('cities.id', ondelete='SET NULL'), nullable=True),
+        sa.Column('city_name', sa.TEXT(), nullable=True),
         sa.Column('email', sa.TEXT(), nullable=True),
         sa.Column('url', sa.TEXT(), nullable=True),
         sa.Column('date', sa.Date(), nullable=True),
@@ -38,10 +41,12 @@ def upgrade() -> None:
         sa.Column('author', sa.TEXT(), nullable=True),
         sa.Column('author_uid', sa.TEXT(), nullable=True),
         sa.Column('offer_uid', sa.TEXT(), nullable=True),
-        sa.Column('added_at', sa.DateTime()),
-        sa.Column('valid_to', sa.DateTime()),
+        sa.Column('added_at',  postgresql.TIMESTAMP(timezone=True), nullable=True),
+        sa.Column('valid_to', postgresql.TIMESTAMP(timezone=True), nullable=True),
         sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
+        sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),
+        sa.ForeignKeyConstraint(['city_id'], ['cities.id'], ),
     )
 
 

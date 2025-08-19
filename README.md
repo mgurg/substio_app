@@ -1,16 +1,16 @@
 # Substio_APP
 
 ## Places
- - courthouse (https://dane.gov.pl/pl/dataset/985,lista-sadow-powszechnych/resource/67369/table)
- - prison
- - police
+
+- courthouse (<https://dane.gov.pl/pl/dataset/985,lista-sadow-powszechnych/resource/67369/table>)
+- prison
+- police
 
 ```bash
 cd tools
 uv run offers.py
 cd ..
 ```
-
 
 ## Docker
 
@@ -93,4 +93,10 @@ TRUNCATE TABLE locations RESTART IDENTITY CASCADE;
 
 ```bash
 bunx repomix --style markdown --ignore "**/*.log,tmp/,Readme.md,uv.lock"
+```
+
+### Truncate PG data
+
+```postgresql
+TRUNCATE TABLE places RESTART IDENTITY CASCADE ;
 ```

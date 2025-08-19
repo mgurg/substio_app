@@ -4,6 +4,7 @@ from starlette.status import HTTP_200_OK
 
 from app.controller.offers import offer_router
 from app.controller.places import place_router
+from app.schemas.rest.rest_responses import HealthCheck
 
 origins = ["http://localhost", "http://localhost:8080", "*"]
 
@@ -45,5 +46,5 @@ async def read_root():
          summary="Perform a Health Check",
          response_description="Return HTTP Status Code 200 (OK)"
          )
-async def health_check():
-    return {"status": "healthy"}
+async def health_check() -> HealthCheck:
+    return HealthCheck(status="OK")

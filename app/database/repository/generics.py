@@ -25,7 +25,7 @@ class GenericRepo[T]:
 
         :return: A list of all objects of the model type.
         """
-        result = await self.session.execute(select(self.model))  # await the query
+        result = await self.session.execute(select(self.model))
         return result.scalars().all()
 
     async def get_by_id(self, id: int) -> T | None:
@@ -35,7 +35,7 @@ class GenericRepo[T]:
         :param id: The ID of the object to retrieve.
         :return: The object if found, None otherwise.
         """
-        result = await self.session.execute(select(self.model).where(self.model.id == id))  # await the query
+        result = await self.session.execute(select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
 
     async def create(self, **kwargs: dict[str, Any]) -> T:
