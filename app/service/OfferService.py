@@ -169,7 +169,6 @@ class OfferService:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
 
         try:
-            # Use async OpenAI client
             client = AsyncOpenAI(api_key=settings.API_KEY_OPENAI)
 
             t = time.process_time()
@@ -231,7 +230,6 @@ class OfferService:
         date_str = update_data.pop("date", None)
         hour_str = update_data.pop("hour", None)
 
-        # Apply simple scalar field updates
         for field, value in update_data.items():
             setattr(db_offer, field, value)
 
@@ -248,17 +246,14 @@ class OfferService:
             utc_now = datetime.now(tz=ZoneInfo("UTC"))
             db_offer.valid_to = utc_now + timedelta(days=4)
 
-        # Apply simple scalar field updates
         for field, value in update_data.items():
             setattr(db_offer, field, value)
 
-        # Update M2M legal_roles
         if legal_roles_data is not None:
             roles = await self.legal_role_repo.get_by_uuids(legal_roles_data)
             db_offer.legal_roles.clear()
             db_offer.legal_roles.extend(roles)
-        #
-        # # Update relation to place
+
         if facility_uuid is not None:
             place = await self.place_repo.get_by_uuid(facility_uuid)
             if place is None:
@@ -270,8 +265,7 @@ class OfferService:
             if city is None:
                 raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"City `{city_uuid}` not found!")
             db_offer.city = city
-        #
-        # # Persist the changes
+
         await self.offer_repo.update(db_offer.id, **update_data)
 
         return None

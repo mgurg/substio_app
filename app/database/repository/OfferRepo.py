@@ -112,17 +112,15 @@ class OfferRepo(GenericRepo[Offer]):
         # Execute main query
         result = await self.session.execute(query.offset(offset).limit(limit))
 
-        # Count query with same filters
         count_query = select(func.count(self.Model.id))
 
-        # Apply same joins for count if needed
         if legal_role_uuids is not None and len(legal_role_uuids) > 0:
             count_query = count_query.select_from(self.Model).join(self.Model.legal_roles).filter(
                 LegalRole.uuid.in_(legal_role_uuids)
             )
 
         if all([lat is not None, lon is not None, distance_km is not None]):
-            if legal_role_uuids is None or len(legal_role_uuids) == 0:  # Avoid double join
+            if legal_role_uuids is None or len(legal_role_uuids) == 0:
                 count_query = count_query.select_from(self.Model).join(Place, self.Model.place_id == Place.id,
                                                                        isouter=True)
             else:
