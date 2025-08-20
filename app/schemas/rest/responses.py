@@ -65,6 +65,7 @@ class RawOfferIndexResponse(BaseResponse):
     description: str | None = None
     email: EmailStr | None
     url: str | None
+    invoice: bool | None = None
     place: PlaceResponse | None = None
     city: CityResponse | None = None
     legal_roles: list[RolesResponse]
