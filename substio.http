@@ -29,29 +29,41 @@ Content-Type: application/json
 }
 
 
-###
+### Filter by legal roles
 GET http://{{host}}/offers?offset=0&limit=3&limit=3&legal_role_uuids=f4724dc9-5763-44ac-b2b8-ccd5ab04e9e9
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
 
 
-###
+### Filter by invoice
 GET http://{{host}}/offers?offset=0&limit=3&limit=3&invoice=true
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
 
 
-###
+### Filter by distance
 GET http://{{host}}/offers?offset=0&limit=3&limit=3&lat=52.40&lon=16.9&distance_km=5
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
 
+### Filter by keyword
+GET http://{{host}}/offers?offset=0&limit=3&limit=3&search=fotokopie
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
 
-###
+
+### RAW offers
 GET http://{{host}}/offers/raw
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+
+### RAW offers with filter
+GET http://{{host}}/offers/raw?offset=0&limit=3&status=new
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json

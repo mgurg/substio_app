@@ -34,10 +34,21 @@ class PlaceService:
         return db_item
 
     async def create(self, place_add: PlaceAdd) -> None:
-        db_place = await self.place_repo.get_by_name_and_street(place_add.name, place_add.street)
+        lat = float(place_add.lat) if place_add.lat is not None else None
+        lon = float(place_add.lon) if place_add.lon is not None else None
+
+        if lat is None or lon is None:
+            raise ValueError("Latitude and longitude are required for distance calculation")
+
+        db_place = await self.place_repo.get_by_name_and_distance(place_add.name, lat, lon, 1)
+
         if db_place:
-            logger.warning(f"Place `{place_add.name}` already exists as {db_place.uuid}")
-            # raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Place `{place_add.name}` already exists")
+            uuids = ", ".join(str(p.uuid) for p in db_place)  # Log all UUIDs of conflicting places
+            logger.warning(f"Place `{place_add.name}` already exists as {uuids}")
+            # raise HTTPException(
+            #     status_code=HTTP_409_CONFLICT,
+            #     detail=f"Place `{place_add.name}` already exists"
+            # )
 
         place = {
             "uuid": str(uuid4()),
@@ -61,7 +72,8 @@ class PlaceService:
         db_city = await self.city_repo.get_by_name_and_region(city.city_name, city.state)
         if db_city:
             logger.warning(f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
-            raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"City `{city.city_name} - {city.state}` already exists")
+            raise HTTPException(status_code=HTTP_409_CONFLICT,
+                                detail=f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
 
         city_data = {
             "uuid": str(uuid4()),
