@@ -23,18 +23,20 @@ def upgrade() -> None:
         'offers',
         sa.Column("id", sa.INTEGER(), sa.Identity(), primary_key=True, autoincrement=True, nullable=False),
         sa.Column('uuid', sa.UUID(), nullable=False),
+        sa.Column('status', sa.Text(), nullable=True),
+        sa.Column('description', sa.Text(), nullable=True),
         sa.Column('place_id', sa.INTEGER(), sa.ForeignKey('places.id', ondelete='SET NULL'), nullable=True),
         sa.Column('place_name', sa.TEXT(), nullable=True),
         sa.Column('city_id', sa.INTEGER(), sa.ForeignKey('cities.id', ondelete='SET NULL'), nullable=True),
         sa.Column('city_name', sa.TEXT(), nullable=True),
+        sa.Column('lat', sa.Numeric(precision=10, scale=7), nullable=True, index=True),
+        sa.Column('lon', sa.Numeric(precision=10, scale=7), nullable=True, index=True),
         sa.Column('email', sa.TEXT(), nullable=True),
         sa.Column('url', sa.TEXT(), nullable=True),
         sa.Column('date', sa.Date(), nullable=True),
         sa.Column('hour', sa.Time(), nullable=True),
         sa.Column('price', sa.Numeric(10, 2), nullable=True),
-        sa.Column('description', sa.Text(), nullable=True),
         sa.Column('invoice', sa.Boolean(), nullable=True),
-        sa.Column('status', sa.Text(), nullable=True),
         sa.Column('visible', sa.Boolean(), nullable=True),
         sa.Column('raw_data', sa.Text(), nullable=True),
         sa.Column('source', sa.Text(), nullable=False),
@@ -48,6 +50,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['place_id'], ['places.id'], ),
         sa.ForeignKeyConstraint(['city_id'], ['cities.id'], ),
     )
+
+    op.create_index("ix_offers_lat_lon", "offers", ["lat", "lon"])
 
 
 def downgrade() -> None:

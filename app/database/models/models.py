@@ -99,6 +99,8 @@ class Offer(BaseModel):
 
     place_name: Mapped[str | None] = mapped_column(String(1024))
     city_name: Mapped[str | None] = mapped_column(String(1024))
+    lat: Mapped[float | None] = mapped_column(Numeric(10, 7))
+    lon: Mapped[float | None] = mapped_column(Numeric(10, 7))
 
     # Foreign keys
     place_id: Mapped[int | None] = mapped_column(ForeignKey("places.id", ondelete="SET NULL"), nullable=True)

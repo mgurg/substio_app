@@ -41,6 +41,9 @@ def upgrade() -> None:
         sa.Column('epuap', sa.TEXT(), nullable=True),
     )
 
+    op.create_index("ix_places_lat_lon", "places", ["lat", "lon"])
+
 
 def downgrade() -> None:
+    op.drop_index("ix_places_lat_lon", table_name="places")
     op.drop_table("places")

@@ -43,6 +43,7 @@ class CityResponse(BaseResponse):
 class OfferIndexResponse(BaseResponse):
     uuid: UUID
     author: str
+    place_name: str
     description: str
     email: EmailStr | None
     url: str | None

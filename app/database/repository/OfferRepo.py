@@ -85,23 +85,37 @@ class OfferRepo(GenericRepo[Offer]):
                 self.Model.legal_roles.any(LegalRole.uuid.in_(legal_role_uuids))
             )
 
+        # if all([lat is not None, lon is not None, distance_km is not None]):
+        #     lat_diff = distance_km / self.KM_PER_DEGREE_LAT
+        #     lon_diff = distance_km / (self.KM_PER_DEGREE_LAT * func.cos(func.radians(lat)))
+        #
+        #     distance_filter = self.Model.place.has(
+        #         and_(
+        #             Place.lat.between(lat - lat_diff, lat + lat_diff),
+        #             Place.lon.between(lon - lon_diff, lon + lon_diff),
+        #             func.acos(
+        #                 func.sin(func.radians(lat)) * func.sin(func.radians(Place.lat)) +
+        #                 func.cos(func.radians(lat)) * func.cos(func.radians(Place.lat)) *
+        #                 func.cos(func.radians(Place.lon) - func.radians(lon))
+        #             ) * self.EARTH_RADIUS_KM <= distance_km
+        #         )
+        #     )
+        #     search_filters.append(distance_filter)
         if all([lat is not None, lon is not None, distance_km is not None]):
             lat_diff = distance_km / self.KM_PER_DEGREE_LAT
             lon_diff = distance_km / (self.KM_PER_DEGREE_LAT * func.cos(func.radians(lat)))
 
-            distance_filter = self.Model.place.has(
-                and_(
-                    Place.lat.between(lat - lat_diff, lat + lat_diff),
-                    Place.lon.between(lon - lon_diff, lon + lon_diff),
-                    func.acos(
-                        func.sin(func.radians(lat)) * func.sin(func.radians(Place.lat)) +
-                        func.cos(func.radians(lat)) * func.cos(func.radians(Place.lat)) *
-                        func.cos(func.radians(Place.lon) - func.radians(lon))
-                    ) * self.EARTH_RADIUS_KM <= distance_km
-                )
+            distance_filter = and_(
+                self.Model.lat.between(lat - lat_diff, lat + lat_diff),
+                self.Model.lon.between(lon - lon_diff, lon + lon_diff),
+                func.acos(
+                    func.sin(func.radians(lat)) * func.sin(func.radians(self.Model.lat)) +
+                    func.cos(func.radians(lat)) * func.cos(func.radians(self.Model.lat)) *
+                    func.cos(func.radians(self.Model.lon) - func.radians(lon))
+                ) * self.EARTH_RADIUS_KM <= distance_km
             )
-            search_filters.append(distance_filter)
 
+            search_filters.append(distance_filter)
         # Apply all filters
         if search_filters:
             query = query.filter(and_(*search_filters))

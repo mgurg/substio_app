@@ -6,7 +6,7 @@ from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.database.models.enums import OfferStatus
 from app.schemas.api.api_responses import ParseResponse
-from app.schemas.rest.requests import OfferAdd, OfferUpdate
+from app.schemas.rest.requests import OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import ImportResult, LegalRoleIndexResponse, OffersPaginated, RawOfferIndexResponse, RawOffersPaginated
 from app.service.OfferService import OfferService
 
@@ -15,8 +15,15 @@ offer_router = APIRouter()
 offerServiceDependency = Annotated[OfferService, Depends()]
 
 
+@offer_router.post("", status_code=HTTP_201_CREATED)
+async def create_user_offer(offer_service: offerServiceDependency, offer_add: OfferAdd) -> None:
+    await offer_service.create_by_user(offer_add)
+
+    return None
+
+
 @offer_router.post("/raw", status_code=HTTP_201_CREATED)
-async def create_raw_offer(offer_service: offerServiceDependency, offer_add: OfferAdd) -> None:
+async def create_raw_offer(offer_service: offerServiceDependency, offer_add: OfferRawAdd) -> None:
     await offer_service.create(offer_add)
 
     return None

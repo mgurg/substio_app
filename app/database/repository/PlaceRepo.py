@@ -1,9 +1,9 @@
 from collections.abc import Sequence
-from typing import Annotated, Any, Coroutine, Sequence
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import and_, func, select, Row, RowMapping
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.db import get_db
@@ -13,6 +13,7 @@ from app.database.repository.generics import GenericRepo
 UserDB = Annotated[AsyncSession, Depends(get_db)]
 
 EARTH_RADIUS_KM = 6371.0
+
 
 class PlaceRepo(GenericRepo[Place]):
     def __init__(self, session: UserDB) -> None:
