@@ -1,8 +1,8 @@
 import httpx
 from loguru import logger
 
-from app.config import get_settings
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
+from app.config import get_settings
 
 settings = get_settings()
 

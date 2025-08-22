@@ -1,7 +1,7 @@
 
-from app.config import get_settings
 from app.common.slack.SlackNotifier import SlackNotifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
+from app.config import get_settings
 
 
 # ------------------------------

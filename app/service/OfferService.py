@@ -13,6 +13,8 @@ from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
+from app.common.slack.dependencies import get_slack_notifier
+from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
@@ -23,8 +25,6 @@ from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse
-from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.common.slack.dependencies import get_slack_notifier
 
 settings = get_settings()
 
@@ -168,18 +168,16 @@ class OfferService:
 
     async def create_by_user(self, offer_add: OfferAdd):
         offer_uuid = str(uuid4())
-
-        # convert Pydantic model to dict
         offer_data = offer_add.model_dump(exclude_unset=True)
 
-        # pop relationship/derived fields
+        # --- Extract relationship/derived fields ---
         facility_uuid = offer_data.pop("facility_uuid", None)
         city_uuid = offer_data.pop("city_uuid", None)
-
+        roles_uuids = offer_data.pop("roles", None)
         date_str = offer_data.pop("date", None)
         hour_str = offer_data.pop("hour", None)
 
-        # generate system fields
+        # --- System fields ---
         offer_data.update({
             "uuid": offer_uuid,
             "offer_uid": str(uuid4()),
@@ -189,22 +187,19 @@ class OfferService:
             "status": offer_data.get("status") or OfferStatus.NEW,
         })
 
-        # --- Handle date/hour fields ---
-        date_obj = None
-        hour_obj = None
-        if date_str:
-            date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        # --- Handle date/hour ---
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else None
+        hour_obj = datetime.strptime(hour_str, "%H:%M").time() if hour_str else None
+        if date_obj:
             offer_data["date"] = date_obj
-        if hour_str:
-            hour_obj = datetime.strptime(hour_str, "%H:%M").time()
+        if hour_obj:
             offer_data["hour"] = hour_obj
 
         # --- Compute valid_to ---
         if date_obj and hour_obj:
             combined = datetime.combine(date_obj, hour_obj)
             warsaw_tz = ZoneInfo("Europe/Warsaw")
-            local_dt = combined.replace(tzinfo=warsaw_tz)
-            offer_data["valid_to"] = local_dt.astimezone(ZoneInfo("UTC"))
+            offer_data["valid_to"] = combined.replace(tzinfo=warsaw_tz).astimezone(ZoneInfo("UTC"))
         else:
             offer_data["valid_to"] = datetime.now(tz=ZoneInfo("UTC")) + timedelta(days=7)
 
@@ -212,7 +207,7 @@ class OfferService:
         if facility_uuid:
             place = await self.place_repo.get_by_uuid(facility_uuid)
             if not place:
-                raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Place `{facility_uuid}` not found")
+                raise HTTPException(HTTP_404_NOT_FOUND, f"Place `{facility_uuid}` not found")
             offer_data["place_id"] = place.id
             offer_data["lat"] = place.lat
             offer_data["lon"] = place.lon
@@ -221,18 +216,17 @@ class OfferService:
         if city_uuid:
             city = await self.city_repo.get_by_uuid(city_uuid)
             if not city:
-                raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"City `{city_uuid}` not found")
+                raise HTTPException(HTTP_404_NOT_FOUND, f"City `{city_uuid}` not found")
             offer_data["city_id"] = city.id
             offer_data["lat"] = city.lat
             offer_data["lon"] = city.lon
 
-        # --- Handle roles ---
-        roles_data = offer_data.pop("roles", None)
-        if roles_data:
-            roles = await self.legal_role_repo.get_by_uuids(roles_data)
+        # --- Resolve roles ---
+        if roles_uuids:
+            roles = await self.legal_role_repo.get_by_uuids(roles_uuids)
             offer_data["legal_roles"] = roles
 
-        # --- Create in DB using kwargs ---
+        # --- Create in DB ---
         await self.offer_repo.create(**offer_data)
 
         offer_url = f"{settings.APP_URL}/raw/{offer_uuid}"
