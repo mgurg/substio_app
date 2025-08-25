@@ -58,9 +58,9 @@ class OfferIndexResponse(BaseResponse):
 class RawOfferIndexResponse(BaseResponse):
     uuid: UUID
     author: str
-    author_uid: str
+    author_uid: str | None = None
     offer_uid: str
-    raw_data: str
+    raw_data: str | None = None
     source: SourceType
     author: str | None = None
     description: str | None = None
@@ -69,6 +69,7 @@ class RawOfferIndexResponse(BaseResponse):
     invoice: bool | None = None
     place: PlaceResponse | None = None
     city: CityResponse | None = None
+    place_name: str | None = None
     legal_roles: list[RolesResponse]
     date: dt.date | None = None
     hour: dt.time | None = None
