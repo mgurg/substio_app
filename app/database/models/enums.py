@@ -7,8 +7,10 @@ class SourceType(Enum):
 
 
 class OfferStatus(Enum):
+    IMPORTED = "imported"
     NEW = "new"
     DRAFT = "draft"
+    SPAM = "spam"
     POSTPONED = "postponed"
     ACCEPTED = "accepted"
     REJECTED = "rejected"

@@ -127,6 +127,11 @@ class OfferService:
             for i, post_data in enumerate(json_data, start=1):
                 try:
                     post = FacebookPost.model_validate(post_data)
+                    if 'nieaktualne' in post.post_content.lower():
+                        import_result.skipped_records += 1
+                        import_result.errors.append(f"Record {i + 1}: nieaktualne")
+                        continue
+
                     offer = parse_facebook_post_to_offer(post, file.filename)
                     await self.create(offer)
                     import_result.imported_records += 1
