@@ -13,6 +13,8 @@ from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
+from app.common.slack.dependencies import get_slack_notifier
+from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
@@ -21,7 +23,7 @@ from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
-from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferUpdate
+from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse
 
 settings = get_settings()
@@ -49,7 +51,7 @@ def extract_timestamp_from_filename(filename: str) -> datetime:
         return datetime.now()
 
 
-def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferAdd":
+def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferRawAdd":
     """
     Convert a FacebookPost model into an OfferAdd object.
     Falls back to the filename timestamp or current datetime if date_posted is missing/invalid.
@@ -65,7 +67,7 @@ def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferAdd
     elif filename:
         timestamp = extract_timestamp_from_filename(filename)
 
-    return OfferAdd(
+    return OfferRawAdd(
         raw_data=post.post_content,
         author=post.user_name,
         author_uid=post.user_profile_url,
@@ -95,12 +97,14 @@ class OfferService:
             offer_repo: Annotated[OfferRepo, Depends()],
             place_repo: Annotated[PlaceRepo, Depends()],
             city_repo: Annotated[CityRepo, Depends()],
-            legal_role_repo: Annotated[LegalRoleRepo, Depends()]
+            legal_role_repo: Annotated[LegalRoleRepo, Depends()],
+            slack_notifier: SlackNotifierBase = Depends(get_slack_notifier)
     ) -> None:
         self.offer_repo = offer_repo
         self.place_repo = place_repo
         self.city_repo = city_repo
         self.legal_role_repo = legal_role_repo
+        self.slack_notifier = slack_notifier
 
     async def upload(self, file: UploadFile) -> ImportResult:
         if not file.filename.endswith(".json"):
@@ -123,6 +127,11 @@ class OfferService:
             for i, post_data in enumerate(json_data, start=1):
                 try:
                     post = FacebookPost.model_validate(post_data)
+                    if 'nieaktualne' in post.post_content.lower():
+                        import_result.skipped_records += 1
+                        import_result.errors.append(f"Record {i + 1}: nieaktualne")
+                        continue
+
                     offer = parse_facebook_post_to_offer(post, file.filename)
                     await self.create(offer)
                     import_result.imported_records += 1
@@ -143,7 +152,7 @@ class OfferService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}") from e
 
-    async def create(self, offer: OfferAdd) -> None:
+    async def create(self, offer: OfferRawAdd) -> None:
         db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
         if db_offer:
             raise HTTPException(status_code=HTTP_409_CONFLICT,
@@ -160,6 +169,75 @@ class OfferService:
         }
 
         await self.offer_repo.create(**offer_data)
+        return None
+
+    async def create_by_user(self, offer_add: OfferAdd):
+        offer_uuid = str(uuid4())
+        offer_data = offer_add.model_dump(exclude_unset=True)
+
+        # --- Extract relationship/derived fields ---
+        facility_uuid = offer_data.pop("facility_uuid", None)
+        city_uuid = offer_data.pop("city_uuid", None)
+        roles_uuids = offer_data.pop("roles", None)
+        date_str = offer_data.pop("date", None)
+        hour_str = offer_data.pop("hour", None)
+
+        # --- System fields ---
+        offer_data.update({
+            "uuid": offer_uuid,
+            "offer_uid": str(uuid4()),
+            "author_uid": None,
+            "raw_data": None,
+            "added_at": datetime.utcnow(),
+            "status": offer_data.get("status") or OfferStatus.NEW,
+        })
+
+        # --- Handle date/hour ---
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else None
+        hour_obj = datetime.strptime(hour_str, "%H:%M").time() if hour_str else None
+        if date_obj:
+            offer_data["date"] = date_obj
+        if hour_obj:
+            offer_data["hour"] = hour_obj
+
+        # --- Compute valid_to ---
+        if date_obj and hour_obj:
+            combined = datetime.combine(date_obj, hour_obj)
+            warsaw_tz = ZoneInfo("Europe/Warsaw")
+            offer_data["valid_to"] = combined.replace(tzinfo=warsaw_tz).astimezone(ZoneInfo("UTC"))
+        else:
+            offer_data["valid_to"] = datetime.now(tz=ZoneInfo("UTC")) + timedelta(days=7)
+
+        # --- Resolve facility/place ---
+        if facility_uuid:
+            place = await self.place_repo.get_by_uuid(facility_uuid)
+            if not place:
+                raise HTTPException(HTTP_404_NOT_FOUND, f"Place `{facility_uuid}` not found")
+            offer_data["place_id"] = place.id
+            offer_data["lat"] = place.lat
+            offer_data["lon"] = place.lon
+
+        # --- Resolve city ---
+        if city_uuid:
+            city = await self.city_repo.get_by_uuid(city_uuid)
+            if not city:
+                raise HTTPException(HTTP_404_NOT_FOUND, f"City `{city_uuid}` not found")
+            offer_data["city_id"] = city.id
+            offer_data["lat"] = city.lat
+            offer_data["lon"] = city.lon
+
+        # --- Resolve roles ---
+        if roles_uuids:
+            roles = await self.legal_role_repo.get_by_uuids(roles_uuids)
+            offer_data["legal_roles"] = roles
+
+        # --- Create in DB ---
+        await self.offer_repo.create(**offer_data)
+
+        offer_url = f"{settings.APP_URL}/raw/{offer_uuid}"
+        await self.slack_notifier.send_message(
+            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>"
+        )
         return None
 
     async def parse_raw(self, offer_uuid: UUID) -> ParseResponse:
@@ -233,21 +311,34 @@ class OfferService:
         for field, value in update_data.items():
             setattr(db_offer, field, value)
 
-        if date_str and hour_str:
+        # --- Handle date/hour fields ---
+        date_obj = None
+        hour_obj = None
+
+        if date_str:
             try:
-                combined = datetime.strptime(f"{date_str} {hour_str}", "%Y-%m-%d %H:%M")
-                warsaw_tz = ZoneInfo("Europe/Warsaw")
-                local_dt = combined.replace(tzinfo=warsaw_tz)
-                utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
-                db_offer.valid_to = utc_dt
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                db_offer.date = date_obj
             except ValueError as e:
-                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid date/hour format") from e
+                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid date format") from e
+
+        if hour_str:
+            try:
+                hour_obj = datetime.strptime(hour_str, "%H:%M").time()
+                db_offer.hour = hour_obj
+            except ValueError as e:
+                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid hour format") from e
+
+        # --- Compute valid_to ---
+        if date_obj and hour_obj:
+            combined = datetime.combine(date_obj, hour_obj)
+            warsaw_tz = ZoneInfo("Europe/Warsaw")
+            local_dt = combined.replace(tzinfo=warsaw_tz)
+            utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
+            db_offer.valid_to = utc_dt
         else:
             utc_now = datetime.now(tz=ZoneInfo("UTC"))
-            db_offer.valid_to = utc_now + timedelta(days=4)
-
-        for field, value in update_data.items():
-            setattr(db_offer, field, value)
+            db_offer.valid_to = utc_now + timedelta(days=7)
 
         if legal_roles_data is not None:
             roles = await self.legal_role_repo.get_by_uuids(legal_roles_data)
@@ -258,12 +349,16 @@ class OfferService:
             place = await self.place_repo.get_by_uuid(facility_uuid)
             if place is None:
                 raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Place `{facility_uuid}` not found!")
+            db_offer.lat = place.lat
+            db_offer.lon = place.lon
             db_offer.place = place
 
         if city_uuid is not None:
             city = await self.city_repo.get_by_uuid(city_uuid)
             if city is None:
                 raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"City `{city_uuid}` not found!")
+            db_offer.lat = city.lat
+            db_offer.lon = city.lon
             db_offer.city = city
 
         await self.offer_repo.update(db_offer.id, **update_data)

@@ -37,6 +37,9 @@ def upgrade() -> None:
         sa.Column('in_title', sa.TEXT(), nullable=True),
     )
 
+    op.create_index("ix_cities_lat_lon", "cities", ["lat", "lon"])
+
 
 def downgrade() -> None:
+    op.drop_index("ix_cities_lat_lon", table_name="cities")
     op.drop_table("cities")

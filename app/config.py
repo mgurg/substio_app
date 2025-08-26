@@ -9,6 +9,7 @@ APP_DIR = Path(__file__).parent.parent / "app"
 
 
 class Settings(BaseSettings):
+    APP_URL: str
     PROJECT_DIR: os.PathLike[str] = Path(__file__).parent.parent
 
     DB_POSTGRES_URL: PostgresDsn = PostgresDsn.build(
@@ -22,6 +23,8 @@ class Settings(BaseSettings):
 
     API_KEY_OPENAI: str | None = os.getenv("API_KEY_OPENAI")
     OPENAI_MODEL: str = "gpt-5-nano"
+
+    SLACK_WEBHOOK_URL: str = os.getenv("SLACK_WEBHOOK_URL")
 
     SYSTEM_PROMPT: str = """
     Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:

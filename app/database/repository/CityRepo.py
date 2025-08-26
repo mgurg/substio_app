@@ -31,8 +31,6 @@ class CityRepo(GenericRepo[City]):
             )
         )
 
-        query = select(self.Model).where(func.lower(self.Model.name).ilike(f"%{name.lower()}%")).limit(5)
-
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 

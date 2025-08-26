@@ -9,12 +9,29 @@ from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
 from app.schemas.validators.validators import round_to_7_decimal_places
 
 
-class OfferAdd(BaseModel):
+class OfferRawAdd(BaseModel):
     raw_data: str
     author: str
     author_uid: str
     offer_uid: str
     timestamp: datetime
+    source: SourceType
+
+
+class OfferAdd(BaseModel):
+    author: str
+    facility_uuid: UUID | None = None
+    facility_name: str | None = None
+    city_uuid: UUID | None = None
+    city_name: str | None = None
+    place_name: str | None = None
+    email: EmailStr
+    date: str | None = None
+    hour: str | None = None
+    description: str | None = None
+    invoice: bool | None = None
+    status: OfferStatus | None = None
+    roles: list[UUID] | None = None
     source: SourceType
 
 

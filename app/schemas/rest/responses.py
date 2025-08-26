@@ -43,6 +43,7 @@ class CityResponse(BaseResponse):
 class OfferIndexResponse(BaseResponse):
     uuid: UUID
     author: str
+    place_name: str
     description: str
     email: EmailStr | None
     url: str | None
@@ -57,16 +58,18 @@ class OfferIndexResponse(BaseResponse):
 class RawOfferIndexResponse(BaseResponse):
     uuid: UUID
     author: str
-    author_uid: str
+    author_uid: str | None = None
     offer_uid: str
-    raw_data: str
+    raw_data: str | None = None
     source: SourceType
     author: str | None = None
     description: str | None = None
     email: EmailStr | None
     url: str | None
+    invoice: bool | None = None
     place: PlaceResponse | None = None
     city: CityResponse | None = None
+    place_name: str | None = None
     legal_roles: list[RolesResponse]
     date: dt.date | None = None
     hour: dt.time | None = None
