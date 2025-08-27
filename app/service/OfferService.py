@@ -3,7 +3,7 @@ import re
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
@@ -29,7 +29,7 @@ from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse
 settings = get_settings()
 
 TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
-
+EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
 def extract_timestamp_from_filename(filename: str) -> datetime:
     """
@@ -157,6 +157,11 @@ class OfferService:
         if db_offer:
             raise HTTPException(status_code=HTTP_409_CONFLICT,
                                 detail=f"Offer with {offer.offer_uid} already exists")
+        email = None
+        if isinstance(offer.raw_data, str):
+            match = EMAIL_REGEX.search(offer.raw_data)
+            if match:
+                email = match.group(0)
 
         offer_data = {
             "uuid": str(uuid4()),
@@ -167,6 +172,9 @@ class OfferService:
             "added_at": offer.timestamp,
             "source": offer.source
         }
+
+        if email:
+            offer_data["email"] = email
 
         await self.offer_repo.create(**offer_data)
         return None
@@ -391,10 +399,8 @@ class OfferService:
             offset, limit, sort_column, sort_order,
             OfferStatus.ACCEPTED, search, ["legal_roles", "place", "city"],
             lat=lat, lon=lon, distance_km=distance_km,
-            legal_role_uuids=legal_role_uuids, invoice=invoice
+            legal_role_uuids=legal_role_uuids, invoice=invoice, valid_to=datetime.now(tz=ZoneInfo("UTC"))
         )
-        return db_offers, count
-
         return db_offers, count
 
     async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:

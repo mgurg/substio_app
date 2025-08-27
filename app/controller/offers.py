@@ -44,7 +44,7 @@ async def get_all_offers(offer_service: offerServiceDependency,
                          search: Annotated[str | None, Query(max_length=50)] = None,
                          limit: int = 10,
                          offset: int = 0,
-                         field: Literal["name", "created_at"] = "created_at",
+                         field: Literal["valid_to", "created_at"] = "valid_to",
                          order: Literal["asc", "desc"] = "asc",
                          lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
                          lon: Annotated[float | None, Query(ge=-180, le=180)] = None,
@@ -76,7 +76,7 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
                              offset: int = 0,
                              status: Annotated[OfferStatus | None, Query()] = None,
                              field: Literal["name", "created_at"] = "created_at",
-                             order: Literal["asc", "desc"] = "asc",
+                             order: Literal["asc", "desc"] = "desc",
                              ) -> RawOffersPaginated:
     db_offers, count = await offer_service.read_raw(offset, limit, field, order, status, search)
 
@@ -86,7 +86,6 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
 @offer_router.get("/raw/{offer_uuid}")
 async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> RawOfferIndexResponse:
     return await offer_service.get_raw(offer_uuid)
-
 
 @offer_router.get("/legal_roles")
 async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:

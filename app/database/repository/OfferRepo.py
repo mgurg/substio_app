@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -63,7 +64,8 @@ class OfferRepo(GenericRepo[Offer]):
             lon: float | None = None,
             distance_km: float | None = None,
             legal_role_uuids: list[UUID] | None = None,
-            invoice: bool | None = None
+            invoice: bool | None = None,
+            valid_to: datetime | None = None
     ) -> tuple[Sequence[Offer], int]:
 
         query = select(self.Model)
@@ -80,27 +82,14 @@ class OfferRepo(GenericRepo[Offer]):
         if invoice is not None:
             search_filters.append(self.Model.invoice == invoice)
 
+        if valid_to is not None:
+            search_filters.append(self.Model.valid_to >  valid_to)
+
         if legal_role_uuids is not None and len(legal_role_uuids) > 0:
             search_filters.append(
                 self.Model.legal_roles.any(LegalRole.uuid.in_(legal_role_uuids))
             )
 
-        # if all([lat is not None, lon is not None, distance_km is not None]):
-        #     lat_diff = distance_km / self.KM_PER_DEGREE_LAT
-        #     lon_diff = distance_km / (self.KM_PER_DEGREE_LAT * func.cos(func.radians(lat)))
-        #
-        #     distance_filter = self.Model.place.has(
-        #         and_(
-        #             Place.lat.between(lat - lat_diff, lat + lat_diff),
-        #             Place.lon.between(lon - lon_diff, lon + lon_diff),
-        #             func.acos(
-        #                 func.sin(func.radians(lat)) * func.sin(func.radians(Place.lat)) +
-        #                 func.cos(func.radians(lat)) * func.cos(func.radians(Place.lat)) *
-        #                 func.cos(func.radians(Place.lon) - func.radians(lon))
-        #             ) * self.EARTH_RADIUS_KM <= distance_km
-        #         )
-        #     )
-        #     search_filters.append(distance_filter)
         if all([lat is not None, lon is not None, distance_km is not None]):
             lat_diff = distance_km / self.KM_PER_DEGREE_LAT
             lon_diff = distance_km / (self.KM_PER_DEGREE_LAT * func.cos(func.radians(lat)))
