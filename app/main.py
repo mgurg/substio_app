@@ -50,8 +50,7 @@ def traces_sampler(sampling_context: dict[str, Any]) -> float:
         return 0.0
 
     request_path = sampling_context.get("asgi_scope", {}).get("path")
-    if request_path == "/health":
-        # Drop all /health requests
+    if request_path in {"/health", "/metrics", "/docs", "/openapi.json"}:
         return 0.0
     return 0.1
 
@@ -59,6 +58,7 @@ def traces_sampler(sampling_context: dict[str, Any]) -> float:
 if settings.APP_ENV == "PROD":
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
+        send_default_pii=True,
         traces_sampler=traces_sampler,
         profiles_sample_rate=0.1,
         integrations=[SqlalchemyIntegration()],
@@ -79,8 +79,3 @@ async def read_root():
          )
 async def health_check() -> HealthCheck:
     return HealthCheck(status="OK")
-
-
-@app.get("/sentry-debug")
-async def trigger_error():
-    division_by_zero = 1 / 0
