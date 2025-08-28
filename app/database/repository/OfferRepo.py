@@ -83,7 +83,7 @@ class OfferRepo(GenericRepo[Offer]):
             search_filters.append(self.Model.invoice == invoice)
 
         if valid_to is not None:
-            search_filters.append(self.Model.valid_to >  valid_to)
+            search_filters.append(self.Model.valid_to > valid_to)
 
         if legal_role_uuids is not None and len(legal_role_uuids) > 0:
             search_filters.append(

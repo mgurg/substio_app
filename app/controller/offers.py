@@ -87,6 +87,7 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
 async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> RawOfferIndexResponse:
     return await offer_service.get_raw(offer_uuid)
 
+
 @offer_router.get("/legal_roles")
 async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:
     return await offer_service.get_legal_roles()

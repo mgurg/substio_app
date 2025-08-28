@@ -3,7 +3,7 @@ import re
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
@@ -30,6 +30,7 @@ settings = get_settings()
 
 TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
 EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+
 
 def extract_timestamp_from_filename(filename: str) -> datetime:
     """
@@ -127,7 +128,7 @@ class OfferService:
             for i, post_data in enumerate(json_data, start=1):
                 try:
                     post = FacebookPost.model_validate(post_data)
-                    if 'nieaktualne' in post.post_content.lower():
+                    if "nieaktualne" in post.post_content.lower():
                         import_result.skipped_records += 1
                         import_result.errors.append(f"Record {i + 1}: nieaktualne")
                         continue
