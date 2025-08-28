@@ -3,6 +3,7 @@ POST http://{{host}}/offers/raw
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "author": "Tomasz Duda",
@@ -18,6 +19,7 @@ POST http://{{host}}/offers/raw
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "author": "Magdalena Kordeczka-Bok",
@@ -34,6 +36,7 @@ GET http://{{host}}/offers?offset=0&limit=3&limit=3&legal_role_uuids=f4724dc9-57
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 
 ### Filter by invoice
@@ -41,6 +44,7 @@ GET http://{{host}}/offers?offset=0&limit=3&limit=3&invoice=true
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 
 ### Filter by distance
@@ -48,12 +52,14 @@ GET http://{{host}}/offers?offset=0&limit=3&limit=3&lat=52.40&lon=16.9&distance_
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 ### Filter by keyword
 GET http://{{host}}/offers?offset=0&limit=3&limit=3&search=fotokopie
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 
 ### RAW offers
@@ -61,22 +67,26 @@ GET http://{{host}}/offers/raw
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 ### RAW offers
 GET http://{{host}}/offers/raw/9efabf07-22d8-4ff2-8cee-9ab1e782b651
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 ### RAW offers with filter
 GET http://{{host}}/offers/raw?offset=0&limit=3&status=new
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 ### Parse with AI
 @offer_uuid =19e5f25d-ac5e-4623-87b4-21e00fa85635
 GET http://{{host}}/offers/parse/{{offer_uuid}}
+Authorization: {{token}}
 
 
 ### UPDATE OFFER
@@ -84,6 +94,7 @@ PATCH http://{{host}}/offers/{{offer_uuid}}
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "place_name" : "SO SO",
@@ -95,6 +106,7 @@ POST http://localhost:5000/places/
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
 {
   "type": "SR",
@@ -119,6 +131,7 @@ POST http://localhost:5000/places/city
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
 
     {
       "city_name": "Mieścisko",
@@ -156,7 +169,7 @@ GET http://{{host}}/places/city/ako
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
-
+Authorization: {{token}}
 
 
 ### GET FACILITY
@@ -164,3 +177,4 @@ GET http://{{host}}/places/facility/ako
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
+Authorization: {{token}}
