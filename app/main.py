@@ -58,7 +58,7 @@ def traces_sampler(sampling_context: dict[str, Any]) -> float:
 
 if settings.APP_ENV == "PROD":
     sentry_sdk.init(
-        dsn=settings.sentry_dsn,
+        dsn=settings.SENTRY_DSN,
         traces_sampler=traces_sampler,
         profiles_sample_rate=0.1,
         integrations=[SqlalchemyIntegration()],
