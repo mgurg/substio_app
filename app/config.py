@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     APP_DEBUG: bool = False
     APP_ENV: Literal["DEV", "PROD"]
     APP_URL: str
-    APP_API_DOCS: str | None
+    APP_API_DOCS: str | None = os.getenv("APP_API_DOCS")
     PROJECT_DIR: os.PathLike[str] = Path(__file__).parent.parent
 
     DB_POSTGRES_URL: PostgresDsn = PostgresDsn.build(
