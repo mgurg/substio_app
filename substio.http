@@ -126,6 +126,32 @@ Authorization: {{token}}
 }
 
 
+### POST PLACE
+POST http://localhost:5000/places/
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "type": "SR",
+  "name": "Sąd Rejonowy w Gorzowie Wielkopolskim",
+  "street_name": "Chopina",
+  "street_number": "52 blok 10 i 15",
+  "postal_code": "66-400",
+  "city": "Gorzów Wielkopolski",
+  "phone": "(95) 725 65 04, \n(95) 725 65 01,  \n(95) 725 65 03,\n(95) 725 68 00, \n(95) 725 68 07 BOI Księgi Wieczyste",
+  "email": "boi@gorzow-wlkp.sr.gov.pl",
+  "epuap": "/SR_GorzowWlkp/SkrytkaESP",
+  "department": null,
+  "lat": 52.73296161512391,
+  "lon": 15.22409302655178,
+  "category": "court",
+  "website": "https://gorzow-wlkp.sr.gov.pl",
+  "id": 357
+}
+
+
 ### POST CITY
 POST http://localhost:5000/places/city
 Accept: application/json
@@ -178,6 +204,13 @@ Cache-Control: no-cache
 Content-Type: application/json
 Authorization: {{token}}
 
+
+### GET FACILITY
+GET http://{{host}}/places/facility/uuid/4d2fc2d4-f0be-47bd-bde8-2dba69cae4e3
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{token}}
 
 ### GET FACILITY
 GET http://{{host}}/places/facility/ako

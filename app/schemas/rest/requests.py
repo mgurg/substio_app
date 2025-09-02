@@ -78,8 +78,10 @@ class OfferUpdate(BaseModel):
 class PlaceAdd(BaseModel):
     category: PlaceCategory
     type: str | None = None
-    name: str | None = None
+    name: str
     street: str | None = None
+    street_name: str | None = None
+    street_number: str | None = None
     postal_code: str | None = None
     city: str | None = None
     phone: str | None = None

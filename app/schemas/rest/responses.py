@@ -96,6 +96,7 @@ class PlaceIndexResponse(BaseResponse):
     category: PlaceCategory
     name: str
     street_name: str | None = None
+    street_number: str | None = None
     postal_code: str | None = None
     city: str | None = None
     phone: str | None = None

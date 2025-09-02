@@ -1,3 +1,4 @@
+import re
 from collections.abc import Sequence
 from typing import Annotated
 from uuid import UUID, uuid4
@@ -37,7 +38,7 @@ class PlaceService:
         db_city = await self.city_repo.get_by_uuid(city_uuid)
 
         if not db_city:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Vity `{city_uuid}` not found!")
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"City `{city_uuid}` not found!")
 
         return db_city
 
@@ -53,28 +54,58 @@ class PlaceService:
         if db_place:
             uuids = ", ".join(str(p.uuid) for p in db_place)  # Log all UUIDs of conflicting places
             logger.warning(f"Place `{place_add.name}` already exists as {uuids}")
-            # raise HTTPException(
-            #     status_code=HTTP_409_CONFLICT,
-            #     detail=f"Place `{place_add.name}` already exists"
-            # )
+            # raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Place `{place_add.name}` already exists" )
 
         place = {
             "uuid": str(uuid4()),
             "type": place_add.type,
             "name": place_add.name,
+            "street_name": place_add.street_name,
+            "street_number": place_add.street_number,
             "department": place_add.department,
             "name_ascii": sanitize_name(place_add.name),
             "category": place_add.category,
-            "street_name": place_add.street,
             "postal_code": place_add.postal_code,
             "city": place_add.city,
             "lat": place_add.lat,
             "lon": place_add.lon
         }
 
+        if not place_add.street_name and place_add.street:
+            street_name, street_number = self.split_street(place_add.street)
+
+            place["street_name"] = street_name
+            place["street_number"] = street_number
+        if place_add.street_name and not place_add.street_number:
+            place["street_name"] = place_add.street_name
+            place["street_number"] = place_add.street_number
+
         await self.place_repo.create(**place)
 
         return None
+
+    def split_street(self, street: str):
+        """
+        Splits a street string into (street_name, street_number).
+        Handles Polish-style house numbers with letters, slashes, commas, and ranges.
+        Normalizes street_number (removes internal spaces).
+        """
+        pattern = (
+            r'\s('
+            r'\d+\s*[A-Za-z]?'  # 22, 4d, 18 a
+            r'(?:[-/]\d+\s*[A-Za-z]?)*'  # -13, /25, /2a, -13B
+            r'(?:,\s*\d+\s*[A-Za-z]?(?:[-/]\d+\s*[A-Za-z]?)*?)*'  # , 23, , 25a/2, , 12-13
+            r')$'
+        )
+
+        match = re.search(pattern, street)
+        if match:
+            street_number = re.sub(r'\s+', '', match.group(1))  # normalize: remove spaces
+            street_name = street[:match.start(1)].strip()
+        else:
+            street_name = street.strip()
+            street_number = None
+        return street_name, street_number
 
     async def create_city(self, city: CityAdd) -> None:
         db_city = await self.city_repo.get_by_teryt(city.teryt_simc)
