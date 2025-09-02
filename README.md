@@ -86,7 +86,7 @@ ruff check app/ --fix
 ### Truncate PG data
 
 ```postgresql
-TRUNCATE TABLE locations RESTART IDENTITY CASCADE;
+TRUNCATE TABLE cities RESTART IDENTITY CASCADE;
 ```
 
 ### LLM friendly version

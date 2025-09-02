@@ -171,6 +171,13 @@ Cache-Control: no-cache
 Content-Type: application/json
 Authorization: {{token}}
 
+### GET CITY
+GET http://{{host}}/places/city/uuid/8eb73392-d09c-46fa-844c-4c0e6e6a0cee
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{token}}
+
 
 ### GET FACILITY
 GET http://{{host}}/places/facility/ako

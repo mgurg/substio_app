@@ -26,12 +26,20 @@ class PlaceService:
         self.place_repo = place_repo
 
     async def get_place_by_uuid(self, place_uuid: UUID) -> Place | None:
-        db_item = await self.place_repo.get_by_uuid(place_uuid)
+        db_place = await self.place_repo.get_by_uuid(place_uuid)
 
-        if not db_item:
+        if not db_place:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Place `{place_uuid}` not found!")
 
-        return db_item
+        return db_place
+
+    async def get_city_by_uuid(self, city_uuid: UUID) -> Place | None:
+        db_city = await self.city_repo.get_by_uuid(city_uuid)
+
+        if not db_city:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Vity `{city_uuid}` not found!")
+
+        return db_city
 
     async def create(self, place_add: PlaceAdd) -> None:
         lat = float(place_add.lat) if place_add.lat is not None else None
@@ -69,9 +77,9 @@ class PlaceService:
         return None
 
     async def create_city(self, city: CityAdd) -> None:
-        db_city = await self.city_repo.get_by_name_and_region(city.city_name, city.state)
+        db_city = await self.city_repo.get_by_teryt(city.teryt_simc)
         if db_city:
-            logger.warning(f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
+            logger.warning(f"City `{city.city_name} - {city.teryt_simc}` already exists as {db_city.uuid}")
             raise HTTPException(status_code=HTTP_409_CONFLICT,
                                 detail=f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
 
@@ -88,7 +96,9 @@ class PlaceService:
             "population": city.population,
             "importance": city.importance,
             "category": city.category,
-            "region": city.state
+            "voivodeship_name": city.voivodeship_name,
+            "voivodeship_iso": city.voivodeship_iso,
+            "teryt_simc": city.teryt_simc if city.teryt_simc else None,
         }
 
         await self.city_repo.create(**city_data)

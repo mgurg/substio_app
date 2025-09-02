@@ -98,16 +98,19 @@ class PlaceAdd(BaseModel):
 
 class CityAdd(BaseModel):
     city_name: str
-    lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
-    lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
-    lat_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]  # South Latitude
-    lat_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]  # North Latitude
-    lon_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]  # West Longitude
-    lon_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]  # East Longitude
-    population: int | None
-    importance: float | None
+    lat: Annotated[Decimal, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal, Field(max_digits=10, decimal_places=7)]
+    lat_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # South Latitude
+    lat_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # North Latitude
+    lon_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # West Longitude
+    lon_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # East Longitude
+    population: int | None = None
+    importance: float | None = None
     category: str
-    state: str | None
+    state: str | None = None
+    voivodeship_name: str
+    voivodeship_iso: str
+    teryt_simc: str
 
     @field_validator("lat", "lon", "lat_min", "lat_max", "lon_min", "lon_max", mode="before")
     @classmethod

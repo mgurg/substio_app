@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBasicCredentials, HTTPBearer
 from starlette.status import HTTP_401_UNAUTHORIZED
+
 security = HTTPBearer()
 
 

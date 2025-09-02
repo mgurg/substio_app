@@ -111,12 +111,7 @@ class CityIndexResponse(BaseResponse):
     name: str | None = None
     lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
     lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
-    # lat_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # South Latitude
-    # lat_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # North Latitude
-    # lon_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # West Longitude
-    # lon_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # East Longitude
-    # importance: float | None
-    # state: str | None
+    voivodeship_name: str
 
 
 class ImportResult(BaseModel):
