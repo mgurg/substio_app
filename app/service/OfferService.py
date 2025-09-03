@@ -398,7 +398,7 @@ class OfferService:
 
         db_offers, count = await self.offer_repo.get_offers(
             offset, limit, sort_column, sort_order,
-            OfferStatus.ACCEPTED, search, ["legal_roles", "place", "city"],
+            OfferStatus.ACTIVE, search, ["legal_roles", "place", "city"],
             lat=lat, lon=lon, distance_km=distance_km,
             legal_role_uuids=legal_role_uuids, invoice=invoice, valid_to=datetime.now(tz=ZoneInfo("UTC"))
         )
