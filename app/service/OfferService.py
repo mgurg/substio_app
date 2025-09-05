@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
+from mailersend import MailerSendClient, EmailBuilder
 from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
@@ -371,6 +372,34 @@ class OfferService:
             db_offer.city = city
 
         await self.offer_repo.update(db_offer.id, **update_data)
+        updated_offer =  await self.offer_repo.get_by_uuid(offer_uuid, [])
+
+
+        ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
+        email = (
+            EmailBuilder()
+            .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
+            .to_many([
+                {"email": settings.APP_ADMIN_MAIL, "name": updated_offer.author}
+            ])
+            .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
+            .template("3zxk54vy71x4jy6v")
+            .personalize_many([
+                {
+                    "email": settings.APP_ADMIN_MAIL,
+                    "data": {
+                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe",
+                        "website_name": settings.APP_DOMAIN,
+                        "support_email": settings.APP_ADMIN_MAIL
+                    }
+                }
+            ])
+            .build()
+        )
+        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "DEV":
+            response = ms.emails.send(email)
+            logger.info("Email sent!", response)
+
 
         return None
 
