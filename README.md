@@ -95,6 +95,10 @@ TRUNCATE TABLE cities RESTART IDENTITY CASCADE;
 bunx repomix --style markdown --ignore "**/*.log,tmp/,Readme.md,uv.lock"
 ```
 
+```bash
+`tree -P '*.py' -I '__pycache__|*.pyc' --dirsfirst`
+```
+
 ### Truncate PG data
 
 ```postgresql

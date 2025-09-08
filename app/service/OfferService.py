@@ -3,7 +3,7 @@ import re
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
@@ -32,6 +32,53 @@ settings = get_settings()
 TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
 EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
+
+def extract_and_fix_email(text: str) -> Optional[str]:
+    """
+    Extract email from text with simple domain fixing for .pl and .com
+
+    Args:
+        text: Raw text that might contain an email
+
+    Returns:
+        Valid email string or None if no valid email found
+    """
+    if not isinstance(text, str):
+        return None
+
+    email = try_extract_email(text)
+    if email:
+        return email
+
+    fixed_text = apply_simple_fixes(text)
+    return try_extract_email(fixed_text)
+
+
+def try_extract_email(text: str) -> Optional[str]:
+    """Try to extract email from text"""
+    match = EMAIL_REGEX.search(text)
+    if match:
+        email = match.group(0).lower()
+        # Basic validation - must contain @ and end with valid domain
+        if '@' in email and (email.endswith('.pl') or email.endswith('.com') or
+                             re.search(r'\.[a-z]{2,4}$', email)):
+            return email
+    return None
+
+
+def apply_simple_fixes(text: str) -> str:
+    """
+    Strip off any junk after known valid TLDs
+    """
+    valid_tlds = ["pl", "com", "eu", "edu.pl", "org.pl", "net.pl", "com.pl"]
+
+    for tld in valid_tlds:
+        pattern = rf'(\.{tld})([a-zA-Z0-9_]+)\b'
+        text = re.sub(pattern, r'\1', text, flags=re.IGNORECASE)
+
+    text = re.sub(r'^\d+\.', '', text)
+
+    return text
 
 def extract_timestamp_from_filename(filename: str) -> datetime:
     """
@@ -161,9 +208,7 @@ class OfferService:
                                 detail=f"Offer with {offer.offer_uid} already exists")
         email = None
         if isinstance(offer.raw_data, str):
-            match = EMAIL_REGEX.search(offer.raw_data)
-            if match:
-                email = match.group(0)
+            email = extract_and_fix_email(offer.raw_data)
 
         offer_data = {
             "uuid": str(uuid4()),
@@ -307,7 +352,7 @@ class OfferService:
     async def update(self, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place"])
 
-        if not db_offer or not db_offer.raw_data:
+        if not db_offer:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
 
         update_data = offer_update.model_dump(exclude_unset=True)
