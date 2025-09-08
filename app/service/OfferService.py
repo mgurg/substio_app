@@ -217,11 +217,13 @@ class OfferService:
             "offer_uid": offer.offer_uid,
             "raw_data": offer.raw_data,
             "added_at": offer.timestamp,
-            "source": offer.source
+            "source": offer.source,
+            "status": OfferStatus.POSTPONED,
         }
 
         if email:
             offer_data["email"] = email
+            offer_data["status"] = OfferStatus.NEW
 
         await self.offer_repo.create(**offer_data)
         return None
