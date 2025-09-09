@@ -430,6 +430,9 @@ class OfferService:
             .to_many([
                 {"email": settings.APP_ADMIN_MAIL, "name": updated_offer.author}
             ])
+            .bcc([
+                {"email": settings.APP_ADMIN_MAIL}
+            ])
             .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
             .template("3zxk54vy71x4jy6v")
             .personalize_many([
