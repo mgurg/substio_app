@@ -14,8 +14,8 @@ from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.common.slack.dependencies import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
+from app.common.slack.dependencies import get_slack_notifier
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
@@ -79,6 +79,7 @@ def apply_simple_fixes(text: str) -> str:
     text = re.sub(r'^\d+\.', '', text)
 
     return text
+
 
 def extract_timestamp_from_filename(filename: str) -> datetime:
     """
@@ -419,8 +420,7 @@ class OfferService:
             db_offer.city = city
 
         await self.offer_repo.update(db_offer.id, **update_data)
-        updated_offer =  await self.offer_repo.get_by_uuid(offer_uuid, [])
-
+        updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
 
         ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
         email = (
@@ -443,10 +443,9 @@ class OfferService:
             ])
             .build()
         )
-        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "DEV":
+        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "DEV" and db_offer.source == SourceType.BOT:
             response = ms.emails.send(email)
             logger.info("Email sent!", response)
-
 
         return None
 
