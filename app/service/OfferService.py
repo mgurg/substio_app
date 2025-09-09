@@ -428,7 +428,7 @@ class OfferService:
             EmailBuilder()
             .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
             .to_many([
-                {"email": settings.APP_ADMIN_MAIL, "name": updated_offer.author}
+                {"email": updated_offer.email, "name": updated_offer.author}
             ])
             .bcc([
                 {"email": settings.APP_ADMIN_MAIL}
