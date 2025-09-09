@@ -15,6 +15,10 @@ offer_router = APIRouter()
 
 offerServiceDependency = Annotated[OfferService, Depends()]
 
+@offer_router.get("/legal_roles")
+async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:
+    return await offer_service.get_legal_roles()
+
 
 @offer_router.post("", status_code=HTTP_201_CREATED)
 async def create_user_offer(offer_service: offerServiceDependency, offer_add: OfferAdd) -> None:
@@ -96,9 +100,6 @@ async def get_review_offer(offer_service: offerServiceDependency, offer_uuid: UU
 async def reject_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> None:
     return await offer_service.reject_offer(offer_uuid)
 
-@offer_router.get("/legal_roles")
-async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:
-    return await offer_service.get_legal_roles()
 
 
 @offer_router.get("/parse/{offer_uuid}")

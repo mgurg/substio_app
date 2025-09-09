@@ -226,3 +226,11 @@ Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
 Authorization: {{token}}
+
+
+### GET Legal roles
+GET http://localhost:5000/offers/legal_roles
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{token}}
