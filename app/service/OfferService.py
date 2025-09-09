@@ -293,8 +293,9 @@ class OfferService:
         await self.offer_repo.create(**offer_data)
 
         offer_url = f"{settings.APP_URL}/raw/{offer_uuid}"
+        review_url = f"{settings.APP_URL}/substytucje-procesowe/review-{offer_uuid}"
         await self.slack_notifier.send_message(
-            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>"
+            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>\n<{review_url}|Review Offer>"
         )
         return None
 
