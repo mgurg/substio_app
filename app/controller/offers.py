@@ -7,12 +7,17 @@ from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 from app.database.models.enums import OfferStatus
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import ImportResult, LegalRoleIndexResponse, OffersPaginated, RawOfferIndexResponse, RawOffersPaginated
+from app.schemas.rest.responses import ImportResult, LegalRoleIndexResponse, OffersPaginated, RawOfferIndexResponse, \
+    RawOffersPaginated, OfferIndexResponse
 from app.service.OfferService import OfferService
 
 offer_router = APIRouter()
 
 offerServiceDependency = Annotated[OfferService, Depends()]
+
+@offer_router.get("/legal_roles")
+async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:
+    return await offer_service.get_legal_roles()
 
 
 @offer_router.post("", status_code=HTTP_201_CREATED)
@@ -44,7 +49,7 @@ async def get_all_offers(offer_service: offerServiceDependency,
                          search: Annotated[str | None, Query(max_length=50)] = None,
                          limit: int = 10,
                          offset: int = 0,
-                         field: Literal["name", "created_at"] = "created_at",
+                         field: Literal["valid_to", "created_at"] = "valid_to",
                          order: Literal["asc", "desc"] = "asc",
                          lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
                          lon: Annotated[float | None, Query(ge=-180, le=180)] = None,
@@ -76,7 +81,7 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
                              offset: int = 0,
                              status: Annotated[OfferStatus | None, Query()] = None,
                              field: Literal["name", "created_at"] = "created_at",
-                             order: Literal["asc", "desc"] = "asc",
+                             order: Literal["asc", "desc"] = "desc",
                              ) -> RawOffersPaginated:
     db_offers, count = await offer_service.read_raw(offset, limit, field, order, status, search)
 
@@ -87,10 +92,19 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
 async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> RawOfferIndexResponse:
     return await offer_service.get_raw(offer_uuid)
 
+@offer_router.get("/{offer_uuid}")
+async def get_review_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> OfferIndexResponse:
+    return await offer_service.get_offer(offer_uuid)
 
-@offer_router.get("/legal_roles")
-async def get_legal_roles(offer_service: offerServiceDependency) -> list[LegalRoleIndexResponse]:
-    return await offer_service.get_legal_roles()
+
+@offer_router.patch("/accept/{offer_uuid}")
+async def accept_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> None:
+    return await offer_service.accept_offer(offer_uuid)
+
+@offer_router.patch("/reject/{offer_uuid}")
+async def reject_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> None:
+    return await offer_service.reject_offer(offer_uuid)
+
 
 
 @offer_router.get("/parse/{offer_uuid}")

@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,7 +10,13 @@ APP_DIR = Path(__file__).parent.parent / "app"
 
 
 class Settings(BaseSettings):
+    APP_DEBUG: bool = False
+    APP_ENV: Literal["DEV", "PROD"]
     APP_URL: str
+    APP_DOMAIN: str
+    APP_ADMIN_MAIL: str
+    APP_API_DOCS: str | None = os.getenv("APP_API_DOCS")
+
     PROJECT_DIR: os.PathLike[str] = Path(__file__).parent.parent
 
     DB_POSTGRES_URL: PostgresDsn = PostgresDsn.build(
@@ -22,8 +29,10 @@ class Settings(BaseSettings):
     )
 
     API_KEY_OPENAI: str | None = os.getenv("API_KEY_OPENAI")
+    API_KEY_MAILERSEND: str | None = os.getenv("API_KEY_MAILERSEND")
     OPENAI_MODEL: str = "gpt-5-nano"
 
+    SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
     SLACK_WEBHOOK_URL: str = os.getenv("SLACK_WEBHOOK_URL")
 
     SYSTEM_PROMPT: str = """

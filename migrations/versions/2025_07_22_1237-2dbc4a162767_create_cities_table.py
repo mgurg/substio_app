@@ -33,13 +33,21 @@ def upgrade() -> None:
         sa.Column('population', sa.Integer(), nullable=True),
         sa.Column('importance', sa.Float(), nullable=True),
         sa.Column('category', sa.TEXT(), nullable=False),
-        sa.Column('region', sa.TEXT(), nullable=True),
+        sa.Column('voivodeship_name', sa.TEXT(), nullable=True),
+        sa.Column('voivodeship_iso', sa.TEXT(), nullable=True),
+        sa.Column('teryt_simc', sa.TEXT(), nullable=True),
         sa.Column('in_title', sa.TEXT(), nullable=True),
     )
 
     op.create_index("ix_cities_lat_lon", "cities", ["lat", "lon"])
+    op.create_index("ix_cities_teryt_simc", "cities", ["teryt_simc"])
+    op.create_index("ix_cities_category", "cities", ["category"])
+    op.create_index("ix_cities_name_ascii", "cities", ["name_ascii"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_cities_lat_lon", table_name="cities")
+    op.drop_index("ix_cities_teryt_simc", table_name="cities")
+    op.drop_index("ix_cities_category", table_name="cities")
+    op.drop_index("ix_cities_name_ascii", table_name="cities")
     op.drop_table("cities")

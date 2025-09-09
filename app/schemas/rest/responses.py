@@ -49,6 +49,7 @@ class OfferIndexResponse(BaseResponse):
     url: str | None
     place: PlaceResponse | None = None
     city: CityResponse | None = None
+    place_name: str | None = None
     legal_roles: list[RolesResponse]
     date: dt.date | None = None
     hour: dt.time | None = None
@@ -96,6 +97,7 @@ class PlaceIndexResponse(BaseResponse):
     category: PlaceCategory
     name: str
     street_name: str | None = None
+    street_number: str | None = None
     postal_code: str | None = None
     city: str | None = None
     phone: str | None = None
@@ -111,12 +113,7 @@ class CityIndexResponse(BaseResponse):
     name: str | None = None
     lat: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
     lon: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)]
-    # lat_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # South Latitude
-    # lat_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # North Latitude
-    # lon_min: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # West Longitude
-    # lon_max: Annotated[Decimal | None, Field(max_digits=10, decimal_places=7)] | None = None  # East Longitude
-    # importance: float | None
-    # state: str | None
+    voivodeship_name: str
 
 
 class ImportResult(BaseModel):

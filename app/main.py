@@ -1,10 +1,21 @@
-from fastapi import FastAPI
+from datetime import datetime
+from typing import Any
+from zoneinfo import ZoneInfo
+
+import sentry_sdk
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.status import HTTP_200_OK
 
+from app.common.auth import check_token
+from app.config import get_settings
 from app.controller.offers import offer_router
 from app.controller.places import place_router
 from app.schemas.rest.rest_responses import HealthCheck
+
+settings = get_settings()
 
 origins = ["http://localhost", "http://localhost:8080", "*"]
 
@@ -15,7 +26,7 @@ def create_application() -> FastAPI:
     Returns:
         FastAPI: [description]
     """
-    app = FastAPI(debug=False)
+    app = FastAPI(debug=settings.APP_DEBUG, openapi_url=settings.APP_API_DOCS)
 
     app.add_middleware(
         CORSMiddleware,
@@ -26,8 +37,8 @@ def create_application() -> FastAPI:
         max_age=86400,
     )
 
-    app.include_router(offer_router, prefix="/offers", tags=["OFFERS"])
-    app.include_router(place_router, prefix="/places", tags=["PLACE"])
+    app.include_router(offer_router, prefix="/offers", tags=["OFFERS"], dependencies=[Depends(check_token)])
+    app.include_router(place_router, prefix="/places", tags=["PLACE"], dependencies=[Depends(check_token)])
 
     return app
 
@@ -35,9 +46,32 @@ def create_application() -> FastAPI:
 app = create_application()
 
 
+def traces_sampler(sampling_context: dict[str, Any]) -> float:
+    """Function to dynamically set Sentry sampling rates"""
+
+    if settings.APP_ENV != "PROD":
+        return 0.0
+
+    request_path = sampling_context.get("asgi_scope", {}).get("path")
+    if request_path in {"/health", "/metrics", "/docs", "/openapi.json"}:
+        return 0.0
+    return 0.1
+
+
+if settings.APP_ENV == "PROD":
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        send_default_pii=True,
+        traces_sampler=traces_sampler,
+        profiles_sample_rate=0.1,
+        integrations=[SqlalchemyIntegration()],
+    )
+    app.add_middleware(SentryAsgiMiddleware)
+
+
 @app.get("/")
 async def read_root():
-    return {"Hello": "World!"}
+    return {"Hello": "World!", "Env": settings.APP_ENV, "timestamp": datetime.now(tz=ZoneInfo("UTC"))}
 
 
 @app.get("/health",

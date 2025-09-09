@@ -19,17 +19,15 @@ class SubstitutionOffer(BaseModel):
         """Validate email and set to None if invalid format."""
         if v is None or v == "":
             return None
-
         if isinstance(v, str):
+            v = v.strip().replace(" ", "")
             if "@" not in v or "." not in v:
                 logger.warning(f"Invalid email format detected (no @ sign or dot): {v}, setting to None")
                 return None
-
             parts = v.split("@")
             if len(parts) != 2 or not parts[0] or not parts[1]:
                 logger.warning(f"Invalid email format detected: {v}, setting to None")
                 return None
-
         return v
 
 

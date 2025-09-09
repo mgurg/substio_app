@@ -3,18 +3,19 @@ import re
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
+from mailersend import MailerSendClient, EmailBuilder
 from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.common.slack.dependencies import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
+from app.common.slack.dependencies import get_slack_notifier
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
@@ -24,11 +25,60 @@ from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse
+from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse, OfferIndexResponse
 
 settings = get_settings()
 
 TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
+EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+
+
+def extract_and_fix_email(text: str) -> Optional[str]:
+    """
+    Extract email from text with simple domain fixing for .pl and .com
+
+    Args:
+        text: Raw text that might contain an email
+
+    Returns:
+        Valid email string or None if no valid email found
+    """
+    if not isinstance(text, str):
+        return None
+
+    email = try_extract_email(text)
+    if email:
+        return email
+
+    fixed_text = apply_simple_fixes(text)
+    return try_extract_email(fixed_text)
+
+
+def try_extract_email(text: str) -> Optional[str]:
+    """Try to extract email from text"""
+    match = EMAIL_REGEX.search(text)
+    if match:
+        email = match.group(0).lower()
+        # Basic validation - must contain @ and end with valid domain
+        if '@' in email and (email.endswith('.pl') or email.endswith('.com') or
+                             re.search(r'\.[a-z]{2,4}$', email)):
+            return email
+    return None
+
+
+def apply_simple_fixes(text: str) -> str:
+    """
+    Strip off any junk after known valid TLDs
+    """
+    valid_tlds = ["pl", "com", "eu", "edu.pl", "org.pl", "net.pl", "com.pl"]
+
+    for tld in valid_tlds:
+        pattern = rf'(\.{tld})([a-zA-Z0-9_]+)\b'
+        text = re.sub(pattern, r'\1', text, flags=re.IGNORECASE)
+
+    text = re.sub(r'^\d+\.', '', text)
+
+    return text
 
 
 def extract_timestamp_from_filename(filename: str) -> datetime:
@@ -127,7 +177,7 @@ class OfferService:
             for i, post_data in enumerate(json_data, start=1):
                 try:
                     post = FacebookPost.model_validate(post_data)
-                    if 'nieaktualne' in post.post_content.lower():
+                    if "nieaktualne" in post.post_content.lower():
                         import_result.skipped_records += 1
                         import_result.errors.append(f"Record {i + 1}: nieaktualne")
                         continue
@@ -157,6 +207,9 @@ class OfferService:
         if db_offer:
             raise HTTPException(status_code=HTTP_409_CONFLICT,
                                 detail=f"Offer with {offer.offer_uid} already exists")
+        email = None
+        if isinstance(offer.raw_data, str):
+            email = extract_and_fix_email(offer.raw_data)
 
         offer_data = {
             "uuid": str(uuid4()),
@@ -165,8 +218,13 @@ class OfferService:
             "offer_uid": offer.offer_uid,
             "raw_data": offer.raw_data,
             "added_at": offer.timestamp,
-            "source": offer.source
+            "source": offer.source,
+            "status": OfferStatus.POSTPONED,
         }
+
+        if email:
+            offer_data["email"] = email
+            offer_data["status"] = OfferStatus.NEW
 
         await self.offer_repo.create(**offer_data)
         return None
@@ -235,8 +293,9 @@ class OfferService:
         await self.offer_repo.create(**offer_data)
 
         offer_url = f"{settings.APP_URL}/raw/{offer_uuid}"
+        review_url = f"{settings.APP_URL}/substytucje-procesowe/review-{offer_uuid}"
         await self.slack_notifier.send_message(
-            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>"
+            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>\n<{review_url}|Review Offer>"
         )
         return None
 
@@ -297,7 +356,7 @@ class OfferService:
     async def update(self, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place"])
 
-        if not db_offer or not db_offer.raw_data:
+        if not db_offer:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
 
         update_data = offer_update.model_dump(exclude_unset=True)
@@ -362,6 +421,32 @@ class OfferService:
             db_offer.city = city
 
         await self.offer_repo.update(db_offer.id, **update_data)
+        updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
+
+        ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
+        email = (
+            EmailBuilder()
+            .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
+            .to_many([
+                {"email": settings.APP_ADMIN_MAIL, "name": updated_offer.author}
+            ])
+            .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
+            .template("3zxk54vy71x4jy6v")
+            .personalize_many([
+                {
+                    "email": settings.APP_ADMIN_MAIL,
+                    "data": {
+                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
+                        "website_name": settings.APP_DOMAIN,
+                        "support_email": settings.APP_ADMIN_MAIL
+                    }
+                }
+            ])
+            .build()
+        )
+        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "DEV" and db_offer.source == SourceType.BOT:
+            response = ms.emails.send(email)
+            logger.info("Email sent!", response)
 
         return None
 
@@ -389,18 +474,45 @@ class OfferService:
 
         db_offers, count = await self.offer_repo.get_offers(
             offset, limit, sort_column, sort_order,
-            OfferStatus.ACCEPTED, search, ["legal_roles", "place", "city"],
+            OfferStatus.ACTIVE, search, ["legal_roles", "place", "city"],
             lat=lat, lon=lon, distance_km=distance_km,
-            legal_role_uuids=legal_role_uuids, invoice=invoice
+            legal_role_uuids=legal_role_uuids, invoice=invoice, valid_to=datetime.now(tz=ZoneInfo("UTC"))
         )
-        return db_offers, count
-
         return db_offers, count
 
     async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
 
         return db_offer
+
+    async def get_offer(self, offer_uuid: UUID) -> OfferIndexResponse:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
+
+        return db_offer
+
+    async def accept_offer(self, offer_uuid: UUID) -> None:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+
+        if not db_offer:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+
+        update_data = {
+            "status": OfferStatus.ACTIVE,
+        }
+        await self.offer_repo.update(db_offer.id, **update_data)
+        return None
+
+    async def reject_offer(self, offer_uuid: UUID) -> None:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+
+        if not db_offer:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+
+        update_data = {
+            "status": OfferStatus.REJECTED,
+        }
+        await self.offer_repo.update(db_offer.id, **update_data)
+        return None
 
     async def get_legal_roles(self):
         return await self.legal_role_repo.get_all()

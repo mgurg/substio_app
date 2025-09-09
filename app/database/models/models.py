@@ -82,7 +82,9 @@ class City(BaseModel):
     population: Mapped[int | None]
     importance: Mapped[float | None]
     category: Mapped[str] = mapped_column(String(16))
-    region: Mapped[str | None] = mapped_column(String(64))
+    voivodeship_name: Mapped[str | None] = mapped_column(String(64))
+    voivodeship_iso: Mapped[str | None] = mapped_column(String(64))
+    teryt_simc: Mapped[str | None] = mapped_column(String(64))
 
     offers: Mapped[list["Offer"]] = relationship(back_populates="city")
 

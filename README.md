@@ -86,13 +86,17 @@ ruff check app/ --fix
 ### Truncate PG data
 
 ```postgresql
-TRUNCATE TABLE locations RESTART IDENTITY CASCADE;
+TRUNCATE TABLE cities RESTART IDENTITY CASCADE;
 ```
 
 ### LLM friendly version
 
 ```bash
 bunx repomix --style markdown --ignore "**/*.log,tmp/,Readme.md,uv.lock"
+```
+
+```bash
+`tree -P '*.py' -I '__pycache__|*.pyc' --dirsfirst`
 ```
 
 ### Truncate PG data

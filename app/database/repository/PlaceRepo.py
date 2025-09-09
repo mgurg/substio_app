@@ -32,7 +32,7 @@ class PlaceRepo(GenericRepo[Place]):
         if facility_type:
             conditions.append(self.Model.type == facility_type)
 
-        query = select(self.Model).where(and_(*conditions)).limit(5)
+        query = select(self.Model).where(and_(*conditions)).limit(7)
         result = await self.session.execute(query)
         return result.scalars().all()
 

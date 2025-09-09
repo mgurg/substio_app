@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
@@ -30,6 +31,13 @@ async def create_city(place_service: placeServiceDependency, city: CityAdd):
 async def get_facilities(place_service: placeServiceDependency, place_name: str, place_type: str | None = None) -> list[PlaceIndexResponse]:
     return await place_service.get_facilities(place_name, place_type)
 
+@place_router.get("/facility/uuid/{place_uuid}")
+async def get_facility(place_service: placeServiceDependency, place_uuid: UUID) -> PlaceIndexResponse:
+    return await place_service.get_place_by_uuid(place_uuid)
+
+@place_router.get("/city/uuid/{city_uuid}")
+async def get_city(place_service: placeServiceDependency, city_uuid: UUID) -> CityIndexResponse:
+    return await place_service.get_city_by_uuid(city_uuid)
 
 @place_router.get("/city/{city_name}")
 async def get_cities(place_service: placeServiceDependency, city_name: str) -> list[CityIndexResponse]:
