@@ -444,7 +444,7 @@ class OfferService:
             ])
             .build()
         )
-        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "DEV" and db_offer.source == SourceType.BOT:
+        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "PROD" and db_offer.source == SourceType.BOT:
             response = ms.emails.send(email)
             logger.info("Email sent!", response)
 

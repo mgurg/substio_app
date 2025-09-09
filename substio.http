@@ -78,7 +78,7 @@ Authorization: {{token}}
 
 
 ### REVIEW offer
-GET http://{{host}}/offers/01cf5507-4692-4fce-8b04-628cf79e7b95
+GET http://{{host}}/offers/0840b008-4660-4772-81f1-1e5cbf4de7b3
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json
