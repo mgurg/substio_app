@@ -490,6 +490,18 @@ class OfferService:
 
         return db_offer
 
+    async def accept_offer(self, offer_uuid: UUID) -> None:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+
+        if not db_offer:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+
+        update_data = {
+            "status": OfferStatus.ACTIVE,
+        }
+        await self.offer_repo.update(db_offer.id, **update_data)
+        return None
+
     async def reject_offer(self, offer_uuid: UUID) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
@@ -500,7 +512,7 @@ class OfferService:
             "status": OfferStatus.REJECTED,
         }
         await self.offer_repo.update(db_offer.id, **update_data)
-        return db_offer
+        return None
 
     async def get_legal_roles(self):
         return await self.legal_role_repo.get_all()

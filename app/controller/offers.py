@@ -96,6 +96,11 @@ async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID)
 async def get_review_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> OfferIndexResponse:
     return await offer_service.get_offer(offer_uuid)
 
+
+@offer_router.patch("/accept/{offer_uuid}")
+async def accept_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> None:
+    return await offer_service.accept_offer(offer_uuid)
+
 @offer_router.patch("/reject/{offer_uuid}")
 async def reject_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> None:
     return await offer_service.reject_offer(offer_uuid)
