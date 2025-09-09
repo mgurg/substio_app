@@ -49,6 +49,7 @@ class OfferIndexResponse(BaseResponse):
     url: str | None
     place: PlaceResponse | None = None
     city: CityResponse | None = None
+    place_name: str | None = None
     legal_roles: list[RolesResponse]
     date: dt.date | None = None
     hour: dt.time | None = None

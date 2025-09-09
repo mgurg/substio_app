@@ -69,8 +69,16 @@ Cache-Control: no-cache
 Content-Type: application/json
 Authorization: {{token}}
 
-### RAW offers
+### RAW offer
 GET http://{{host}}/offers/raw/9efabf07-22d8-4ff2-8cee-9ab1e782b651
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{token}}
+
+
+### REVIEW offer
+GET http://{{host}}/offers/01cf5507-4692-4fce-8b04-628cf79e7b95
 Accept: application/json
 Cache-Control: no-cache
 Content-Type: application/json

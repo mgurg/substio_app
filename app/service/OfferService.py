@@ -25,7 +25,7 @@ from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse
+from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse, OfferIndexResponse
 
 settings = get_settings()
 
@@ -435,7 +435,7 @@ class OfferService:
                 {
                     "email": settings.APP_ADMIN_MAIL,
                     "data": {
-                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe",
+                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
                         "website_name": settings.APP_DOMAIN,
                         "support_email": settings.APP_ADMIN_MAIL
                     }
@@ -483,6 +483,23 @@ class OfferService:
     async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
 
+        return db_offer
+
+    async def get_offer(self, offer_uuid: UUID) -> OfferIndexResponse:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
+
+        return db_offer
+
+    async def reject_offer(self, offer_uuid: UUID) -> None:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+
+        if not db_offer:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+
+        update_data = {
+            "status": OfferStatus.REJECTED,
+        }
+        await self.offer_repo.update(db_offer.id, **update_data)
         return db_offer
 
     async def get_legal_roles(self):
