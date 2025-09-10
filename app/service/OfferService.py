@@ -424,8 +424,9 @@ class OfferService:
         await self.offer_repo.update(db_offer.id, **update_data)
         updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
 
-        logger.info(f"Offer `{db_offer.uuid}` email: {updated_offer.email} / {offer_update.email}")
+        logger.info(f"Offer `{db_offer.uuid}`should submit email: {submit_email}")
         if updated_offer.email and submit_email == True and settings.APP_ENV == "PROD" and updated_offer.status == OfferStatus.ACTIVE  and db_offer.source == SourceType.BOT:
+            logger.info(f"Sending email to {updated_offer.email}")
             ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
             email = (
                 EmailBuilder()
@@ -446,7 +447,7 @@ class OfferService:
                 ])
                 .build()
             )
-
+            logger.info(f"Sending email...")
             response = ms.emails.send(email)
             logger.info(f"Email sent! `{db_offer.uuid}`", response.data)
 
