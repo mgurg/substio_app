@@ -363,6 +363,7 @@ class OfferService:
         legal_roles_data = update_data.pop("roles", None)
         facility_uuid = update_data.pop("facility_uuid", None)
         city_uuid = update_data.pop("city_uuid", None)
+        submit_email = update_data.pop("submit_email", None)
 
         date_str = update_data.pop("date", None)
         hour_str = update_data.pop("hour", None)
@@ -427,17 +428,13 @@ class OfferService:
         email = (
             EmailBuilder()
             .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
-            .to_many([
-                {"email": updated_offer.email, "name": updated_offer.author}
-            ])
-            .bcc([
-                {"email": settings.APP_ADMIN_MAIL}
-            ])
+            .to_many([{"email": updated_offer.email, "name": updated_offer.author}])
+            .bcc(settings.APP_ADMIN_MAIL)
             .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
             .template("3zxk54vy71x4jy6v")
             .personalize_many([
                 {
-                    "email": settings.APP_ADMIN_MAIL,
+                    "email": updated_offer.email,
                     "data": {
                         "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
                         "website_name": settings.APP_DOMAIN,
@@ -447,9 +444,9 @@ class OfferService:
             ])
             .build()
         )
-        if updated_offer.status == OfferStatus.ACTIVE and settings.APP_ENV == "PROD" and db_offer.source == SourceType.BOT:
+        if submit_email == True and settings.APP_ENV == "PROD" and updated_offer.status == OfferStatus.ACTIVE  and db_offer.source == SourceType.BOT:
             response = ms.emails.send(email)
-            logger.info("Email sent!", response)
+            logger.info(f"Email sent! `{db_offer.uuid}`", response.data)
 
         return None
 
