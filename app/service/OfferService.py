@@ -424,27 +424,29 @@ class OfferService:
         await self.offer_repo.update(db_offer.id, **update_data)
         updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
 
-        ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
-        email = (
-            EmailBuilder()
-            .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
-            .to_many([{"email": updated_offer.email, "name": updated_offer.author}])
-            .bcc(settings.APP_ADMIN_MAIL)
-            .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
-            .template("3zxk54vy71x4jy6v")
-            .personalize_many([
-                {
-                    "email": updated_offer.email,
-                    "data": {
-                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
-                        "website_name": settings.APP_DOMAIN,
-                        "support_email": settings.APP_ADMIN_MAIL
+        logger.info(f"Offer `{db_offer.uuid}` email: {updated_offer.email} / {offer_update.email}")
+        if updated_offer.email and submit_email == True and settings.APP_ENV == "PROD" and updated_offer.status == OfferStatus.ACTIVE  and db_offer.source == SourceType.BOT:
+            ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
+            email = (
+                EmailBuilder()
+                .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
+                .to_many([{"email": updated_offer.email, "name": updated_offer.author}])
+                .bcc(settings.APP_ADMIN_MAIL)
+                .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
+                .template("3zxk54vy71x4jy6v")
+                .personalize_many([
+                    {
+                        "email": updated_offer.email,
+                        "data": {
+                            "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
+                            "website_name": settings.APP_DOMAIN,
+                            "support_email": settings.APP_ADMIN_MAIL
+                        }
                     }
-                }
-            ])
-            .build()
-        )
-        if submit_email == True and settings.APP_ENV == "PROD" and updated_offer.status == OfferStatus.ACTIVE  and db_offer.source == SourceType.BOT:
+                ])
+                .build()
+            )
+
             response = ms.emails.send(email)
             logger.info(f"Email sent! `{db_offer.uuid}`", response.data)
 
