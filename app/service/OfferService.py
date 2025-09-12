@@ -529,6 +529,10 @@ class OfferService:
         update_data = {
             "status": OfferStatus.ACTIVE,
         }
+        # Ensure valid_to is set in the future so it appears in public listings
+        # now_utc = datetime.now(tz=ZoneInfo("UTC"))
+        # if not getattr(db_offer, "valid_to", None) or db_offer.valid_to <= now_utc:
+        #     update_data["valid_to"] = now_utc + timedelta(days=7)
         await self.offer_repo.update(db_offer.id, **update_data)
         return None
 

@@ -81,5 +81,6 @@ def app(apply_migrations):  # noqa: ARG001 - ensure migrations ran first
 
 @pytest.fixture()
 def client(app) -> Generator[TestClient, None, None]:
-    with TestClient(app) as c:
+    headers = {"Authorization": "Bearer " + ("a" * 31)}
+    with TestClient(app, headers=headers) as c:
         yield c
