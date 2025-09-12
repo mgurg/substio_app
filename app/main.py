@@ -4,7 +4,9 @@ from zoneinfo import ZoneInfo
 
 import sentry_sdk
 from fastapi import Depends, FastAPI
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.status import HTTP_200_OK
@@ -13,6 +15,7 @@ from app.common.auth import check_token
 from app.config import get_settings
 from app.controller.offers import offer_router
 from app.controller.places import place_router
+from app.exceptions import NotFoundError, ConflictError
 from app.schemas.rest.rest_responses import HealthCheck
 
 settings = get_settings()
@@ -82,3 +85,13 @@ async def read_root():
          )
 async def health_check() -> HealthCheck:
     return HealthCheck(status="OK")
+
+
+@app.exception_handler(NotFoundError)
+async def not_found_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(ConflictError)
+async def conflict_handler(request: Request, exc: ConflictError):
+    return JSONResponse(status_code=409, content={"detail": str(exc)})

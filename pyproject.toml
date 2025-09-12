@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.16.4",
+    "coverage>=7.10.6",
     "fastapi[standard]>=0.116.1",
     "httptools>=0.6.4",
     "loguru>=0.7.3",
@@ -31,6 +32,7 @@ dev-dependencies = [
     "lxml>=6.0.0",
     "overpy>=0.7",
     "pytest>=8.4.0",
+    "pytest-asyncio>=1.1.1",
     "ruff>=0.12.0",
     "testcontainers>=4.12.0",
 ]
