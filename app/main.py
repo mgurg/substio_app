@@ -7,6 +7,7 @@ from fastapi import Depends, FastAPI
 from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.status import HTTP_200_OK
@@ -71,7 +72,8 @@ if settings.APP_ENV == "PROD":
     )
     app.add_middleware(SentryAsgiMiddleware)
 
-
+def custom_generate_unique_id(route: APIRoute) -> str:
+    return f"{route.tags[0]}-{route.name}"
 @app.get("/")
 async def read_root():
     return {"Hello": "World!", "Env": settings.APP_ENV, "timestamp": datetime.now(tz=ZoneInfo("UTC"))}
