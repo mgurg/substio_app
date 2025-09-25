@@ -3,19 +3,19 @@ import re
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
-from mailersend import MailerSendClient, EmailBuilder
+from mailersend import EmailBuilder, MailerSendClient
 from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.common.slack.dependencies import get_slack_notifier
+from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
@@ -25,7 +25,7 @@ from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import ImportResult, RawOfferIndexResponse, OfferIndexResponse
+from app.schemas.rest.responses import ImportResult, OfferIndexResponse, RawOfferIndexResponse
 
 settings = get_settings()
 
@@ -33,7 +33,7 @@ TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
 EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
 
-def extract_and_fix_email(text: str) -> Optional[str]:
+def extract_and_fix_email(text: str) -> str | None:
     """
     Extract email from text with simple domain fixing for .pl and .com
 
@@ -54,14 +54,14 @@ def extract_and_fix_email(text: str) -> Optional[str]:
     return try_extract_email(fixed_text)
 
 
-def try_extract_email(text: str) -> Optional[str]:
+def try_extract_email(text: str) -> str | None:
     """Try to extract email from text"""
     match = EMAIL_REGEX.search(text)
     if match:
         email = match.group(0).lower()
         # Basic validation - must contain @ and end with valid domain
-        if '@' in email and (email.endswith('.pl') or email.endswith('.com') or
-                             re.search(r'\.[a-z]{2,4}$', email)):
+        if "@" in email and (email.endswith(".pl") or email.endswith(".com") or
+                             re.search(r"\.[a-z]{2,4}$", email)):
             return email
     return None
 
@@ -73,10 +73,10 @@ def apply_simple_fixes(text: str) -> str:
     valid_tlds = ["pl", "com", "eu", "edu.pl", "org.pl", "net.pl", "com.pl"]
 
     for tld in valid_tlds:
-        pattern = rf'(\.{tld})([a-zA-Z0-9_]+)\b'
-        text = re.sub(pattern, r'\1', text, flags=re.IGNORECASE)
+        pattern = rf"(\.{tld})([a-zA-Z0-9_]+)\b"
+        text = re.sub(pattern, r"\1", text, flags=re.IGNORECASE)
 
-    text = re.sub(r'^\d+\.', '', text)
+    text = re.sub(r"^\d+\.", "", text)
 
     return text
 
@@ -197,8 +197,8 @@ class OfferService:
 
             return import_result
 
-        except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid JSON file")
+        except json.JSONDecodeError as err:
+            raise HTTPException(status_code=400, detail="Invalid JSON file") from err
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}") from e
 
@@ -452,34 +452,30 @@ class OfferService:
             ])
             .build()
         )
-        logger.info(f"Sending email...")
+        logger.info("Sending email...")
         response = ms.emails.send(email)
         logger.info(f"Email sent! `{db_offer.uuid}`", response.data)
 
         return None
 
     def should_send_offer_email(self, updated_offer: Offer, db_offer: Offer, submit_email: bool) -> bool:
-            if not updated_offer.email:
-                logger.info("Skipping email sending: no email set on offer")
-                return False
+        if not updated_offer.email:
+            logger.info("Skipping email sending: no email set on offer")
+            return False
+        if settings.APP_ENV != "PROD":
+            logger.info("Skipping email sending: not running in PROD")
+            return False
+        if not submit_email:
+            logger.info("Skipping email sending: submit_email is False")
+            return False
+        if updated_offer.status != OfferStatus.ACTIVE:
+            logger.info(f"Skipping email sending: offer status is {updated_offer.status}")
+            return False
+        if db_offer.source != SourceType.BOT:
+            logger.info(f"Skipping email sending: source is {db_offer.source}")
+            return False
+        return True
 
-            if settings.APP_ENV != "PROD":
-                logger.info("Skipping email sending: not running in PROD")
-                return False
-
-            if not submit_email:
-                logger.info("Skipping email sending: submit_email is False")
-                return False
-
-            if updated_offer.status != OfferStatus.ACTIVE:
-                logger.info(f"Skipping email sending: offer status is {updated_offer.status}")
-                return False
-
-            if db_offer.source != SourceType.BOT:
-                logger.info(f"Skipping email sending: source is {db_offer.source}")
-                return False
-
-            return True
     async def read_raw(self, offset: int,
                        limit: int,
                        sort_column: str,

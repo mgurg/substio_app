@@ -1,21 +1,13 @@
 import re
 from collections.abc import Sequence
-from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException
 from loguru import logger
-from starlette.status import (
-    HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT,
-)
 
 from app.common.text_utils import sanitize_name
 from app.database.models.models import City, Place
 from app.database.protocols import CityRepoProtocol, PlaceRepoProtocol
-from app.database.repository.CityRepo import CityRepo
-from app.database.repository.PlaceRepo import PlaceRepo
-from app.exceptions import NotFoundError, ConflictError
+from app.exceptions import ConflictError, NotFoundError
 from app.schemas.rest.requests import CityAdd, PlaceAdd
 
 
@@ -92,16 +84,16 @@ class PlaceService:
         Normalizes street_number (removes internal spaces).
         """
         pattern = (
-            r'\s('
-            r'\d+\s*[A-Za-z]?'  # 22, 4d, 18 a
-            r'(?:[-/]\d+\s*[A-Za-z]?)*'  # -13, /25, /2a, -13B
-            r'(?:,\s*\d+\s*[A-Za-z]?(?:[-/]\d+\s*[A-Za-z]?)*?)*'  # , 23, , 25a/2, , 12-13
-            r')$'
+            r"\s("
+            r"\d+\s*[A-Za-z]?"  # 22, 4d, 18 a
+            r"(?:[-/]\d+\s*[A-Za-z]?)*"  # -13, /25, /2a, -13B
+            r"(?:,\s*\d+\s*[A-Za-z]?(?:[-/]\d+\s*[A-Za-z]?)*?)*"  # , 23, , 25a/2, , 12-13
+            r")$"
         )
 
         match = re.search(pattern, street)
         if match:
-            street_number = re.sub(r'\s+', '', match.group(1))  # normalize: remove spaces
+            street_number = re.sub(r"\s+", "", match.group(1))  # normalize: remove spaces
             street_name = street[:match.start(1)].strip()
         else:
             street_name = street.strip()
