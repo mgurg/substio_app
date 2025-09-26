@@ -73,7 +73,7 @@ class OfferUpdate(BaseModel):
     visible: bool | None = None
     status: OfferStatus | None = None
     roles: list[UUID] | None = None
-    email_notification: bool | None = False
+    submit_email: bool | None = False
 
 
 class PlaceAdd(BaseModel):
