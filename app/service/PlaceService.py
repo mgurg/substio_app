@@ -1,44 +1,36 @@
 import re
 from collections.abc import Sequence
-from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import Depends, HTTPException
 from loguru import logger
-from starlette.status import (
-    HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT,
-)
 
 from app.common.text_utils import sanitize_name
 from app.database.models.models import City, Place
-from app.database.repository.CityRepo import CityRepo
-from app.database.repository.PlaceRepo import PlaceRepo
+from app.database.protocols import CityRepoProtocol, PlaceRepoProtocol
+from app.exceptions import ConflictError, NotFoundError
 from app.schemas.rest.requests import CityAdd, PlaceAdd
 
 
 class PlaceService:
     def __init__(
-            self,
-            city_repo: Annotated[CityRepo, Depends()],
-            place_repo: Annotated[PlaceRepo, Depends()]
+        self,
+        city_repo: CityRepoProtocol,
+        place_repo: PlaceRepoProtocol,
     ) -> None:
         self.city_repo = city_repo
         self.place_repo = place_repo
 
     async def get_place_by_uuid(self, place_uuid: UUID) -> Place | None:
         db_place = await self.place_repo.get_by_uuid(place_uuid)
-
         if not db_place:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Place `{place_uuid}` not found!")
+            raise NotFoundError(f"Place `{place_uuid}` not found")
 
         return db_place
 
     async def get_city_by_uuid(self, city_uuid: UUID) -> Place | None:
         db_city = await self.city_repo.get_by_uuid(city_uuid)
-
         if not db_city:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"City `{city_uuid}` not found!")
+            raise NotFoundError(f"City `{city_uuid}` not found")
 
         return db_city
 
@@ -54,6 +46,7 @@ class PlaceService:
         if db_place:
             uuids = ", ".join(str(p.uuid) for p in db_place)  # Log all UUIDs of conflicting places
             logger.warning(f"Place `{place_add.name}` already exists as {uuids}")
+            raise ConflictError(f"Place `{place_add.name}` already exists")
             # raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Place `{place_add.name}` already exists" )
 
         place = {
@@ -91,16 +84,16 @@ class PlaceService:
         Normalizes street_number (removes internal spaces).
         """
         pattern = (
-            r'\s('
-            r'\d+\s*[A-Za-z]?'  # 22, 4d, 18 a
-            r'(?:[-/]\d+\s*[A-Za-z]?)*'  # -13, /25, /2a, -13B
-            r'(?:,\s*\d+\s*[A-Za-z]?(?:[-/]\d+\s*[A-Za-z]?)*?)*'  # , 23, , 25a/2, , 12-13
-            r')$'
+            r"\s("
+            r"\d+\s*[A-Za-z]?"  # 22, 4d, 18 a
+            r"(?:[-/]\d+\s*[A-Za-z]?)*"  # -13, /25, /2a, -13B
+            r"(?:,\s*\d+\s*[A-Za-z]?(?:[-/]\d+\s*[A-Za-z]?)*?)*"  # , 23, , 25a/2, , 12-13
+            r")$"
         )
 
         match = re.search(pattern, street)
         if match:
-            street_number = re.sub(r'\s+', '', match.group(1))  # normalize: remove spaces
+            street_number = re.sub(r"\s+", "", match.group(1))  # normalize: remove spaces
             street_name = street[:match.start(1)].strip()
         else:
             street_name = street.strip()
@@ -111,8 +104,7 @@ class PlaceService:
         db_city = await self.city_repo.get_by_teryt(city.teryt_simc)
         if db_city:
             logger.warning(f"City `{city.city_name} - {city.teryt_simc}` already exists as {db_city.uuid}")
-            raise HTTPException(status_code=HTTP_409_CONFLICT,
-                                detail=f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
+            raise ConflictError(f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")
 
         city_data = {
             "uuid": str(uuid4()),

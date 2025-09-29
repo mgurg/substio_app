@@ -42,4 +42,4 @@ COPY --chown=appuser:appuser ./logs /src/logs
 EXPOSE 5000
 
 # Run the application.
-CMD ["/src/.venv/bin/fastapi", "run", "/src/app/main.py", "--port", "5000"]
+CMD ["/src/.venv/bin/fastapi", "run", "/src/app/main.py", "--port", "5000", "--forwarded-allow-ips=*"]

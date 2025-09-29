@@ -3,8 +3,10 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import sentry_sdk
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.status import HTTP_200_OK
@@ -13,11 +15,17 @@ from app.common.auth import check_token
 from app.config import get_settings
 from app.controller.offers import offer_router
 from app.controller.places import place_router
+from app.exceptions import ConflictError, NotFoundError
 from app.schemas.rest.rest_responses import HealthCheck
 
 settings = get_settings()
 
 origins = ["http://localhost", "http://localhost:8080", "*"]
+
+
+def custom_generate_unique_id(route: APIRoute) -> str:
+    tag = route.tags[0] if route.tags else "default"
+    return f"{tag}-{route.name}"
 
 
 def create_application() -> FastAPI:
@@ -26,7 +34,8 @@ def create_application() -> FastAPI:
     Returns:
         FastAPI: [description]
     """
-    app = FastAPI(debug=settings.APP_DEBUG, openapi_url=settings.APP_API_DOCS)
+    app = FastAPI(debug=settings.APP_DEBUG, openapi_url=settings.APP_API_DOCS,
+                  generate_unique_id_function=custom_generate_unique_id,)
 
     app.add_middleware(
         CORSMiddleware,
@@ -37,8 +46,8 @@ def create_application() -> FastAPI:
         max_age=86400,
     )
 
-    app.include_router(offer_router, prefix="/offers", tags=["OFFERS"], dependencies=[Depends(check_token)])
-    app.include_router(place_router, prefix="/places", tags=["PLACE"], dependencies=[Depends(check_token)])
+    app.include_router(offer_router, prefix="/offers", tags=["offer"], dependencies=[Depends(check_token)])
+    app.include_router(place_router, prefix="/places", tags=["place"], dependencies=[Depends(check_token)])
 
     return app
 
@@ -82,3 +91,13 @@ async def read_root():
          )
 async def health_check() -> HealthCheck:
     return HealthCheck(status="OK")
+
+
+@app.exception_handler(NotFoundError)
+async def not_found_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(ConflictError)
+async def conflict_handler(request: Request, exc: ConflictError):
+    return JSONResponse(status_code=409, content={"detail": str(exc)})

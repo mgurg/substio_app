@@ -13,14 +13,17 @@ settings = get_settings()
 
 echo = False
 
-engine = create_async_engine(
-    settings.DB_POSTGRES_URL.unicode_string(),
-    echo=echo,
-    pool_pre_ping=True,
-    pool_recycle=280,
-)
-
-async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
+if settings.DB_POSTGRES_URL:
+    engine = create_async_engine(
+        settings.DB_POSTGRES_URL.unicode_string(),
+        echo=False,
+        pool_pre_ping=True,
+        pool_recycle=280,
+    )
+    async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
+else:
+    engine = None
+    async_session = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

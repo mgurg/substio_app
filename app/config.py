@@ -3,7 +3,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import PostgresDsn
+from pydantic import PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 APP_DIR = Path(__file__).parent.parent / "app"
@@ -19,14 +19,25 @@ class Settings(BaseSettings):
 
     PROJECT_DIR: os.PathLike[str] = Path(__file__).parent.parent
 
-    DB_POSTGRES_URL: PostgresDsn = PostgresDsn.build(
-        scheme="postgresql+psycopg",
-        username=os.getenv("DB_USERNAME"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT")) if os.getenv("DB_PORT") else None,
-        path=os.getenv("DB_DATABASE"),
-    )
+    DB_USERNAME: str | None = os.getenv("DB_USERNAME")
+    DB_PASSWORD: str | None = os.getenv("DB_PASSWORD")
+    DB_HOST: str | None = os.getenv("DB_HOST")
+    DB_PORT: int | None = int(os.getenv("DB_PORT", "5432"))
+    DB_DATABASE: str | None = os.getenv("DB_DATABASE")
+
+    @computed_field(return_type=PostgresDsn | None)
+    @property
+    def DB_POSTGRES_URL(self) -> PostgresDsn | None:
+        if self.DB_HOST and self.DB_DATABASE:
+            return PostgresDsn.build(
+                scheme="postgresql+psycopg",
+                username=self.DB_USERNAME,
+                password=self.DB_PASSWORD,
+                host=self.DB_HOST,
+                port=self.DB_PORT,
+                path=self.DB_DATABASE,
+            )
+        return None
 
     API_KEY_OPENAI: str | None = os.getenv("API_KEY_OPENAI")
     API_KEY_MAILERSEND: str | None = os.getenv("API_KEY_MAILERSEND")
