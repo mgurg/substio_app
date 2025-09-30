@@ -13,23 +13,10 @@ settings = get_settings()
 class OpenAIParser:
     """OpenAI-based implementation of offer parsing."""
 
-    SYSTEM_PROMPT = """
-    Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:
-
-    - `location`: Typ instytucji – wybierz jedną z: "sąd", "policja", "prokuratura". Ustaw `null`, jeśli nie można określić.
-    - `location_full_name`: Pełna nazwa instytucji, np. "Sąd Rejonowy dla Warszawy-Mokotowa", lub `null`.
-    - `date`: Lista dat zastępstwa w formacie **RRRR-MM-DD (np. 2025-07-30)**. Jeśli podana jest tylko jedna, zwróć listę z jednym elementem. Jeśli brak – `null`.
-    - `time`: Lista godzin zastępstwa w formacie  **HH:MM** (24-godzinny format, np. 13:45). Jeśli brak – `null`.
-    - `description`: Krótkie streszczenie charakteru sprawy lub kontekstu. **Usuń email** jeżeli występuje.
-    - `legal_roles`: Lista grup docelowych – wybierz spośród: "adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski". Jeśli brak informacji – `null`.
-    - `email`: Adres e-mail, jeśli występuje w opisie. Jeśli nie ma – `null`.
-
-    Zwróć dane w formacie JSON zgodnym ze schematem.
-    """
-
-    def __init__(self, api_key: str | None = None, model: str | None = None):
+    def __init__(self, api_key: str | None = None):
         self.api_key = api_key or settings.API_KEY_OPENAI
-        self.model = model or settings.OPENAI_MODEL
+        self.model = settings.OPENAI_MODEL
+        self.system_prompt = settings.SYSTEM_PROMPT
         self.client = AsyncOpenAI(api_key=self.api_key)
 
     async def parse_offer(self, raw_data: str) -> ParseResponse:
@@ -48,7 +35,7 @@ class OpenAIParser:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": self.SYSTEM_PROMPT},
+                    {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": raw_data},
                 ],
                 functions=[
