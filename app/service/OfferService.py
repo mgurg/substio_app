@@ -1,6 +1,5 @@
 import json
 import re
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Annotated
@@ -10,7 +9,6 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
 from mailersend import EmailBuilder, MailerSendClient
-from openai import AsyncOpenAI
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
@@ -23,9 +21,11 @@ from app.database.repository.CityRepo import CityRepo
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
-from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
+from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import ImportResult, OfferIndexResponse, RawOfferIndexResponse
+from app.service.parsers.base import AIParser
+from app.service.parsers.factory import get_ai_parser
 
 settings = get_settings()
 
@@ -148,13 +148,15 @@ class OfferService:
             place_repo: Annotated[PlaceRepo, Depends()],
             city_repo: Annotated[CityRepo, Depends()],
             legal_role_repo: Annotated[LegalRoleRepo, Depends()],
-            slack_notifier: SlackNotifierBase = Depends(get_slack_notifier)
+            slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
+        ai_parser: AIParser = Depends(get_ai_parser)
     ) -> None:
         self.offer_repo = offer_repo
         self.place_repo = place_repo
         self.city_repo = city_repo
         self.legal_role_repo = legal_role_repo
-        self.slack_notifier = slack_notifier
+        self.slack_notifier = slack_notifier,
+        self.ai_parser = ai_parser
 
     async def upload(self, file: UploadFile) -> ImportResult:
         if not file.filename.endswith(".json"):
@@ -300,57 +302,29 @@ class OfferService:
         return None
 
     async def parse_raw(self, offer_uuid: UUID) -> ParseResponse:
+        """
+        Parse raw offer data using the configured AI parser.
+
+        Args:
+            offer_uuid: UUID of the offer to parse
+
+        Returns:
+            ParseResponse with structured data or error
+        """
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
         if not db_offer or not db_offer.raw_data:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail=f"Offer `{offer_uuid}` not found!"
+            )
 
         try:
-            client = AsyncOpenAI(api_key=settings.API_KEY_OPENAI)
-
-            t = time.process_time()
-            response = await client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
-                messages=[
-                    {"role": "system", "content": settings.SYSTEM_PROMPT},
-                    {"role": "user", "content": db_offer.raw_data},
-                ],
-                functions=[
-                    {
-                        "name": "generate_response",
-                        "description": "Wygeneruj dane na podstawie opisu w języku polskim",
-                        "parameters": SubstitutionOffer.model_json_schema(),
-                    }
-                ],
-                function_call={"name": "generate_response"},
-                temperature=1,
-            )
-
-            function_args = response.choices[0].message.function_call.arguments
-            args_dict = json.loads(function_args)
-            validated = SubstitutionOffer.model_validate(args_dict)
-
-            elapsed_time = time.process_time() - t
-            usage_info = UsageDetails(
-                prompt_tokens=response.usage.prompt_tokens,
-                completion_tokens=response.usage.completion_tokens,
-                total_tokens=response.usage.total_tokens,
-                elapsed_time=elapsed_time
-            )
-
-            logger.info(
-                f"Tokens prompt: {usage_info.prompt_tokens}, "
-                f"completion: {usage_info.completion_tokens}, "
-                f"total: {usage_info.total_tokens}, "
-                f"took: {usage_info.elapsed_time:.3f} seconds"
-            )
-
-            return ParseResponse(success=True, data=validated, usage=usage_info)
-
+            return await self.ai_parser.parse_offer(db_offer.raw_data)
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Error generating AI description: {e}")
+            logger.error(f"Error parsing offer {offer_uuid}: {e}")
             return ParseResponse(success=False, error=str(e), data=None)
 
     async def update(self, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
