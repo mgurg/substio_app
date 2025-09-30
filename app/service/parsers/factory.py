@@ -19,5 +19,5 @@ def get_ai_parser() -> AIParser:
     Returns:
         AIParser implementation instance
     """
-    return OpenAIParser()
-    # return PydanticAIOpenAIParser()
+    # return OpenAIParser()
+    return PydanticAIOpenAIParser()
