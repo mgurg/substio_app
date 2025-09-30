@@ -55,15 +55,15 @@ class OpenAIParser:
 
             elapsed_time = time.process_time() - start_time
             usage_info = UsageDetails(
-                prompt_tokens=response.usage.prompt_tokens,
-                completion_tokens=response.usage.completion_tokens,
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens,
                 total_tokens=response.usage.total_tokens,
                 elapsed_time=elapsed_time
             )
 
             logger.info(
-                f"OpenAI parsing - Tokens: prompt={usage_info.prompt_tokens}, "
-                f"completion={usage_info.completion_tokens}, "
+                f"OpenAI parsing - Tokens: prompt={usage_info.input_tokens}, "
+                f"completion={usage_info.output_tokens}, "
                 f"total={usage_info.total_tokens}, "
                 f"time={usage_info.elapsed_time:.3f}s"
             )

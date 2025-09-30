@@ -32,8 +32,8 @@ class SubstitutionOffer(BaseModel):
 
 
 class UsageDetails(BaseModel):
-    prompt_tokens: int
-    completion_tokens: int
+    input_tokens: int
+    output_tokens: int
     total_tokens: int
     elapsed_time: float
 

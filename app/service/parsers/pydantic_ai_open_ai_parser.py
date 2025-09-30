@@ -50,15 +50,15 @@ class PydanticAIOpenAIParser:
             if result.usage():
                 usage = result.usage()
                 usage_info = UsageDetails(
-                    prompt_tokens=usage.input_tokens,
-                    completion_tokens=usage.output_tokens,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
                     total_tokens=usage.total_tokens,
                     elapsed_time=elapsed_time,
                 )
                 logger.info(
                     f"Responses API parsing - Tokens: "
-                    f"input={usage_info.prompt_tokens}, "
-                    f"output={usage_info.completion_tokens}, "
+                    f"input={usage_info.input_tokens}, "
+                    f"output={usage_info.output_tokens}, "
                     f"total={usage_info.total_tokens}, "
                     f"time={usage_info.elapsed_time:.3f}s"
                 )
