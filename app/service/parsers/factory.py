@@ -1,12 +1,4 @@
-"""
-app/services/parsers/factory.py
-
-Factory for getting AI parser implementations.
-"""
-
-
 from app.service.parsers.base import AIParser
-from app.service.parsers.openai_parser import OpenAIParser
 from app.service.parsers.pydantic_ai_open_ai_parser import PydanticAIOpenAIParser
 
 

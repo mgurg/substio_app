@@ -38,11 +38,11 @@ class PydanticAIOpenAIParser:
             if isinstance(output_data, SubstitutionOffer):
                 validated = output_data
             elif isinstance(output_data, str):
-                logger.warning('Received: JSON string, create the Pydantic V2 model instance from the dictionary')
+                logger.warning("Received: JSON string, create the Pydantic V2 model instance from the dictionary")
                 data_dict = json.loads(output_data)
                 validated = SubstitutionOffer.model_validate(data_dict)
             else:
-                logger.error('Unexpected output type: {}'.format(type(output_data)))
+                logger.error(f"Unexpected output type: {type(output_data)}")
                 validated = output_data
 
             elapsed_time = time.process_time() - start_time

@@ -128,20 +128,6 @@ def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferRaw
 
 
 class OfferService:
-    SYSTEM_PROMPT = """
-    Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:
-
-    - `location`: Typ instytucji – wybierz jedną z: "sąd", "policja", "prokuratura". Ustaw `null`, jeśli nie można określić.
-    - `location_full_name`: Pełna nazwa instytucji, np. "Sąd Rejonowy dla Warszawy-Mokotowa", lub `null`.
-    - `date`: Lista dat zastępstwa w formacie **RRRR-MM-DD (np. 2025-07-30)**. Jeśli podana jest tylko jedna, zwróć listę z jednym elementem. Jeśli brak – `null`.
-    - `time`: Lista godzin zastępstwa w formacie  **HH:MM** (24-godzinny format, np. 13:45). Jeśli brak – `null`.
-    - `description`: Krótkie streszczenie charakteru sprawy lub kontekstu. **Usuń email** jeżeli występuje.
-    - `legal_roles`: Lista grup docelowych – wybierz spośród: "adwokat", "radca prawny", "aplikant adwokacki", "aplikant radcowski". Jeśli brak informacji – `null`.
-    - `email`: Adres e-mail, jeśli występuje w opisie. Jeśli nie ma – `null`.
-
-    Zwróć dane w formacie JSON zgodnym ze schematem.
-    """
-
     def __init__(
             self,
             offer_repo: Annotated[OfferRepo, Depends()],
@@ -149,7 +135,7 @@ class OfferService:
             city_repo: Annotated[CityRepo, Depends()],
             legal_role_repo: Annotated[LegalRoleRepo, Depends()],
             slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
-        ai_parser: AIParser = Depends(get_ai_parser)
+            ai_parser: AIParser = Depends(get_ai_parser)
     ) -> None:
         self.offer_repo = offer_repo
         self.place_repo = place_repo
