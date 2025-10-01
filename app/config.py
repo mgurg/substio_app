@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     API_KEY_OPENAI: str | None = os.getenv("API_KEY_OPENAI")
     API_KEY_MAILERSEND: str | None = os.getenv("API_KEY_MAILERSEND")
-    OPENAI_MODEL: str = "gpt-5-nano"
+    OPENAI_MODEL: Literal["gpt-5-nano"] = "gpt-5-nano"
 
     SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
     SLACK_WEBHOOK_URL: str = os.getenv("SLACK_WEBHOOK_URL")
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     SYSTEM_PROMPT: str = """
     Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:
 
-    - `location`: Typ instytucji – wybierz jedną z: "sąd" (SR,SO,SA), "policja" (MPP,KMP), "prokuratura". Ustaw `null`, jeśli nie można określić.
+    - `location`: Typ instytucji – wybierz jedną z: "sąd", "policja", "prokuratura". Ustaw `null`, jeśli nie można określić.
     - `location_full_name`: Pełna nazwa instytucji, np. "Sąd Rejonowy dla Warszawy-Mokotowa", lub `null`.
     - `date`: Lista dat zastępstwa w formacie **RRRR-MM-DD (np. 2025-07-30)**. Jeśli podana jest tylko jedna, zwróć listę z jednym elementem. Jeśli brak – `null`.
     - `time`: Lista godzin zastępstwa w formacie  **HH:MM** (24-godzinny format, np. 13:45). Jeśli brak – `null`.
