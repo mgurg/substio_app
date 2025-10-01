@@ -8,10 +8,11 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
-from mailersend import EmailBuilder, MailerSendClient
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
+from app.common.email.EmailNotifierBase import EmailNotifierBase
+from app.common.email.factory import get_email_notifier
 from app.common.slack.dependencies import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
@@ -135,6 +136,7 @@ class OfferService:
             city_repo: Annotated[CityRepo, Depends()],
             legal_role_repo: Annotated[LegalRoleRepo, Depends()],
             slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
+            email_notifier: EmailNotifierBase = Depends(get_email_notifier),
             ai_parser: AIParser = Depends(get_ai_parser)
     ) -> None:
         self.offer_repo = offer_repo
@@ -142,6 +144,7 @@ class OfferService:
         self.city_repo = city_repo
         self.legal_role_repo = legal_role_repo
         self.slack_notifier = slack_notifier,
+        self.email_notifier = email_notifier,
         self.ai_parser = ai_parser
 
     async def upload(self, file: UploadFile) -> ImportResult:
@@ -384,39 +387,27 @@ class OfferService:
         await self.offer_repo.update(db_offer.id, **update_data)
         updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
 
-        if not self.should_send_offer_email(updated_offer, db_offer, submit_email):
-            return None
-
-        recipient_email: str = updated_offer.email
-        recipient_name: str = updated_offer.author or "User"
-
-        logger.info(f"Sending email to {recipient_email}")
-
-        ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
-        email = (
-            EmailBuilder()
-            .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
-            .to_many([{"email": recipient_email, "name": recipient_name}])
-            .bcc(settings.APP_ADMIN_MAIL)
-            .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
-            .template("3zxk54vy71x4jy6v")
-            .personalize_many([
-                {
-                    "email": recipient_email,
-                    "data": {
-                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
-                        "website_name": settings.APP_DOMAIN,
-                        "support_email": settings.APP_ADMIN_MAIL
-                    }
-                }
-            ])
-            .build()
-        )
-        logger.info("Sending email...")
-        response = ms.emails.send(email)
-        logger.info(f"Email sent! `{db_offer.uuid}`", response.data)
+        # --- Send email notification if conditions are met ---
+        if self.should_send_offer_email(updated_offer, db_offer, submit_email):
+            await self._send_offer_imported_notification(updated_offer, db_offer.uuid)
 
         return None
+
+    async def _send_offer_imported_notification(self, offer: Offer, offer_uuid: str) -> None:
+        """Send email notification for imported offer"""
+        recipient_email = offer.email
+        recipient_name = offer.author or "User"
+
+        success = await self.email_notifier.send_offer_imported_email(
+            recipient_email=recipient_email,
+            recipient_name=recipient_name,
+            offer_uuid=offer_uuid
+        )
+
+        if success:
+            logger.info(f"Email notification sent successfully for offer {offer_uuid}")
+        else:
+            logger.warning(f"Failed to send email notification for offer {offer_uuid}")
 
     def should_send_offer_email(self, updated_offer: Offer, db_offer: Offer, submit_email: bool) -> bool:
         if not updated_offer.email:
