@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import sentry_sdk
 from fastapi import Depends, FastAPI, Request
@@ -80,7 +79,7 @@ if settings.APP_ENV == "PROD":
 
 @app.get("/")
 async def read_root():
-    return {"Hello": "World!", "Env": settings.APP_ENV, "timestamp": datetime.now(tz=ZoneInfo("UTC"))}
+    return {"Hello": "World!", "Env": settings.APP_ENV, "timestamp": datetime.now(UTC)}
 
 
 @app.get("/health",
