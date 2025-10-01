@@ -1,18 +1,17 @@
 import json
-import re
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, Query, UploadFile
 from loguru import logger
-from mailersend import EmailBuilder, MailerSendClient
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.common.slack.dependencies import get_slack_notifier
+from app.common.email.EmailNotifierBase import EmailNotifierBase
+from app.common.email.factory import get_email_notifier
+from app.common.slack.factory import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
@@ -24,81 +23,13 @@ from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import ImportResult, OfferIndexResponse, RawOfferIndexResponse
+from app.service.EmailValidationService import EmailValidationService
 from app.service.parsers.base import AIParser
 from app.service.parsers.factory import get_ai_parser
+from app.utils.email_utils import extract_and_fix_email
+from app.utils.timestamp_utils import extract_timestamp_from_filename
 
 settings = get_settings()
-
-TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
-EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
-
-
-def extract_and_fix_email(text: str) -> str | None:
-    """
-    Extract email from text with simple domain fixing for .pl and .com
-
-    Args:
-        text: Raw text that might contain an email
-
-    Returns:
-        Valid email string or None if no valid email found
-    """
-    if not isinstance(text, str):
-        return None
-
-    email = try_extract_email(text)
-    if email:
-        return email
-
-    fixed_text = apply_simple_fixes(text)
-    return try_extract_email(fixed_text)
-
-
-def try_extract_email(text: str) -> str | None:
-    """Try to extract email from text"""
-    match = EMAIL_REGEX.search(text)
-    if match:
-        email = match.group(0).lower()
-        # Basic validation - must contain @ and end with valid domain
-        if "@" in email and (email.endswith(".pl") or email.endswith(".com") or
-                             re.search(r"\.[a-z]{2,4}$", email)):
-            return email
-    return None
-
-
-def apply_simple_fixes(text: str) -> str:
-    """
-    Strip off any junk after known valid TLDs
-    """
-    valid_tlds = ["pl", "com", "eu", "edu.pl", "org.pl", "net.pl", "com.pl"]
-
-    for tld in valid_tlds:
-        pattern = rf"(\.{tld})([a-zA-Z0-9_]+)\b"
-        text = re.sub(pattern, r"\1", text, flags=re.IGNORECASE)
-
-    text = re.sub(r"^\d+\.", "", text)
-
-    return text
-
-
-def extract_timestamp_from_filename(filename: str) -> datetime:
-    """
-    Extract timestamp from filename format: YYYYMMDD_HHMMSS.json
-    Example: 20250819_110812.json -> 2025-08-19 11:08:12
-
-    Falls back to the current datetime if parsing fails.
-    """
-    try:
-        base_name = Path(filename).stem
-        match = TIMESTAMP_PATTERN.search(base_name)
-        if not match:
-            return datetime.now()
-
-        return datetime.strptime(
-            f"{match.group(1)}_{match.group(2)}", "%Y%m%d_%H%M%S"
-        )
-    except Exception:
-        return datetime.now()
 
 
 def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferRawAdd":
@@ -135,14 +66,18 @@ class OfferService:
             city_repo: Annotated[CityRepo, Depends()],
             legal_role_repo: Annotated[LegalRoleRepo, Depends()],
             slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
-            ai_parser: AIParser = Depends(get_ai_parser)
+            email_notifier: EmailNotifierBase = Depends(get_email_notifier),
+            ai_parser: AIParser = Depends(get_ai_parser),
+            email_validator: EmailValidationService = Depends()
     ) -> None:
         self.offer_repo = offer_repo
         self.place_repo = place_repo
         self.city_repo = city_repo
         self.legal_role_repo = legal_role_repo
-        self.slack_notifier = slack_notifier,
+        self.slack_notifier = slack_notifier
+        self.email_notifier = email_notifier
         self.ai_parser = ai_parser
+        self.email_validator = email_validator
 
     async def upload(self, file: UploadFile) -> ImportResult:
         if not file.filename.endswith(".json"):
@@ -280,23 +215,16 @@ class OfferService:
         # --- Create in DB ---
         await self.offer_repo.create(**offer_data)
 
-        offer_url = f"{settings.APP_URL}/raw/{offer_uuid}"
-        review_url = f"{settings.APP_URL}/substytucje-procesowe/review-{offer_uuid}"
-        await self.slack_notifier.send_message(
-            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>\n<{review_url}|Review Offer>"
+        await self.slack_notifier.send_new_offer_notification(
+            author=offer_add.author,
+            email=offer_add.email,
+            description=offer_add.description,
+            offer_uuid=offer_uuid
         )
         return None
 
     async def parse_raw(self, offer_uuid: UUID) -> ParseResponse:
-        """
-        Parse raw offer data using the configured AI parser.
-
-        Args:
-            offer_uuid: UUID of the offer to parse
-
-        Returns:
-            ParseResponse with structured data or error
-        """
+        """ Parse raw offer data using the configured AI parser. """
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
         if not db_offer or not db_offer.raw_data:
@@ -384,57 +312,27 @@ class OfferService:
         await self.offer_repo.update(db_offer.id, **update_data)
         updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
 
-        if not self.should_send_offer_email(updated_offer, db_offer, submit_email):
-            return None
-
-        recipient_email: str = updated_offer.email
-        recipient_name: str = updated_offer.author or "User"
-
-        logger.info(f"Sending email to {recipient_email}")
-
-        ms = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
-        email = (
-            EmailBuilder()
-            .from_email(settings.APP_ADMIN_MAIL, settings.APP_DOMAIN)
-            .to_many([{"email": recipient_email, "name": recipient_name}])
-            .bcc(settings.APP_ADMIN_MAIL)
-            .subject("Substytucja - Twoje ogłoszenie zostało zaimportowane")
-            .template("3zxk54vy71x4jy6v")
-            .personalize_many([
-                {
-                    "email": recipient_email,
-                    "data": {
-                        "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{db_offer.uuid}",
-                        "website_name": settings.APP_DOMAIN,
-                        "support_email": settings.APP_ADMIN_MAIL
-                    }
-                }
-            ])
-            .build()
-        )
-        logger.info("Sending email...")
-        response = ms.emails.send(email)
-        logger.info(f"Email sent! `{db_offer.uuid}`", response.data)
+        # --- Send email notification if conditions are met ---
+        if self.email_validator.should_send_offer_email(updated_offer, db_offer, submit_email):
+            await self._send_offer_imported_notification(updated_offer, db_offer.uuid)
 
         return None
 
-    def should_send_offer_email(self, updated_offer: Offer, db_offer: Offer, submit_email: bool) -> bool:
-        if not updated_offer.email:
-            logger.info("Skipping email sending: no email set on offer")
-            return False
-        if settings.APP_ENV != "PROD":
-            logger.info("Skipping email sending: not running in PROD")
-            return False
-        if not submit_email:
-            logger.info("Skipping email sending: submit_email is False")
-            return False
-        if updated_offer.status != OfferStatus.ACTIVE:
-            logger.info(f"Skipping email sending: offer status is {updated_offer.status}")
-            return False
-        if db_offer.source != SourceType.BOT:
-            logger.info(f"Skipping email sending: source is {db_offer.source}")
-            return False
-        return True
+    async def _send_offer_imported_notification(self, offer: Offer, offer_uuid: str) -> None:
+        """Send email notification for imported offer"""
+        recipient_email = offer.email
+        recipient_name = offer.author or "User"
+
+        success = await self.email_notifier.send_offer_imported_email(
+            recipient_email=recipient_email,
+            recipient_name=recipient_name,
+            offer_uuid=offer_uuid
+        )
+
+        if success:
+            logger.info(f"Email notification sent successfully to {recipient_email} for offer {offer_uuid}")
+        else:
+            logger.warning(f"Failed to send email notification for offer {offer_uuid}")
 
     async def read_raw(self, offset: int,
                        limit: int,
@@ -485,10 +383,6 @@ class OfferService:
         update_data = {
             "status": OfferStatus.ACTIVE,
         }
-        # Ensure valid_to is set in the future so it appears in public listings
-        # now_utc = datetime.now(tz=ZoneInfo("UTC"))
-        # if not getattr(db_offer, "valid_to", None) or db_offer.valid_to <= now_utc:
-        #     update_data["valid_to"] = now_utc + timedelta(days=7)
         await self.offer_repo.update(db_offer.id, **update_data)
         return None
 

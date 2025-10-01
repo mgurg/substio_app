@@ -1,0 +1,79 @@
+from typing import Any
+
+from loguru import logger
+from mailersend import EmailBuilder, MailerSendClient
+
+from app.common.email.EmailNotifierBase import EmailNotifierBase
+from app.config import get_settings
+
+settings = get_settings()
+
+
+class MailerSendNotifier(EmailNotifierBase):
+    """MailerSend implementation of email notification service"""
+
+    def __init__(self):
+        self.client = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
+        self.from_email = settings.APP_ADMIN_MAIL
+        self.from_name = settings.APP_DOMAIN
+        self.bcc_email = settings.APP_ADMIN_MAIL
+
+    async def send_offer_imported_email(
+        self,
+        recipient_email: str,
+        recipient_name: str,
+        offer_uuid: str,
+        **kwargs
+    ) -> bool:
+        """Send offer imported notification email"""
+        template_vars = {
+            "offer_url": f"{settings.APP_URL}/substytucje-procesowe/review-{offer_uuid}",
+            "website_name": settings.APP_DOMAIN,
+            "support_email": settings.APP_ADMIN_MAIL,
+            **kwargs
+        }
+
+        return await self.send_custom_email(
+            recipient_email=recipient_email,
+            recipient_name=recipient_name,
+            subject="Substytucja - Twoje ogłoszenie zostało zaimportowane",
+            template_id="3zxk54vy71x4jy6v",
+            template_vars=template_vars
+        )
+
+    async def send_custom_email(
+        self,
+        recipient_email: str,
+        recipient_name: str,
+        subject: str,
+        template_id: str,
+        template_vars: dict[str, Any]
+    ) -> bool:
+        """Send custom email with specified template"""
+        try:
+            logger.info(f"Sending email to {recipient_email}")
+
+            email = (
+                EmailBuilder()
+                .from_email(self.from_email, self.from_name)
+                .to_many([{"email": recipient_email, "name": recipient_name}])
+                .bcc(self.bcc_email)
+                .subject(subject)
+                .template(template_id)
+                .personalize_many([
+                    {
+                        "email": recipient_email,
+                        "data": template_vars
+                    }
+                ])
+                .build()
+            )
+
+            logger.info("Sending email...")
+            response = self.client.emails.send(email)
+            logger.info(f"Email sent successfully to {recipient_email}", response.data)
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to send email to {recipient_email}: {e}")
+            return False
