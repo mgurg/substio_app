@@ -11,7 +11,7 @@ from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_
 
 from app.common.email.EmailNotifierBase import EmailNotifierBase
 from app.common.email.factory import get_email_notifier
-from app.common.slack.dependencies import get_slack_notifier
+from app.common.slack.factory import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
@@ -215,10 +215,11 @@ class OfferService:
         # --- Create in DB ---
         await self.offer_repo.create(**offer_data)
 
-        offer_url = f"{settings.APP_URL}/raw/{offer_uuid}"
-        review_url = f"{settings.APP_URL}/substytucje-procesowe/review-{offer_uuid}"
-        await self.slack_notifier.send_message(
-            f":tada: New offer created by *{offer_add.author}* \n email: {offer_add.email}\n description: {offer_add.description}.\n<{offer_url}|View Offer>\n<{review_url}|Review Offer>"
+        await self.slack_notifier.send_new_offer_notification(
+            author=offer_add.author,
+            email=offer_add.email,
+            description=offer_add.description,
+            offer_uuid=offer_uuid
         )
         return None
 
