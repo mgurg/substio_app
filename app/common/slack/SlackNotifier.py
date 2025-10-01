@@ -9,8 +9,8 @@ settings = get_settings()
 
 
 class SlackNotifier(SlackNotifierBase):
-    def __init__(self, webhook_url: str | None = None):
-        self.webhook_url = webhook_url or settings.SLACK_WEBHOOK_URL
+    def __init__(self):
+        self.webhook_url = settings.SLACK_WEBHOOK_URL
         if not self.webhook_url:
             raise ValueError("Slack webhook URL not configured")
 
@@ -22,7 +22,6 @@ class SlackNotifier(SlackNotifierBase):
                 resp.raise_for_status()
             except Exception as e:
                 logger.warning(f"Slack notification failed: {e}")
-
 
     async def send_rich_message(self, payload: dict) -> None:
         async with httpx.AsyncClient() as client:
