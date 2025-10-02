@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.database.models.enums import OfferStatus
+from app.database.repository.filters.offer_filters import OfferFilters
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import (
@@ -42,7 +43,7 @@ async def create_raw_offer(offer_service: offerServiceDependency, offer_add: Off
 
 
 @offer_router.post("/import")
-async def import_raw_offers(offer_service: offerServiceDependency, file: UploadFile = File(...),) -> ImportResult:
+async def import_raw_offers(offer_service: offerServiceDependency, file: UploadFile = File(...), ) -> ImportResult:
     return await offer_service.upload(file)
 
 
@@ -64,7 +65,6 @@ async def get_all_offers(offer_service: offerServiceDependency,
                          legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
                          invoice: Annotated[bool | None, Query()] = None,
                          ) -> OffersPaginated:
-
     location_params = [lat, lon, distance_km]
     if any(param is not None for param in location_params) and not all(param is not None for param in location_params):
         raise HTTPException(
@@ -72,11 +72,20 @@ async def get_all_offers(offer_service: offerServiceDependency,
             detail="lat, lon, and distance_km must all be provided together for location filtering"
         )
 
-    db_offers, count = await offer_service.read(
-        offset, limit, field, order, search,
-        lat=lat, lon=lon, distance_km=distance_km,
-        legal_role_uuids=legal_role_uuids, invoice=invoice
+    filters = OfferFilters(
+        search=search,
+        limit=limit,
+        offset=offset,
+        sort_column=field,
+        sort_order=order,
+        lat=lat,
+        lon=lon,
+        distance_km=distance_km,
+        legal_role_uuids=legal_role_uuids,
+        invoice=invoice,
+        status=OfferStatus.ACTIVE,
     )
+    db_offers, count = await offer_service.read(offset, limit, field, order, filters)
 
     return OffersPaginated(data=db_offers, count=count, offset=offset, limit=limit)
 
@@ -90,7 +99,15 @@ async def get_all_raw_offers(offer_service: offerServiceDependency,
                              field: Literal["name", "created_at"] = "created_at",
                              order: Literal["asc", "desc"] = "desc",
                              ) -> RawOffersPaginated:
-    db_offers, count = await offer_service.read_raw(offset, limit, field, order, status, search)
+    filters = OfferFilters(
+        search=search,
+        limit=limit,
+        offset=offset,
+        sort_column=field,
+        sort_order=order,
+        status=status
+    )
+    db_offers, count = await offer_service.read_raw(offset, limit, field, order, filters)
 
     return RawOffersPaginated(data=db_offers, count=count, offset=offset, limit=limit)
 

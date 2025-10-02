@@ -4,7 +4,7 @@ from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, HTTPException, Query, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from loguru import logger
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
@@ -17,6 +17,7 @@ from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 from app.database.repository.CityRepo import CityRepo
+from app.database.repository.filters.offer_filters import OfferFilters
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
@@ -355,33 +356,25 @@ class OfferService:
             logger.warning(f"Failed to send email notification for offer {offer_uuid}")
 
     async def read_raw(self, offset: int,
-                       limit: int,
-                       sort_column: str,
-                       sort_order: str,
-                       status: OfferStatus | None = None,
-                       search: str | None = None) -> tuple[Sequence[Offer], int]:
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, status,
-                                                            search, ["legal_roles", "place", "city"])
+    limit: int,
+    sort_column: str,
+    sort_order: str,
+    filters: OfferFilters) -> tuple[Sequence[Offer], int]:
+
+        filters.load_relations = ["legal_roles", "place", "city"]
+
+        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"])
 
         return db_offers, count
 
     async def read(self, offset: int,
-                   limit: int,
-                   sort_column: str,
-                   sort_order: str,
-                   search: str | None = None,
-                   lat: float | None = None,
-                   lon: float | None = None,
-                   distance_km: float | None = None,
-                   legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
-                   invoice: bool | None = None) -> tuple[Sequence[Offer], int]:
+    limit: int,
+    sort_column: str,
+    sort_order: str,
+    filters: OfferFilters) -> tuple[Sequence[Offer], int]:
 
-        db_offers, count = await self.offer_repo.get_offers(
-            offset, limit, sort_column, sort_order,
-            OfferStatus.ACTIVE, search, ["legal_roles", "place", "city"],
-            lat=lat, lon=lon, distance_km=distance_km,
-            legal_role_uuids=legal_role_uuids, invoice=invoice, valid_to=datetime.now(tz=ZoneInfo("UTC"))
-        )
+        filters.load_relations = ["legal_roles", "place", "city"]
+        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"])
         return db_offers, count
 
     async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:
