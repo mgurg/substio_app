@@ -1,10 +1,10 @@
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, HTTPException, Query, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from loguru import logger
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
@@ -17,6 +17,7 @@ from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 from app.database.repository.CityRepo import CityRepo
+from app.database.repository.filters.offer_filters import OfferFilters
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
@@ -37,7 +38,7 @@ def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferRaw
     Convert a FacebookPost model into an OfferAdd object.
     Falls back to the filename timestamp or current datetime if date_posted is missing/invalid.
     """
-    timestamp = datetime.now()
+    timestamp = datetime.now(UTC)
 
     if post.date_posted:
         try:
@@ -169,7 +170,7 @@ class OfferService:
             "offer_uid": str(uuid4()),
             "author_uid": None,
             "raw_data": None,
-            "added_at": datetime.utcnow(),
+            "added_at": datetime.now(UTC),
             "status": offer_data.get("status") or OfferStatus.NEW,
         })
 
@@ -187,7 +188,7 @@ class OfferService:
             warsaw_tz = ZoneInfo("Europe/Warsaw")
             offer_data["valid_to"] = combined.replace(tzinfo=warsaw_tz).astimezone(ZoneInfo("UTC"))
         else:
-            offer_data["valid_to"] = datetime.now(tz=ZoneInfo("UTC")) + timedelta(days=7)
+            offer_data["valid_to"] = datetime.now(UTC) + timedelta(days=7)
 
         # --- Resolve facility/place ---
         if facility_uuid:
@@ -248,51 +249,78 @@ class OfferService:
             raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
 
         update_data = offer_update.model_dump(exclude_unset=True)
+
+        # Extract special fields
         legal_roles_data = update_data.pop("roles", None)
         facility_uuid = update_data.pop("facility_uuid", None)
         city_uuid = update_data.pop("city_uuid", None)
         submit_email = update_data.pop("submit_email", None)
-
         date_str = update_data.pop("date", None)
         hour_str = update_data.pop("hour", None)
 
+        # Apply basic updates
         for field, value in update_data.items():
             setattr(db_offer, field, value)
 
-        # --- Handle date/hour fields ---
-        date_obj = None
-        hour_obj = None
+        # Handle complex updates through helper methods
+        await self._update_datetime_fields(db_offer, date_str, hour_str)
+        await self._update_legal_roles(db_offer, legal_roles_data)
+        await self._update_facility(db_offer, facility_uuid)
+        await self._update_city(db_offer, city_uuid)
 
-        if date_str:
-            try:
-                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-                db_offer.date = date_obj
-            except ValueError as e:
-                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid date format") from e
+        await self.offer_repo.update(db_offer.id, **update_data)
+        updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
 
-        if hour_str:
-            try:
-                hour_obj = datetime.strptime(hour_str, "%H:%M").time()
-                db_offer.hour = hour_obj
-            except ValueError as e:
-                raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid hour format") from e
+        # Send email if needed
+        if self.email_validator.should_send_offer_email(updated_offer, db_offer, submit_email):
+            await self._send_offer_imported_notification(updated_offer, db_offer.uuid)
 
-        # --- Compute valid_to ---
+        return None
+
+    async def _update_datetime_fields(self, db_offer: Offer, date_str: str | None, hour_str: str | None) -> None:
+        """Handle date/hour parsing and valid_to computation"""
+        date_obj = self._parse_date(date_str) if date_str else None
+        hour_obj = self._parse_hour(hour_str) if hour_str else None
+
+        if date_obj:
+            db_offer.date = date_obj
+        if hour_obj:
+            db_offer.hour = hour_obj
+
+        db_offer.valid_to = self._compute_valid_to(date_obj, hour_obj)
+
+    def _parse_date(self, date_str: str) -> date:
+        """Parse date string with error handling"""
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError as e:
+            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid date format") from e
+
+    def _parse_hour(self, hour_str: str) -> time:
+        """Parse hour string with error handling"""
+        try:
+            return datetime.strptime(hour_str, "%H:%M").time()
+        except ValueError as e:
+            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="Invalid hour format") from e
+
+    def _compute_valid_to(self, date_obj: date | None, hour_obj: time | None) -> datetime:
+        """Compute valid_to timestamp based on date and hour"""
         if date_obj and hour_obj:
             combined = datetime.combine(date_obj, hour_obj)
             warsaw_tz = ZoneInfo("Europe/Warsaw")
-            local_dt = combined.replace(tzinfo=warsaw_tz)
-            utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
-            db_offer.valid_to = utc_dt
-        else:
-            utc_now = datetime.now(tz=ZoneInfo("UTC"))
-            db_offer.valid_to = utc_now + timedelta(days=7)
+            return combined.replace(tzinfo=warsaw_tz).astimezone(ZoneInfo("UTC"))
 
-        if legal_roles_data is not None:
-            roles = await self.legal_role_repo.get_by_uuids(legal_roles_data)
+        return datetime.now(UTC) + timedelta(days=7)
+
+    async def _update_legal_roles(self, db_offer: Offer, roles_uuids: list | None) -> None:
+        """Update legal roles if provided"""
+        if roles_uuids is not None:
+            roles = await self.legal_role_repo.get_by_uuids(roles_uuids)
             db_offer.legal_roles.clear()
             db_offer.legal_roles.extend(roles)
 
+    async def _update_facility(self, db_offer: Offer, facility_uuid: str | None) -> None:
+        """Update facility/place if provided"""
         if facility_uuid is not None:
             place = await self.place_repo.get_by_uuid(facility_uuid)
             if place is None:
@@ -301,6 +329,8 @@ class OfferService:
             db_offer.lon = place.lon
             db_offer.place = place
 
+    async def _update_city(self, db_offer: Offer, city_uuid: str | None) -> None:
+        """Update city if provided"""
         if city_uuid is not None:
             city = await self.city_repo.get_by_uuid(city_uuid)
             if city is None:
@@ -308,15 +338,6 @@ class OfferService:
             db_offer.lat = city.lat
             db_offer.lon = city.lon
             db_offer.city = city
-
-        await self.offer_repo.update(db_offer.id, **update_data)
-        updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
-
-        # --- Send email notification if conditions are met ---
-        if self.email_validator.should_send_offer_email(updated_offer, db_offer, submit_email):
-            await self._send_offer_imported_notification(updated_offer, db_offer.uuid)
-
-        return None
 
     async def _send_offer_imported_notification(self, offer: Offer, offer_uuid: str) -> None:
         """Send email notification for imported offer"""
@@ -335,33 +356,25 @@ class OfferService:
             logger.warning(f"Failed to send email notification for offer {offer_uuid}")
 
     async def read_raw(self, offset: int,
-                       limit: int,
-                       sort_column: str,
-                       sort_order: str,
-                       status: OfferStatus | None = None,
-                       search: str | None = None) -> tuple[Sequence[Offer], int]:
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, status,
-                                                            search, ["legal_roles", "place", "city"])
+    limit: int,
+    sort_column: str,
+    sort_order: str,
+    filters: OfferFilters) -> tuple[Sequence[Offer], int]:
+
+        filters.load_relations = ["legal_roles", "place", "city"]
+
+        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"])
 
         return db_offers, count
 
     async def read(self, offset: int,
-                   limit: int,
-                   sort_column: str,
-                   sort_order: str,
-                   search: str | None = None,
-                   lat: float | None = None,
-                   lon: float | None = None,
-                   distance_km: float | None = None,
-                   legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
-                   invoice: bool | None = None) -> tuple[Sequence[Offer], int]:
+    limit: int,
+    sort_column: str,
+    sort_order: str,
+    filters: OfferFilters) -> tuple[Sequence[Offer], int]:
 
-        db_offers, count = await self.offer_repo.get_offers(
-            offset, limit, sort_column, sort_order,
-            OfferStatus.ACTIVE, search, ["legal_roles", "place", "city"],
-            lat=lat, lon=lon, distance_km=distance_km,
-            legal_role_uuids=legal_role_uuids, invoice=invoice, valid_to=datetime.now(tz=ZoneInfo("UTC"))
-        )
+        filters.load_relations = ["legal_roles", "place", "city"]
+        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"])
         return db_offers, count
 
     async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:

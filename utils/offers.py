@@ -3,7 +3,7 @@ import json
 import os
 import re
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import requests
 from bs4 import BeautifulSoup
@@ -222,7 +222,7 @@ class FacebookPageParser:
             output_filename = f"facebook_posts_{timestamp_str}.json"
         else:
             # Fallback if a pattern doesn't match
-            current_time = datetime.now().strftime("%Y-%m-%dT%H_%M_%S.%fZ")
+            current_time = datetime.now(UTC).strftime("%Y-%m-%dT%H_%M_%S.%fZ")
             output_filename = f"facebook_posts_{current_time}.json"
 
         output_path = os.path.join(self.output_dir, output_filename)
@@ -240,7 +240,7 @@ class FacebookPageParser:
         output_data = {
             "metadata": {
                 "source_file": base_filename,
-                "extracted_at": datetime.now().isoformat(),
+                "extracted_at": datetime.now(UTC).isoformat(),
                 "total_posts": total_posts,
                 "posts_with_author_link": posts_with_author_link,
                 "posts_with_post_link": posts_with_post_link,

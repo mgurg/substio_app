@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 TIMESTAMP_PATTERN = re.compile(r"(\d{8})_(\d{6})")
@@ -22,10 +22,10 @@ def extract_timestamp_from_filename(filename: str) -> datetime:
         base_name = Path(filename).stem
         match = TIMESTAMP_PATTERN.search(base_name)
         if not match:
-            return datetime.now()
+            return datetime.now(UTC)
 
         return datetime.strptime(
             f"{match.group(1)}_{match.group(2)}", "%Y%m%d_%H%M%S"
         )
     except Exception:
-        return datetime.now()
+        return datetime.now(UTC)
