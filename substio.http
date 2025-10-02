@@ -1,3 +1,9 @@
+GET http://{{host}}/offers/count
+Accept: application/json
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{token}}
+
 ### POST RAW OFFER 1
 POST http://{{host}}/offers/raw
 Accept: application/json

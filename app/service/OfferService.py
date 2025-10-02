@@ -80,7 +80,7 @@ class OfferService:
         self.ai_parser = ai_parser
         self.email_validator = email_validator
 
-    async def upload(self, file: UploadFile) -> ImportResult:
+    async def import_raw_offers(self, file: UploadFile) -> ImportResult:
         if not file.filename.endswith(".json"):
             raise HTTPException(status_code=400, detail="File must be a JSON file")
 
@@ -107,7 +107,7 @@ class OfferService:
                         continue
 
                     offer = parse_facebook_post_to_offer(post, file.filename)
-                    await self.create(offer)
+                    await self.create_raw_offer(offer)
                     import_result.imported_records += 1
 
                 except HTTPException as e:
@@ -126,7 +126,7 @@ class OfferService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}") from e
 
-    async def create(self, offer: OfferRawAdd) -> None:
+    async def create_raw_offer(self, offer: OfferRawAdd) -> None:
         db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
         if db_offer:
             raise HTTPException(status_code=HTTP_409_CONFLICT,
@@ -153,7 +153,7 @@ class OfferService:
         await self.offer_repo.create(**offer_data)
         return None
 
-    async def create_by_user(self, offer_add: OfferAdd):
+    async def create_offer(self, offer_add: OfferAdd):
         offer_uuid = str(uuid4())
         offer_data = offer_add.model_dump(exclude_unset=True)
 
@@ -165,7 +165,7 @@ class OfferService:
         hour_str = offer_data.pop("hour", None)
 
         # --- System fields ---
-        offer_data.update({
+        offer_data.update_offers({
             "uuid": offer_uuid,
             "offer_uid": str(uuid4()),
             "author_uid": None,
@@ -224,7 +224,7 @@ class OfferService:
         )
         return None
 
-    async def parse_raw(self, offer_uuid: UUID) -> ParseResponse:
+    async def parse_raw_offer(self, offer_uuid: UUID) -> ParseResponse:
         """ Parse raw offer data using the configured AI parser. """
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
@@ -242,7 +242,7 @@ class OfferService:
             logger.error(f"Error parsing offer {offer_uuid}: {e}")
             return ParseResponse(success=False, error=str(e), data=None)
 
-    async def update(self, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
+    async def update_offers(self, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place"])
 
         if not db_offer:
@@ -355,39 +355,50 @@ class OfferService:
         else:
             logger.warning(f"Failed to send email notification for offer {offer_uuid}")
 
-    async def read_raw(self, offset: int,
-    limit: int,
-    sort_column: str,
-    sort_order: str,
-    filters: OfferFilters) -> tuple[Sequence[Offer], int]:
+    async def list_raw_offers(self, offset: int,
+                              limit: int,
+                              sort_column: str,
+                              sort_order: str,
+                              filters: OfferFilters) -> tuple[Sequence[Offer], int]:
 
         filters.load_relations = ["legal_roles", "place", "city"]
 
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"])
+        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters,
+                                                            ["legal_roles", "place", "city"])
 
         return db_offers, count
 
-    async def read(self, offset: int,
-    limit: int,
-    sort_column: str,
-    sort_order: str,
-    filters: OfferFilters) -> tuple[Sequence[Offer], int]:
+    async def list_offers(self, offset: int,
+                          limit: int,
+                          sort_column: str,
+                          sort_order: str,
+                          filters: OfferFilters) -> tuple[Sequence[Offer], int]:
 
         filters.load_relations = ["legal_roles", "place", "city"]
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"])
+        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters,
+                                                            ["legal_roles", "place", "city"])
         return db_offers, count
 
-    async def get_raw(self, offer_uuid: UUID) -> RawOfferIndexResponse:
+    async def get_similar_offers(self, offer_uuid: UUID):
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
+        if not db_offer:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+
+        db_offers = await self.offer_repo.get_by_email(db_offer.email)
+
+        return db_offers
+
+    async def get_raw_offer(self, offer_uuid: UUID) -> RawOfferIndexResponse:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
 
         return db_offer
 
-    async def get_offer(self, offer_uuid: UUID) -> OfferIndexResponse:
+    async def get_offer_by_id(self, offer_uuid: UUID) -> OfferIndexResponse:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
 
         return db_offer
 
-    async def accept_offer(self, offer_uuid: UUID) -> None:
+    async def accept_raw_offer(self, offer_uuid: UUID) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
         if not db_offer:
@@ -399,7 +410,7 @@ class OfferService:
         await self.offer_repo.update(db_offer.id, **update_data)
         return None
 
-    async def reject_offer(self, offer_uuid: UUID) -> None:
+    async def reject_raw_offer(self, offer_uuid: UUID) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
         if not db_offer:
@@ -413,3 +424,6 @@ class OfferService:
 
     async def get_legal_roles(self):
         return await self.legal_role_repo.get_all()
+
+    async def offers_count(self):
+        return await self.offer_repo.get_offers_count()

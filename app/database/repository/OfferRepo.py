@@ -1,13 +1,16 @@
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
+from pydantic import EmailStr
 from sqlalchemy import BinaryExpression, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database.db import get_db
+from app.database.models.enums import OfferStatus
 from app.database.models.models import LegalRole, Offer, Place
 from app.database.repository.filters.offer_filters import OfferFilters
 from app.database.repository.generics import GenericRepo
@@ -37,6 +40,15 @@ class OfferRepo(GenericRepo[Offer]):
 
         return query
 
+    async def get_offers_count(self):
+
+        count_query = select(func.count(self.Model.id)).where(self.Model.status == OfferStatus.ACTIVE).where(
+            self.Model.valid_to > datetime.now(UTC))
+
+        result = await self.session.execute(count_query)
+        count = result.scalar_one()
+        return count
+
     async def get_by_uuid(self, uuid: UUID, load_relations: list[str] | str = None) -> Offer | None:
         query = select(self.Model).where(self.Model.uuid == uuid)
         query = self._apply_relationship_loading(query, load_relations)
@@ -49,6 +61,12 @@ class OfferRepo(GenericRepo[Offer]):
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    async def get_by_email(self, email: EmailStr) -> Sequence[Offer]:
+        query = select(self.Model).where(self.Model.email == email).where(self.Model.valid_to.is_not(None))
+
+        result = await self.session.execute(query)
+        return result.scalars().all()
 
     async def get_offers(
             self,
