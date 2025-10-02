@@ -43,7 +43,8 @@ async def create_raw_offer(offer_service: offerServiceDependency, offer_add: Off
 
 
 @offer_router.post("/import")
-async def import_raw_offers(offer_service: offerServiceDependency, file: UploadFile = File(...), ) -> ImportResult:
+async def import_raw_offers(offer_service: offerServiceDependency,
+                            file: Annotated[UploadFile, File(...)]) -> ImportResult:
     return await offer_service.upload(file)
 
 
