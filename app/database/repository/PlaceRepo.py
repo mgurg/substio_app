@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.db import get_db
 from app.database.models.models import Place
 from app.database.repository.generics import GenericRepo
+from app.exceptions import NotFoundError
 
 UserDB = Annotated[AsyncSession, Depends(get_db)]
 
@@ -20,11 +21,15 @@ class PlaceRepo(GenericRepo[Place]):
         self.Model = Place
         super().__init__(session, self.Model)
 
-    async def get_by_uuid(self, uuid: UUID) -> Place | None:
+    async def get_by_uuid(self, uuid: UUID) -> Place:
         query = select(self.Model).where(self.Model.uuid == uuid)
 
         result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        place = result.scalar_one_or_none()
+        if place is None:
+            raise NotFoundError("Place", str(uuid))
+
+        return place
 
     async def get_by_partial_name(self, name: str, facility_type: str | None = None) -> Sequence[Place]:
         conditions = [func.lower(self.Model.name_ascii).ilike(f"%{name.lower()}%")]

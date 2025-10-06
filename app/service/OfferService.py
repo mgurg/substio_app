@@ -23,7 +23,7 @@ from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import ImportResult, OfferIndexResponse, RawOfferIndexResponse
+from app.schemas.rest.responses import ImportResult
 from app.service.EmailValidationService import EmailValidationService
 from app.service.parsers.base import AIParser
 from app.service.parsers.factory import get_ai_parser
@@ -193,8 +193,6 @@ class OfferService:
         # --- Resolve facility/place ---
         if facility_uuid:
             place = await self.place_repo.get_by_uuid(facility_uuid)
-            if not place:
-                raise HTTPException(HTTP_404_NOT_FOUND, f"Place `{facility_uuid}` not found")
             offer_data["place_id"] = place.id
             offer_data["lat"] = place.lat
             offer_data["lon"] = place.lon
@@ -202,8 +200,7 @@ class OfferService:
         # --- Resolve city ---
         if city_uuid:
             city = await self.city_repo.get_by_uuid(city_uuid)
-            if not city:
-                raise HTTPException(HTTP_404_NOT_FOUND, f"City `{city_uuid}` not found")
+
             offer_data["city_id"] = city.id
             offer_data["lat"] = city.lat
             offer_data["lon"] = city.lon
@@ -228,11 +225,8 @@ class OfferService:
         """ Parse raw offer data using the configured AI parser. """
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
-        if not db_offer or not db_offer.raw_data:
-            raise HTTPException(
-                status_code=HTTP_404_NOT_FOUND,
-                detail=f"Offer `{offer_uuid}` not found!"
-            )
+        if not db_offer.raw_data:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` has no data to parse!")
 
         try:
             return await self.ai_parser.parse_offer(db_offer.raw_data)
@@ -244,9 +238,6 @@ class OfferService:
 
     async def update_offers(self, offer_uuid: UUID, offer_update: OfferUpdate) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place"])
-
-        if not db_offer:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
 
         update_data = offer_update.model_dump(exclude_unset=True)
 
@@ -319,22 +310,18 @@ class OfferService:
             db_offer.legal_roles.clear()
             db_offer.legal_roles.extend(roles)
 
-    async def _update_facility(self, db_offer: Offer, facility_uuid: str | None) -> None:
+    async def _update_facility(self, db_offer: Offer, facility_uuid: UUID | None) -> None:
         """Update facility/place if provided"""
         if facility_uuid is not None:
             place = await self.place_repo.get_by_uuid(facility_uuid)
-            if place is None:
-                raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Place `{facility_uuid}` not found!")
             db_offer.lat = place.lat
             db_offer.lon = place.lon
             db_offer.place = place
 
-    async def _update_city(self, db_offer: Offer, city_uuid: str | None) -> None:
+    async def _update_city(self, db_offer: Offer, city_uuid: UUID | None) -> None:
         """Update city if provided"""
         if city_uuid is not None:
             city = await self.city_repo.get_by_uuid(city_uuid)
-            if city is None:
-                raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"City `{city_uuid}` not found!")
             db_offer.lat = city.lat
             db_offer.lon = city.lon
             db_offer.city = city
@@ -379,47 +366,31 @@ class OfferService:
                                                             ["legal_roles", "place", "city"])
         return db_offers, count
 
-    async def get_similar_offers(self, offer_uuid: UUID):
+    async def get_similar_offers(self, offer_uuid: UUID) -> Sequence[Offer]:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
-        if not db_offer:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
+        if not db_offer.email:
+            return []
 
         db_offers = await self.offer_repo.get_by_email(db_offer.email)
 
         return db_offers
 
-    async def get_raw_offer(self, offer_uuid: UUID) -> RawOfferIndexResponse:
-        db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
+    async def get_raw_offer(self, offer_uuid: UUID) -> Offer:
+        return await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
 
-        return db_offer
-
-    async def get_offer_by_id(self, offer_uuid: UUID) -> OfferIndexResponse:
-        db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
-
-        return db_offer
+    async def get_offer_by_id(self, offer_uuid: UUID) -> Offer:
+        return await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])
 
     async def accept_raw_offer(self, offer_uuid: UUID) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+        await self.offer_repo.update(db_offer.id, **{"status": OfferStatus.ACTIVE})
 
-        if not db_offer:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
-
-        update_data = {
-            "status": OfferStatus.ACTIVE,
-        }
-        await self.offer_repo.update(db_offer.id, **update_data)
         return None
 
     async def reject_raw_offer(self, offer_uuid: UUID) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+        await self.offer_repo.update(db_offer.id, **{"status": OfferStatus.REJECTED})
 
-        if not db_offer:
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail=f"Offer `{offer_uuid}` not found!")
-
-        update_data = {
-            "status": OfferStatus.REJECTED,
-        }
-        await self.offer_repo.update(db_offer.id, **update_data)
         return None
 
     async def get_legal_roles(self):
