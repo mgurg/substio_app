@@ -78,6 +78,18 @@ class RawOfferIndexResponse(BaseResponse):
     added_at: dt.datetime
 
 
+class SimilarOfferIndexResponse(BaseResponse):
+    uuid: UUID
+    description: str | None = None
+    place_name: str | None = None
+    status: OfferStatus
+    valid_to: dt.datetime
+
+
+class OffersCount(BaseResponse):
+    count: int
+
+
 class OffersPaginated(BaseResponse):
     data: list[OfferIndexResponse]
     count: int
