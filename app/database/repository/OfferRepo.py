@@ -49,7 +49,7 @@ class OfferRepo(GenericRepo[Offer]):
         count = result.scalar_one()
         return count
 
-    async def find_by_uuid(self, uuid: UUID, load_relations: list[str] | str = None) -> Offer | None:
+    async def find_by_uuid(self, uuid: UUID, load_relations: list[str] | str |None = None) -> Offer | None:
         """Find offer by UUID. Returns None if not found (no exception)."""
         query = select(self.Model).where(self.Model.uuid == uuid)
         query = self._apply_relationship_loading(query, load_relations)
@@ -57,7 +57,7 @@ class OfferRepo(GenericRepo[Offer]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_uuid(self, uuid: UUID, load_relations: list[str] | str = None) -> Offer:
+    async def get_by_uuid(self, uuid: UUID, load_relations: list[str] | str|None  = None) -> Offer:
         """Find offer by UUID. Returns NotFoundError if not found."""
         query = select(self.Model).where(self.Model.uuid == uuid)
         query = self._apply_relationship_loading(query, load_relations)
@@ -89,7 +89,7 @@ class OfferRepo(GenericRepo[Offer]):
             sort_column: str,
             sort_order: str,
             filters: OfferFilters,
-            load_relations: list[str] | str = None,
+            load_relations: list[str] | str|None  = None,
     ) -> tuple[Sequence[Offer], int]:
         query = select(self.Model)
         query = self._apply_relationship_loading(query, load_relations)
