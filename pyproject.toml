@@ -23,8 +23,7 @@ dependencies = [
     "whenever>=0.8.8",
 ]
 
-[tool.uv]
-dev-dependencies = [
+dependency-groups.dev = [
     "beautifulsoup4>=4.13.4",
     "datefinder>=0.7.3",
     "dateparser>=1.2.2",
