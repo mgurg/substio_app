@@ -81,7 +81,7 @@ class OfferService:
         self.email_validator = email_validator
 
     async def import_raw_offers(self, file: UploadFile) -> ImportResult:
-        if not file.filename or file.filename.endswith(".json"):
+        if not file.filename or not file.filename.endswith(".json"):
             raise HTTPException(status_code=400, detail="File must be a JSON file")
 
         try:
