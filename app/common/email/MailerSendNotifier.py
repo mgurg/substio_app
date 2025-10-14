@@ -55,9 +55,9 @@ class MailerSendNotifier(EmailNotifierBase):
 
             email = (
                 EmailBuilder()
-                .from_email(self.from_email, self.from_name)
+                .from_email(email=self.from_email, name=self.from_name)
                 .to_many([{"email": recipient_email, "name": recipient_name}])
-                .bcc(self.bcc_email)
+                .bcc(email=self.bcc_email)
                 .subject(subject)
                 .template(template_id)
                 .personalize_many([
