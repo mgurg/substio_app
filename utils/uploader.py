@@ -4,6 +4,7 @@ import re
 
 import requests
 from loguru import logger
+from requests import RequestException
 
 # Constants
 LOCAL_API_URL = "http://localhost:5000/places"
@@ -31,7 +32,7 @@ def send_places_to_api(item, api_url):
         response = requests.post(api_url, json=item, headers=AUTH_HEADER)
         response.raise_for_status()
         print('.', end='', flush=True)
-    except requests.exceptions.RequestException as e:
+    except RequestException as e:
         logger.error(f"Error sending item `{item['id']}` - {item['name']}: {e}")
 
 
@@ -39,7 +40,7 @@ def send_cities_to_api(item, api_url):
     try:
         response = requests.post(f"{api_url}/city", json=item, headers=AUTH_HEADER)
         response.raise_for_status()
-    except requests.exceptions.RequestException as e:
+    except RequestException as e:
         if e.response is not None and e.response.status_code != 409:
             logger.error(f"Error, city: {item['city_name']} {e.response.text}")
         else:

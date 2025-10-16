@@ -23,16 +23,12 @@ class PlaceService:
     async def get_place_by_uuid(self, place_uuid: UUID) -> Place | None:
         db_place = await self.place_repo.get_by_uuid(place_uuid)
         if not db_place:
-            raise NotFoundError(f"Place `{place_uuid}` not found")
+            raise NotFoundError("Place", str(place_uuid))
 
         return db_place
 
-    async def get_city_by_uuid(self, city_uuid: UUID) -> Place | None:
-        db_city = await self.city_repo.get_by_uuid(city_uuid)
-        if not db_city:
-            raise NotFoundError(f"City `{city_uuid}` not found")
-
-        return db_city
+    async def get_city_by_uuid(self, city_uuid: UUID) -> City:
+        return await self.city_repo.get_by_uuid(city_uuid)
 
     async def create(self, place_add: PlaceAdd) -> None:
         lat = float(place_add.lat) if place_add.lat is not None else None
@@ -101,7 +97,7 @@ class PlaceService:
         return street_name, street_number
 
     async def create_city(self, city: CityAdd) -> None:
-        db_city = await self.city_repo.get_by_teryt(city.teryt_simc)
+        db_city = await self.city_repo.find_by_teryt(city.teryt_simc)
         if db_city:
             logger.warning(f"City `{city.city_name} - {city.teryt_simc}` already exists as {db_city.uuid}")
             raise ConflictError(f"City `{city.city_name} - {city.state}` already exists as {db_city.uuid}")

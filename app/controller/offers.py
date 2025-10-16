@@ -1,3 +1,4 @@
+from datetime import datetime, UTC, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -80,6 +81,7 @@ async def list_offers(offer_service: offerServiceDependency,
         legal_role_uuids=legal_role_uuids,
         invoice=invoice,
         status=OfferStatus.ACTIVE,
+        valid_to=datetime.now(UTC) - timedelta(hours=12)
     )
 
     db_offers, count = await offer_service.list_offers(offset, limit, field, order, filters)

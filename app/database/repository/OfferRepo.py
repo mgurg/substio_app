@@ -4,7 +4,6 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends
-from pydantic import EmailStr
 from sqlalchemy import BinaryExpression, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -14,6 +13,7 @@ from app.database.models.enums import OfferStatus
 from app.database.models.models import LegalRole, Offer, Place
 from app.database.repository.filters.offer_filters import OfferFilters
 from app.database.repository.generics import GenericRepo
+from app.exceptions import NotFoundError
 
 UserDB = Annotated[AsyncSession, Depends(get_db)]
 
@@ -49,12 +49,26 @@ class OfferRepo(GenericRepo[Offer]):
         count = result.scalar_one()
         return count
 
-    async def get_by_uuid(self, uuid: UUID, load_relations: list[str] | str = None) -> Offer | None:
+    async def find_by_uuid(self, uuid: UUID, load_relations: list[str] | str | None = None) -> Offer | None:
+        """Find offer by UUID. Returns None if not found (no exception)."""
         query = select(self.Model).where(self.Model.uuid == uuid)
         query = self._apply_relationship_loading(query, load_relations)
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    async def get_by_uuid(self, uuid: UUID, load_relations: list[str] | str | None = None) -> Offer:
+        """Find offer by UUID. Returns NotFoundError if not found."""
+        query = select(self.Model).where(self.Model.uuid == uuid)
+        query = self._apply_relationship_loading(query, load_relations)
+
+        result = await self.session.execute(query)
+        offer = result.scalar_one_or_none()
+
+        if offer is None:
+            raise NotFoundError("Offer", str(uuid))
+
+        return offer
 
     async def get_by_offer_uid(self, offer_uid: str) -> Offer | None:
         query = select(self.Model).where(self.Model.offer_uid == offer_uid)
@@ -62,7 +76,7 @@ class OfferRepo(GenericRepo[Offer]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: EmailStr) -> Sequence[Offer]:
+    async def get_by_email(self, email: str) -> Sequence[Offer]:
         query = select(self.Model).where(self.Model.email == email).where(self.Model.valid_to.is_not(None))
 
         result = await self.session.execute(query)
@@ -75,7 +89,7 @@ class OfferRepo(GenericRepo[Offer]):
             sort_column: str,
             sort_order: str,
             filters: OfferFilters,
-            load_relations: list[str] | str = None,
+            load_relations: list[str] | str | None = None,
     ) -> tuple[Sequence[Offer], int]:
         query = select(self.Model)
         query = self._apply_relationship_loading(query, load_relations)
