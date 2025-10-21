@@ -1,4 +1,4 @@
-from datetime import datetime, UTC, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -12,12 +12,13 @@ from app.schemas.rest.requests import OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import (
     ImportResult,
     LegalRoleIndexResponse,
+    OfferEmail,
     OfferIndexResponse,
     OffersCount,
     OffersPaginated,
     RawOfferIndexResponse,
     RawOffersPaginated,
-    SimilarOfferIndexResponse, OfferEmail,
+    SimilarOfferIndexResponse,
 )
 from app.service.OfferService import OfferService
 
@@ -119,9 +120,10 @@ async def get_offer_by_id(offer_service: offerServiceDependency, offer_uuid: UUI
 
 @offer_router.get("/{offer_uuid}/email")
 async def get_offer_email(offer_service: offerServiceDependency, offer_uuid: UUID) -> OfferEmail:
-    offer =  await offer_service.get_offer_email(offer_uuid)
+    email = await offer_service.get_offer_email(offer_uuid)
 
     return OfferEmail(email=email)
+
 
 @offer_router.get("/{offer_uuid}/similar")
 async def get_similar_offers_by_user(offer_service: offerServiceDependency, offer_uuid: UUID) -> list[
