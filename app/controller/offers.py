@@ -17,7 +17,7 @@ from app.schemas.rest.responses import (
     OffersPaginated,
     RawOfferIndexResponse,
     RawOffersPaginated,
-    SimilarOfferIndexResponse,
+    SimilarOfferIndexResponse, OfferEmail,
 )
 from app.service.OfferService import OfferService
 
@@ -116,6 +116,12 @@ async def list_raw_offers(offer_service: offerServiceDependency,
 async def get_offer_by_id(offer_service: offerServiceDependency, offer_uuid: UUID) -> OfferIndexResponse:
     return await offer_service.get_offer_by_id(offer_uuid)
 
+
+@offer_router.get("/{offer_uuid}/email")
+async def get_offer_email(offer_service: offerServiceDependency, offer_uuid: UUID) -> OfferEmail:
+    offer =  await offer_service.get_offer_email(offer_uuid)
+
+    return OfferEmail(email=email)
 
 @offer_router.get("/{offer_uuid}/similar")
 async def get_similar_offers_by_user(offer_service: offerServiceDependency, offer_uuid: UUID) -> list[

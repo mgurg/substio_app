@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, HTTPException, UploadFile
 from loguru import logger
+from pydantic import EmailStr
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
@@ -374,6 +375,14 @@ class OfferService:
         db_offers = await self.offer_repo.get_by_email(db_offer.email)
 
         return db_offers
+
+
+    async def get_offer_email(self, offer_uuid: UUID) -> str:
+        db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+        if not db_offer.email:
+            logger.error(f"No email found for offer with UUID: {offer_uuid}")
+            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail="No email found")
+        return db_offer.email
 
     async def get_raw_offer(self, offer_uuid: UUID) -> Offer:
         return await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place", "city"])

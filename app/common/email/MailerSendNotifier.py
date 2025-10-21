@@ -1,3 +1,4 @@
+from random import randint
 from typing import Any
 
 from loguru import logger
@@ -19,11 +20,11 @@ class MailerSendNotifier(EmailNotifierBase):
         self.bcc_email = settings.APP_ADMIN_MAIL
 
     async def send_offer_imported_email(
-        self,
-        recipient_email: str,
-        recipient_name: str,
-        offer_uuid: str,
-        **kwargs
+            self,
+            recipient_email: str,
+            recipient_name: str,
+            offer_uuid: str,
+            **kwargs
     ) -> bool:
         """Send offer imported notification email"""
         template_vars = {
@@ -42,22 +43,21 @@ class MailerSendNotifier(EmailNotifierBase):
         )
 
     async def send_custom_email(
-        self,
-        recipient_email: str,
-        recipient_name: str,
-        subject: str,
-        template_id: str,
-        template_vars: dict[str, Any]
+            self,
+            recipient_email: str,
+            recipient_name: str,
+            subject: str,
+            template_id: str,
+            template_vars: dict[str, Any]
     ) -> bool:
         """Send custom email with specified template"""
         try:
             logger.info(f"Sending email to {recipient_email}")
 
-            email = (
+            builder = (
                 EmailBuilder()
                 .from_email(email=self.from_email, name=self.from_name)
                 .to_many([{"email": recipient_email, "name": recipient_name}])
-                .bcc(email=self.bcc_email)
                 .subject(subject)
                 .template(template_id)
                 .personalize_many([
@@ -66,8 +66,13 @@ class MailerSendNotifier(EmailNotifierBase):
                         "data": template_vars
                     }
                 ])
-                .build()
             )
+
+            if randint(1, 10) == 1:  # Add BCC with 10% probability
+                logger.info(f"Adding BCC to {self.bcc_email}")
+                builder = builder.bcc(email=self.bcc_email)
+
+            email = builder.build()
 
             logger.info("Sending email...")
             response = self.client.emails.send(email)
