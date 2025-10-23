@@ -86,6 +86,10 @@ class SimilarOfferIndexResponse(BaseResponse):
     valid_to: dt.datetime
 
 
+class OfferEmail(BaseResponse):
+    email: EmailStr
+
+
 class OffersCount(BaseResponse):
     count: int
 
