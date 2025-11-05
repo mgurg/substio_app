@@ -54,6 +54,7 @@ class OfferIndexResponse(BaseResponse):
     date: dt.date | None = None
     hour: dt.time | None = None
     valid_to: dt.datetime | None = None
+    created_at: dt.datetime | None = None
 
 
 class RawOfferIndexResponse(BaseResponse):

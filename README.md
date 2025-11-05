@@ -111,5 +111,5 @@ uvx genai-prices list
 ```
 
 ```bash
-uvx genai-prices calc --input-tokens 100000 --output-tokens 3000 GPT-5-nano GPT-4.1-nano GPT-5  claude-sonnet-4-0 claude-sonnet-4-5
+uvx genai-prices calc --input-tokens 100000 --output-tokens 3000 GPT-5-nano GPT-4.1-nano GPT-5 claude-sonnet-4-0 claude-sonnet-4-5
 ```
