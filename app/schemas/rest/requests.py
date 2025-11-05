@@ -63,6 +63,7 @@ class OfferUpdate(BaseModel):
     city_uuid: UUID | None = None
     city_name: str | None = None
     place_name: str | None = None
+    author: str | None = None
     email: EmailStr | None = None
     url: str | None = None
     date: str | None = None
