@@ -38,6 +38,17 @@ def postgres_url_env() -> Generator[dict, None, None]:
             "DB_DATABASE": db,  # pydantic will handle leading slash
             # Optional: prevent OpenAI usage during tests
             "API_KEY_OPENAI": "",
+            # Provide dummy API keys to prevent external clients from initializing with real network calls
+            "API_KEY_MAILERSEND": "test_dummy_key",
+            "MAILERSEND_API_KEY": "test_dummy_key",
+            # Ensure we are not in PROD to disable prod-only integrations like Sentry
+            "APP_ENV": "DEV",
+            # Required app settings for Settings() validation
+            "APP_URL": "http://testserver",
+            "APP_DOMAIN": "test.local",
+            "APP_ADMIN_MAIL": "admin@test.local",
+            "SLACK_WEBHOOK_URL": "http://localhost/fake-webhook",
+            "APP_API_DOCS": "/openapi.json",
         }
 
         # Backup old environment values and set new ones
