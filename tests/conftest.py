@@ -7,7 +7,7 @@ from typing import Generator
 import pytest
 from alembic import command
 from alembic.config import Config as AlembicConfig
-import httpx
+from fastapi.testclient import TestClient
 from testcontainers.postgres import PostgresContainer
 
 # Ensure project root is on sys.path for `import app`
@@ -91,9 +91,9 @@ def app(apply_migrations):  # noqa: ARG001 - ensure migrations ran first
 
 
 @pytest.fixture()
-def client(app) -> Generator[httpx.Client, None, None]:
+def client(app) -> Generator[TestClient, None, None]:
     headers = {"Authorization": "Bearer " + ("a" * 31)}
-    transport = httpx.ASGITransport(app=app)
-    with httpx.Client(transport=transport, base_url="http://testserver") as c:
+    with TestClient(app, base_url="http://testserver") as c:
+        # Set default headers without using deprecated constructor args
         c.headers.update(headers)
         yield c
