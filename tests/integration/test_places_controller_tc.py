@@ -1,9 +1,8 @@
-from datetime import datetime, timezone
 
 import pytest
 
-
 # Helpers to build payloads compatible with Places API
+
 
 def make_city_payload(
     name: str,

@@ -1,12 +1,10 @@
-import re
-import time
 
 import pytest
 
 from app.utils.email_utils import (
+    apply_simple_fixes,
     extract_and_fix_email,
     try_extract_email,
-    apply_simple_fixes,
 )
 
 

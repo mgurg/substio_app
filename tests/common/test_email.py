@@ -1,5 +1,5 @@
-import asyncio
 import types
+
 import pytest
 
 
@@ -100,19 +100,26 @@ async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
     class DummyBuilder:
         def __init__(self):
             self.bcc_calls = 0
+
         def from_email(self, email, name):
             return self
+
         def to_many(self, arr):
             return self
+
         def subject(self, s):
             return self
+
         def template(self, t):
             return self
+
         def personalize_many(self, arr):
             return self
+
         def bcc(self, email):
             self.bcc_calls += 1
             return self
+
         def build(self):
             return {}
 
@@ -120,6 +127,7 @@ async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
         class Emails:
             def send(self, email):
                 return types.SimpleNamespace(data={"ok": True})
+
         def __init__(self, api_key):
             self.api_key = api_key
             self.emails = self.Emails()
@@ -158,14 +166,19 @@ async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
     class DummyBuilder:
         def from_email(self, email, name):
             return self
+
         def to_many(self, arr):
             return self
+
         def subject(self, s):
             return self
+
         def template(self, t):
             return self
+
         def personalize_many(self, arr):
             return self
+
         def build(self):
             return {}
 
@@ -173,6 +186,7 @@ async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
         class Emails:
             def send(self, email):
                 raise RuntimeError("boom")
+
         def __init__(self, api_key):
             self.api_key = api_key
             self.emails = self.Emails()

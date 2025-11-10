@@ -1,8 +1,8 @@
+import contextlib
 import os
 import sys
-import contextlib
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from alembic import command
@@ -67,7 +67,7 @@ def postgres_url_env() -> Generator[dict, None, None]:
 
 
 @pytest.fixture(scope="session")
-def apply_migrations(postgres_url_env) -> None:  # noqa: ARG001 - used for dependency ordering
+def apply_migrations(postgres_url_env) -> None:
     """Run Alembic migrations against the container DB."""
     # Clear cached settings so alembic.env picks up new URL built from env
     from app.config import get_settings
@@ -83,7 +83,7 @@ def apply_migrations(postgres_url_env) -> None:  # noqa: ARG001 - used for depen
 
 
 @pytest.fixture(scope="session")
-def app(apply_migrations):  # noqa: ARG001 - ensure migrations ran first
+def app(apply_migrations):
     # Now import the app after env and migrations are ready
     from app.main import create_application
 

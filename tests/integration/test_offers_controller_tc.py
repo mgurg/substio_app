@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-
 # Helper to build a raw-offer payload compatible with the API
+
 
 def make_offer_payload(uid: str, author: str = "john", author_uid: str = "u1") -> dict:
     return {
@@ -11,7 +11,7 @@ def make_offer_payload(uid: str, author: str = "john", author_uid: str = "u1") -
         "author": author,
         "author_uid": author_uid,
         "offer_uid": uid,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "source": "bot",
     }
 

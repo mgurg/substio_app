@@ -1,4 +1,3 @@
-import pytest
 
 from app.common.text_utils import remove_html_tags, sanitize_and_normalize_text, sanitize_name
 
