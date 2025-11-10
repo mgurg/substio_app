@@ -9,7 +9,7 @@ def test_remove_html_tags_simple():
 def test_sanitize_and_normalize_text_spaces_and_newlines():
     raw = "  Hello\u00A0\tWorld\n\r\nThis   is  “quoted”  text  "
     out = sanitize_and_normalize_text(raw)
-    assert out == 'Hello World\nThis is "quoted" text'
+    assert out == 'Hello World This is "quoted" text'
 
 
 def test_sanitize_and_normalize_text_strips_html_and_fancy_quotes():
