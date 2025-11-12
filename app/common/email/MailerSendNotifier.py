@@ -81,7 +81,7 @@ class MailerSendNotifier(EmailNotifierBase):
             email = builder.build()
 
             logger.info("Sending email...")
-            response = self.client.emails.send(email)
+            self.client.emails.send(email)
             logger.info(f"Email sent successfully to {recipient_email}")
             return True
 

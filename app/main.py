@@ -99,4 +99,3 @@ async def read_root():
          )
 async def health_check() -> HealthCheck:
     return HealthCheck(status="OK")
-

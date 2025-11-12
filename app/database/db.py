@@ -1,5 +1,4 @@
 from collections.abc import AsyncGenerator
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -11,7 +10,7 @@ from sqlalchemy.orm import declarative_base
 from app.config import get_settings
 
 engine = None
-async_session: Optional[async_sessionmaker[AsyncSession]] = None
+async_session: async_sessionmaker[AsyncSession] | None = None
 
 
 def _init_engine_if_needed() -> None:
