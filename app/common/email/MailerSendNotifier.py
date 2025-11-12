@@ -14,7 +14,6 @@ class MailerSendNotifier(EmailNotifierBase):
     """MailerSend implementation of email notification service"""
 
     def __init__(self):
-        # Lazy-init the MailerSend client to avoid requiring API key at import/instantiation time (helps tests)
         self.client = None
         self.from_email = settings.APP_ADMIN_MAIL
         self.from_name = settings.APP_DOMAIN
@@ -55,7 +54,6 @@ class MailerSendNotifier(EmailNotifierBase):
         try:
             logger.info(f"Sending email to {recipient_email}")
 
-            # Ensure client is initialized lazily to avoid requiring API key during tests/import
             if self.client is None:
                 self.client = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
 

@@ -10,8 +10,6 @@ from sqlalchemy.orm import declarative_base
 
 from app.config import get_settings
 
-# Engine/session are initialized lazily to respect environment variables that
-# may be set at runtime (e.g., in tests via fixtures) before importing the app.
 engine = None
 async_session: Optional[async_sessionmaker[AsyncSession]] = None
 
@@ -21,7 +19,7 @@ def _init_engine_if_needed() -> None:
     if async_session is not None:
         return
 
-    settings = get_settings()  # pick up current env every time we initialize
+    settings = get_settings()
     if not settings.DB_POSTGRES_URL:
         raise RuntimeError("Database URL is not configured")
 

@@ -104,7 +104,6 @@ class Offer(BaseModel):
     lat: Mapped[float | None] = mapped_column(Numeric(10, 7))
     lon: Mapped[float | None] = mapped_column(Numeric(10, 7))
 
-    # Foreign keys
     place_id: Mapped[int | None] = mapped_column(ForeignKey("places.id", ondelete="SET NULL"), nullable=True)
     city_id: Mapped[int | None] = mapped_column(ForeignKey("cities.id", ondelete="SET NULL"), nullable=True)
 
