@@ -7,7 +7,6 @@ from app.database.repository.PlaceRepo import PlaceRepo
 from app.service.PlaceService import PlaceService
 
 
-# providers for concrete repo implementations (can be async or sync)
 def get_city_repo(session: AsyncSession = Depends(get_db)) -> CityRepo:
     return CityRepo(session)
 

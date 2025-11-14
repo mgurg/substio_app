@@ -51,9 +51,9 @@ class FacebookPost(BaseModel):
     )
 
     model_config = {
-        "populate_by_name": True,  # allows usage of both alias and pythonic names
+        "populate_by_name": True,
         "str_strip_whitespace": True,
-        "extra": "ignore",  # ignore unknown fields
+        "extra": "ignore",
     }
 
 

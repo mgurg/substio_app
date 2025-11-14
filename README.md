@@ -56,6 +56,12 @@ docker exec -it substio_app .venv/bin/alembic upgrade +1
 Revision History: Use `.venv/bin/alembic history` to see the history of migrations and understand the steps involved.
 Detailed View: Use `.venv/bin/alembic show <revision>` to get detailed information about specific revision scripts.
 
+
+## Tests
+```bash
+pytest -q tests
+```
+
 ## Update python dependencies
 
 ```bash

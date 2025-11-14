@@ -14,7 +14,7 @@ class MailerSendNotifier(EmailNotifierBase):
     """MailerSend implementation of email notification service"""
 
     def __init__(self):
-        self.client = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
+        self.client = None
         self.from_email = settings.APP_ADMIN_MAIL
         self.from_name = settings.APP_DOMAIN
         self.bcc_email = settings.APP_ADMIN_MAIL
@@ -54,6 +54,9 @@ class MailerSendNotifier(EmailNotifierBase):
         try:
             logger.info(f"Sending email to {recipient_email}")
 
+            if self.client is None:
+                self.client = MailerSendClient(api_key=settings.API_KEY_MAILERSEND)
+
             builder = (
                 EmailBuilder()
                 .from_email(email=self.from_email, name=self.from_name)
@@ -69,14 +72,17 @@ class MailerSendNotifier(EmailNotifierBase):
             )
 
             if randint(1, 10) == 1:  # Add BCC with 10% probability
-                logger.info(f"Adding BCC to {self.bcc_email}")
-                builder = builder.bcc(email=self.bcc_email)
+                if hasattr(builder, "bcc"):
+                    logger.info(f"Adding BCC to {self.bcc_email}")
+                    builder = builder.bcc(email=self.bcc_email)
+                else:
+                    logger.debug("Email builder has no 'bcc' method; skipping BCC")
 
             email = builder.build()
 
             logger.info("Sending email...")
-            response = self.client.emails.send(email)
-            logger.info(f"Email sent successfully to {recipient_email}", response.data)
+            self.client.emails.send(email)
+            logger.info(f"Email sent successfully to {recipient_email}")
             return True
 
         except Exception as e:

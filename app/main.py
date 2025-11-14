@@ -48,6 +48,15 @@ def create_application() -> FastAPI:
     app.include_router(offer_router, prefix="/offers", tags=["offer"], dependencies=[Depends(check_token)])
     app.include_router(place_router, prefix="/places", tags=["place"], dependencies=[Depends(check_token)])
 
+    async def _not_found_handler(request: Request, exc: NotFoundError):
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    async def _conflict_handler(request: Request, exc: ConflictError):
+        return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+    app.add_exception_handler(NotFoundError, _not_found_handler)
+    app.add_exception_handler(ConflictError, _conflict_handler)
+
     return app
 
 
@@ -90,13 +99,3 @@ async def read_root():
          )
 async def health_check() -> HealthCheck:
     return HealthCheck(status="OK")
-
-
-@app.exception_handler(NotFoundError)
-async def not_found_handler(request: Request, exc: NotFoundError):
-    return JSONResponse(status_code=404, content={"detail": str(exc)})
-
-
-@app.exception_handler(ConflictError)
-async def conflict_handler(request: Request, exc: ConflictError):
-    return JSONResponse(status_code=409, content={"detail": str(exc)})

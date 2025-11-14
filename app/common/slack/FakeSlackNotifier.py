@@ -55,8 +55,7 @@ class FakeSlackNotifier(SlackNotifierBase):
         await self.send_rich_message(payload)
 
     async def send_new_offer_notification(self, author: str, email: EmailStr, description: str, offer_uuid: str) -> None:
-        # Build the same message format for testing consistency
-        offer_url = f"http://localhost:3000/raw/{offer_uuid}"  # or use settings if needed
+        offer_url = f"http://localhost:3000/raw/{offer_uuid}"
         review_url = f"http://localhost:3000/substytucje-procesowe/review-{offer_uuid}"
 
         message = (

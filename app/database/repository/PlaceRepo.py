@@ -50,10 +50,11 @@ class PlaceRepo(GenericRepo[Place]):
             func.sin(func.radians(self.Model.lat))
         )
 
+        # Detect places WITHIN the given distance threshold (potential duplicates)
         query = select(self.Model).where(
             and_(
                 func.lower(self.Model.name) == name.lower(),
-                haversine > min_distance_km
+                haversine < min_distance_km
             )
         )
 

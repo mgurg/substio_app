@@ -1,23 +1,26 @@
 # tests/service/test_place_service.py
 from types import SimpleNamespace
-
-import pytest
-import pytest_asyncio
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import pytest
+import pytest_asyncio
+
 from app.database.models.enums import PlaceCategory
+from app.exceptions import ConflictError, NotFoundError
+from app.schemas.rest.requests import PlaceAdd
 from app.service.PlaceService import PlaceService
-from app.exceptions import NotFoundError, ConflictError
-from app.schemas.rest.requests import PlaceAdd, CityAdd
+
 
 @pytest_asyncio.fixture
 def city_repo_mock():
     return AsyncMock()
 
+
 @pytest_asyncio.fixture
 def place_repo_mock():
     return AsyncMock()
+
 
 @pytest_asyncio.fixture
 def service(city_repo_mock, place_repo_mock):
