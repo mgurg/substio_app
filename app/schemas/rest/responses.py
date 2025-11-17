@@ -45,7 +45,6 @@ class OfferIndexResponse(BaseResponse):
     author: str
     place_name: str
     description: str
-    email: EmailStr | None
     url: str | None
     place: PlaceResponse | None = None
     city: CityResponse | None = None
