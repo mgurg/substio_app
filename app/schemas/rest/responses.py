@@ -56,6 +56,14 @@ class OfferIndexResponse(BaseResponse):
     created_at: dt.datetime | None = None
 
 
+class OfferMapResponse(BaseResponse):
+    uuid: UUID
+    lat: Annotated[Decimal, Field(max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal, Field(max_digits=10, decimal_places=7)]
+    place_name: str | None = None
+    description: str | None = None
+
+
 class RawOfferIndexResponse(BaseResponse):
     uuid: UUID
     author: str
