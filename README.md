@@ -56,6 +56,12 @@ docker exec -it substio_app .venv/bin/alembic upgrade +1
 Revision History: Use `.venv/bin/alembic history` to see the history of migrations and understand the steps involved.
 Detailed View: Use `.venv/bin/alembic show <revision>` to get detailed information about specific revision scripts.
 
+## Restore postgres backup
+
+```bash
+./restore.sh /home/xxx/pg-dump-postgres-1764903652.dmp
+
+```
 
 ## Tests
 ```bash
