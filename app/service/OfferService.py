@@ -159,7 +159,7 @@ class OfferService:
         hour_str = offer_data.pop("hour", None)
 
         # --- System fields ---
-        offer_data.update_offers(
+        offer_data.update(
             {
                 "uuid": offer_uuid,
                 "offer_uid": str(uuid4()),
