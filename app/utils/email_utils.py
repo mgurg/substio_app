@@ -1,65 +1,59 @@
 import re
 
-EMAIL_REGEX = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+VALID_TLDS = ["pl", "com", "eu", "org.pl", "net.pl", "com.pl"]
+EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
 
 def extract_and_fix_email(text: str) -> str | None:
     """
-    Extract email from text with simple domain fixing for .pl and .com
+    Extract and normalize email addresses from text.
 
-    Args:
-        text: Raw text that might contain an email
-
-    Returns:
-        Valid email string or None if no valid email found
+    Handles common issues like trailing junk after TLDs and numeric prefixes.
     """
     if not isinstance(text, str):
         return None
 
-    email = try_extract_email(text)
-    if email:
-        return email
+    email = _extract_email_candidate(text)
+    if not email:
+        return None
+    cleaned = _clean_email(email)
+    return _extract_email_candidate(cleaned)
 
-    fixed_text = apply_simple_fixes(text)
-    return try_extract_email(fixed_text)
 
-
-def try_extract_email(text: str) -> str | None:
+def _extract_email_candidate(text: str) -> str | None:
     """
-    Try to extract email from text
-
-    Args:
-        text: Text to search for email
-
-    Returns:
-        Valid email string or None if no valid email found
+    Extract the first email-like string from text and validate the basic structure.
     """
-    match = EMAIL_REGEX.search(text)
-    if match:
-        email = match.group(0).lower()
-        # Basic validation - must contain @ and end with valid domain
-        if "@" in email and (email.endswith(".pl") or email.endswith(".com") or
-                             re.search(r"\.[a-z]{2,4}$", email)):
-            return email
-    return None
+    match = EMAIL_PATTERN.search(text)
+    if not match:
+        return None
+
+    email = match.group(0).lower()
+
+    # Validate: must have @ and end with 2-5 letter TLD
+    if "@" not in email:
+        return None
+
+    if not re.search(r"\.[a-z]{2,5}$", email):
+        return None
+
+    return email
 
 
-def apply_simple_fixes(text: str) -> str:
+def _clean_email(email: str) -> str:
     """
-    Strip off any junk after known valid TLDs
+    Remove common artifacts from extracted email strings.
 
-    Args:
-        text: Text containing potentially malformed email
-
-    Returns:
-        Text with simple fixes applied
+    Fixes:
+    - Trailing junk after known TLDs (e.g., ".comxyz" -> ".com")
+    - Leading numeric prefixes (e.g., "12.user@" -> "user@")
     """
-    valid_tlds = ["pl", "com", "eu", "edu.pl", "org.pl", "net.pl", "com.pl"]
+    # Remove trailing junk after known TLDs
+    # Sort by length (longest first) to match multi-part TLDs like "edu.pl" before "pl"
+    for tld in sorted(VALID_TLDS, key=len, reverse=True):
+        pattern = rf"(\.{re.escape(tld)})([a-zA-Z0-9_]+)\b"
+        email = re.sub(pattern, r"\1", email, flags=re.IGNORECASE)
 
-    for tld in valid_tlds:
-        pattern = rf"(\.{tld})([a-zA-Z0-9_]+)\b"
-        text = re.sub(pattern, r"\1", text, flags=re.IGNORECASE)
+    email = re.sub(r"^\d+\.", "", email)
 
-    text = re.sub(r"^\d+\.", "", text)
-
-    return text
+    return email

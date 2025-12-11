@@ -61,15 +61,15 @@ def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferRaw
 
 class OfferService:
     def __init__(
-            self,
-            offer_repo: Annotated[OfferRepo, Depends()],
-            place_repo: Annotated[PlaceRepo, Depends()],
-            city_repo: Annotated[CityRepo, Depends()],
-            legal_role_repo: Annotated[LegalRoleRepo, Depends()],
-            slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
-            email_notifier: EmailNotifierBase = Depends(get_email_notifier),
-            ai_parser: AIParser = Depends(get_ai_parser),
-            email_validator: EmailValidationService = Depends()
+        self,
+        offer_repo: Annotated[OfferRepo, Depends()],
+        place_repo: Annotated[PlaceRepo, Depends()],
+        city_repo: Annotated[CityRepo, Depends()],
+        legal_role_repo: Annotated[LegalRoleRepo, Depends()],
+        slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
+        email_notifier: EmailNotifierBase = Depends(get_email_notifier),
+        ai_parser: AIParser = Depends(get_ai_parser),
+        email_validator: EmailValidationService = Depends(),
     ) -> None:
         self.offer_repo = offer_repo
         self.place_repo = place_repo
@@ -91,12 +91,7 @@ class OfferService:
             if not isinstance(json_data, list):
                 raise HTTPException(status_code=400, detail="JSON file must contain an array of posts")
 
-            import_result = ImportResult(
-                total_records=len(json_data),
-                imported_records=0,
-                skipped_records=0,
-                errors=[]
-            )
+            import_result = ImportResult(total_records=len(json_data), imported_records=0, skipped_records=0, errors=[])
 
             for i, post_data in enumerate(json_data, start=1):
                 try:
@@ -129,8 +124,7 @@ class OfferService:
     async def create_raw_offer(self, offer: OfferRawAdd) -> None:
         db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
         if db_offer:
-            raise HTTPException(status_code=HTTP_409_CONFLICT,
-                                detail=f"Offer with {offer.offer_uid} already exists")
+            raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Offer with {offer.offer_uid} already exists")
         email = None
         if isinstance(offer.raw_data, str):
             email = extract_and_fix_email(offer.raw_data)
@@ -165,14 +159,16 @@ class OfferService:
         hour_str = offer_data.pop("hour", None)
 
         # --- System fields ---
-        offer_data.update_offers({
-            "uuid": offer_uuid,
-            "offer_uid": str(uuid4()),
-            "author_uid": None,
-            "raw_data": None,
-            "added_at": datetime.now(UTC),
-            "status": offer_data.get("status") or OfferStatus.NEW,
-        })
+        offer_data.update(
+            {
+                "uuid": offer_uuid,
+                "offer_uid": str(uuid4()),
+                "author_uid": None,
+                "raw_data": None,
+                "added_at": datetime.now(UTC),
+                "status": offer_data.get("status") or OfferStatus.ACTIVE,
+            }
+        )
 
         # --- Handle date/hour ---
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date() if date_str else None
@@ -214,15 +210,12 @@ class OfferService:
         await self.offer_repo.create(**offer_data)
 
         await self.slack_notifier.send_new_offer_notification(
-            author=offer_add.author,
-            email=offer_add.email,
-            description=offer_add.description,
-            offer_uuid=offer_uuid
+            author=offer_add.author, email=offer_add.email, description=offer_add.description, offer_uuid=offer_uuid
         )
         return None
 
     async def parse_raw_offer(self, offer_uuid: UUID) -> ParseResponse:
-        """ Parse raw offer data using the configured AI parser. """
+        """Parse raw offer data using the configured AI parser."""
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
 
         if not db_offer.raw_data:
@@ -332,9 +325,7 @@ class OfferService:
         recipient_name = offer.author or "User"
 
         success = await self.email_notifier.send_offer_imported_email(
-            recipient_email=recipient_email,
-            recipient_name=recipient_name,
-            offer_uuid=offer_uuid
+            recipient_email=recipient_email, recipient_name=recipient_name, offer_uuid=offer_uuid
         )
 
         if success:
@@ -342,28 +333,31 @@ class OfferService:
         else:
             logger.warning(f"Failed to send email notification for offer {offer_uuid}")
 
-    async def list_raw_offers(self, offset: int,
-                              limit: int,
-                              sort_column: str,
-                              sort_order: str,
-                              filters: OfferFilters) -> tuple[Sequence[Offer], int]:
-
-        filters.load_relations = ["legal_roles", "place", "city"]
-
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters,
-                                                            ["legal_roles", "place", "city"])
+    async def list_map_offers(self, offset: int, limit: int, sort_column: str, sort_order: str, filters: OfferFilters):
+        db_offers, count = await self.offer_repo.get_offers(
+            offset, limit, sort_column, sort_order, filters, ["place", "city"]
+        )
 
         return db_offers, count
 
-    async def list_offers(self, offset: int,
-                          limit: int,
-                          sort_column: str,
-                          sort_order: str,
-                          filters: OfferFilters) -> tuple[Sequence[Offer], int]:
-
+    async def list_raw_offers(
+        self, offset: int, limit: int, sort_column: str, sort_order: str, filters: OfferFilters
+    ) -> tuple[Sequence[Offer], int]:
         filters.load_relations = ["legal_roles", "place", "city"]
-        db_offers, count = await self.offer_repo.get_offers(offset, limit, sort_column, sort_order, filters,
-                                                            ["legal_roles", "place", "city"])
+
+        db_offers, count = await self.offer_repo.get_offers(
+            offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"]
+        )
+
+        return db_offers, count
+
+    async def list_offers(
+        self, offset: int, limit: int, sort_column: str, sort_order: str, filters: OfferFilters
+    ) -> tuple[Sequence[Offer], int]:
+        filters.load_relations = ["legal_roles", "place", "city"]
+        db_offers, count = await self.offer_repo.get_offers(
+            offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"]
+        )
         return db_offers, count
 
     async def get_similar_offers(self, offer_uuid: UUID) -> Sequence[Offer]:

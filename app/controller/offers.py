@@ -14,6 +14,7 @@ from app.schemas.rest.responses import (
     LegalRoleIndexResponse,
     OfferEmail,
     OfferIndexResponse,
+    OfferMapResponse,
     OffersCount,
     OffersPaginated,
     RawOfferIndexResponse,
@@ -51,24 +52,22 @@ async def update_offer(offer_service: offerServiceDependency, offer_uuid: UUID, 
 
 
 @offer_router.get("")
-async def list_offers(offer_service: offerServiceDependency,
-                      search: Annotated[str | None, Query(max_length=50)] = None,
-                      limit: int = 10,
-                      offset: int = 0,
-                      field: Literal["valid_to", "created_at"] = "valid_to",
-                      order: Literal["asc", "desc"] = "asc",
-                      lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
-                      lon: Annotated[float | None, Query(ge=-180, le=180)] = None,
-                      distance_km: Annotated[float | None, Query(gt=0, le=1000)] = None,
-                      legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
-                      invoice: Annotated[bool | None, Query()] = None,
-                      ) -> OffersPaginated:
+async def list_offers(
+    offer_service: offerServiceDependency,
+    search: Annotated[str | None, Query(max_length=50)] = None,
+    limit: int = 10,
+    offset: int = 0,
+    field: Literal["valid_to", "created_at"] = "valid_to",
+    order: Literal["asc", "desc"] = "asc",
+    lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
+    lon: Annotated[float | None, Query(ge=-180, le=180)] = None,
+    distance_km: Annotated[float | None, Query(gt=0, le=1000)] = None,
+    legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
+    invoice: Annotated[bool | None, Query()] = None,
+) -> OffersPaginated:
     location_params = [lat, lon, distance_km]
     if any(param is not None for param in location_params) and not all(param is not None for param in location_params):
-        raise HTTPException(
-            status_code=400,
-            detail="lat, lon, and distance_km must all be provided together for location filtering"
-        )
+        raise HTTPException(status_code=400, detail="lat, lon, and distance_km must all be provided together for location filtering")
 
     filters = OfferFilters(
         search=search,
@@ -82,7 +81,7 @@ async def list_offers(offer_service: offerServiceDependency,
         legal_role_uuids=legal_role_uuids,
         invoice=invoice,
         status=OfferStatus.ACTIVE,
-        valid_to=datetime.now(UTC) - timedelta(hours=12)
+        valid_to=datetime.now(UTC) - timedelta(hours=12),
     )
 
     db_offers, count = await offer_service.list_offers(offset, limit, field, order, filters)
@@ -91,26 +90,29 @@ async def list_offers(offer_service: offerServiceDependency,
 
 
 @offer_router.get("/raw")
-async def list_raw_offers(offer_service: offerServiceDependency,
-                          search: Annotated[str | None, Query(max_length=50)] = None,
-                          limit: int = 10,
-                          offset: int = 0,
-                          status: Annotated[OfferStatus | None, Query()] = None,
-                          field: Literal["name", "created_at"] = "created_at",
-                          order: Literal["asc", "desc"] = "desc",
-                          ) -> RawOffersPaginated:
-    filters = OfferFilters(
-        search=search,
-        limit=limit,
-        offset=offset,
-        sort_column=field,
-        sort_order=order,
-        status=status
-    )
+async def list_raw_offers(
+    offer_service: offerServiceDependency,
+    search: Annotated[str | None, Query(max_length=50)] = None,
+    limit: int = 10,
+    offset: int = 0,
+    status: Annotated[OfferStatus | None, Query()] = None,
+    field: Literal["name", "created_at"] = "created_at",
+    order: Literal["asc", "desc"] = "desc",
+) -> RawOffersPaginated:
+    filters = OfferFilters(search=search, limit=limit, offset=offset, sort_column=field, sort_order=order, status=status)
 
     db_offers, count = await offer_service.list_raw_offers(offset, limit, field, order, filters)
 
     return RawOffersPaginated(data=db_offers, count=count, offset=offset, limit=limit)
+
+
+@offer_router.get("/map")
+async def list_map_offers(offer_service: offerServiceDependency) -> list[OfferMapResponse]:
+    filters = OfferFilters(limit=100, offset=0, status=OfferStatus.ACTIVE, valid_to=datetime.now(UTC) - timedelta(hours=12))
+
+    db_offers, count = await offer_service.list_raw_offers(0, 100, "created_at", "desc", filters)
+
+    return db_offers
 
 
 @offer_router.get("/{offer_uuid}")
@@ -126,8 +128,7 @@ async def get_offer_email(offer_service: offerServiceDependency, offer_uuid: UUI
 
 
 @offer_router.get("/{offer_uuid}/similar")
-async def get_similar_offers_by_user(offer_service: offerServiceDependency, offer_uuid: UUID) -> list[
-    SimilarOfferIndexResponse]:
+async def get_similar_offers_by_user(offer_service: offerServiceDependency, offer_uuid: UUID) -> list[SimilarOfferIndexResponse]:
     return await offer_service.get_similar_offers(offer_uuid)
 
 
@@ -139,8 +140,7 @@ async def create_raw_offer(offer_service: offerServiceDependency, offer_add: Off
 
 
 @offer_router.post("/raw/import")
-async def import_raw_offers(offer_service: offerServiceDependency,
-                            file: Annotated[UploadFile, File(...)]) -> ImportResult:
+async def import_raw_offers(offer_service: offerServiceDependency, file: Annotated[UploadFile, File(...)]) -> ImportResult:
     return await offer_service.import_raw_offers(file)
 
 

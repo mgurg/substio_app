@@ -7,7 +7,7 @@ import pytest
 
 def make_offer_payload(uid: str, author: str = "john", author_uid: str = "u1") -> dict:
     return {
-        "raw_data": "Some raw offer text about case in court",
+        "raw_data": "Some raw offer text about case in court with mail@mail.com",
         "author": author,
         "author_uid": author_uid,
         "offer_uid": uid,
@@ -37,7 +37,13 @@ def test_create_and_list_raw_offers(client):
 
     # Ensure important fields exist
     item = body["data"][0]
-    assert {"uuid", "author", "author_uid", "offer_uid", "raw_data", "source", "added_at"}.issubset(item.keys())
+    assert {"uuid", "author", "author_uid", "offer_uid", "raw_data", "source", "added_at", "email"}.issubset(item.keys())
+
+
+@pytest.mark.integration
+@pytest.mark.skip(reason="not implemented")
+def test_list_offers(client):
+    ...
 
 
 @pytest.mark.integration
