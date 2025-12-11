@@ -166,7 +166,7 @@ class OfferService:
                 "author_uid": None,
                 "raw_data": None,
                 "added_at": datetime.now(UTC),
-                "status": offer_data.get("status") or OfferStatus.NEW,
+                "status": offer_data.get("status") or OfferStatus.ACTIVE,
             }
         )
 
