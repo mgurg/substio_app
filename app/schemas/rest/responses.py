@@ -62,6 +62,7 @@ class OfferMapResponse(BaseResponse):
     lon: Annotated[Decimal, Field(max_digits=10, decimal_places=7)]
     place_name: str | None = None
     description: str | None = None
+    date: dt.date | None = None
 
 
 class RawOfferIndexResponse(BaseResponse):
