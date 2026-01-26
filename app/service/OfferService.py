@@ -1,17 +1,14 @@
 import json
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Annotated
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
-from fastapi import Depends, HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile
 from loguru import logger
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 from app.common.email.EmailNotifierBase import EmailNotifierBase
-from app.common.email.factory import get_email_notifier
-from app.common.slack.factory import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
@@ -26,7 +23,6 @@ from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, Offer
 from app.schemas.rest.responses import ImportResult
 from app.service.EmailValidationService import EmailValidationService
 from app.service.parsers.base import AIParser
-from app.service.parsers.factory import get_ai_parser
 from app.utils.email_utils import extract_and_fix_email
 from app.utils.timestamp_utils import extract_timestamp_from_filename
 
@@ -62,14 +58,14 @@ def parse_facebook_post_to_offer(post: FacebookPost, filename: str) -> "OfferRaw
 class OfferService:
     def __init__(
         self,
-        offer_repo: Annotated[OfferRepo, Depends()],
-        place_repo: Annotated[PlaceRepo, Depends()],
-        city_repo: Annotated[CityRepo, Depends()],
-        legal_role_repo: Annotated[LegalRoleRepo, Depends()],
-        slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
-        email_notifier: EmailNotifierBase = Depends(get_email_notifier),
-        ai_parser: AIParser = Depends(get_ai_parser),
-        email_validator: EmailValidationService = Depends(),
+        offer_repo: OfferRepo,
+        place_repo: PlaceRepo,
+        city_repo: CityRepo,
+        legal_role_repo: LegalRoleRepo,
+        slack_notifier: SlackNotifierBase,
+        email_notifier: EmailNotifierBase,
+        ai_parser: AIParser,
+        email_validator: EmailValidationService,
     ) -> None:
         self.offer_repo = offer_repo
         self.place_repo = place_repo
