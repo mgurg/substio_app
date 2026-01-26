@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import BinaryExpression, and_, func, select
+from sqlalchemy import BinaryExpression, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -107,7 +107,14 @@ class OfferRepo(GenericRepo[Offer]):
             conditions.append(self.Model.status == filters.status)
 
         if filters.search:
-            conditions.append(self.Model.description.ilike(f"%{filters.search}%"))
+            search_terms = []
+            search_fields = filters.search_fields or ["description"]
+            for field in search_fields:
+                column = getattr(self.Model, field, None)
+                if column is not None:
+                    search_terms.append(column.ilike(f"%{filters.search}%"))
+            if search_terms:
+                conditions.append(or_(*search_terms))
 
         if filters.invoice is not None:
             conditions.append(self.Model.invoice == filters.invoice)

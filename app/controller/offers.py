@@ -96,11 +96,20 @@ async def list_raw_offers(
     search: Annotated[str | None, Query(max_length=50)] = None,
     limit: int = 10,
     offset: int = 0,
-    status: Annotated[OfferStatus | None, Query()] = None,
+    status: Annotated[str | None, Query()] = None,
     field: Literal["name", "created_at"] = "created_at",
     order: Literal["asc", "desc"] = "desc",
 ) -> RawOffersPaginated:
-    filters = OfferFilters(search=search, limit=limit, offset=offset, sort_column=field, sort_order=order, status=status)
+    normalized_status = None
+    if status is not None:
+        try:
+            normalized_status = OfferStatus(status.lower())
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Invalid status") from exc
+
+    filters = OfferFilters(
+        search=search, limit=limit, offset=offset, sort_column=field, sort_order=order, status=normalized_status
+    )
 
     db_offers, count = await offer_service.list_raw_offers(offset, limit, field, order, filters)
 

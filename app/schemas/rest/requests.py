@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
 from app.schemas.validators.validators import round_to_7_decimal_places
@@ -33,6 +33,12 @@ class OfferAdd(BaseModel):
     status: OfferStatus | None = None
     roles: list[UUID] | None = None
     source: SourceType
+
+    @model_validator(mode="after")
+    def validate_location(self):
+        if self.city_uuid is None and self.facility_uuid is None:
+            raise ValueError("city_uuid or facility_uuid is required")
+        return self
 
 
 class FacebookPost(BaseModel):

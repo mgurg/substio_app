@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
 
@@ -49,11 +49,19 @@ class OfferIndexResponse(BaseResponse):
     place: PlaceResponse | None = None
     city: CityResponse | None = None
     place_name: str | None = None
+    invoice: bool | None = None
     legal_roles: list[RolesResponse]
     date: dt.date | None = None
     hour: dt.time | None = None
     valid_to: dt.datetime | None = None
     created_at: dt.datetime | None = None
+
+    @computed_field
+    @property
+    def city_uuid(self) -> UUID | None:
+        if self.city:
+            return self.city.uuid
+        return None
 
 
 class OfferMapResponse(BaseResponse):
@@ -74,7 +82,7 @@ class RawOfferIndexResponse(BaseResponse):
     source: SourceType
     author: str | None = None
     description: str | None = None
-    email: EmailStr | None
+    email: str | None
     url: str | None
     invoice: bool | None = None
     place: PlaceResponse | None = None

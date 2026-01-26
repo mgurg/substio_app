@@ -200,6 +200,8 @@ class OfferService:
         # --- Resolve roles ---
         if roles_uuids:
             roles = await self.legal_role_repo.get_by_uuids(roles_uuids)
+            if len(roles) != len(set(roles_uuids)):
+                raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Legal role not found")
             offer_data["legal_roles"] = roles
 
         # --- Create in DB ---
@@ -341,6 +343,9 @@ class OfferService:
         self, offset: int, limit: int, sort_column: str, sort_order: str, filters: OfferFilters
     ) -> tuple[Sequence[Offer], int]:
         filters.load_relations = ["legal_roles", "place", "city"]
+        filters.search_fields = ["offer_uid", "raw_data", "author"]
+        if sort_column == "name":
+            sort_column = "author"
 
         db_offers, count = await self.offer_repo.get_offers(
             offset, limit, sort_column, sort_order, filters, ["legal_roles", "place", "city"]
@@ -381,6 +386,10 @@ class OfferService:
 
     async def accept_raw_offer(self, offer_uuid: UUID) -> None:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid)
+        if db_offer.status == OfferStatus.REJECTED:
+            raise HTTPException(status_code=HTTP_409_CONFLICT, detail="Cannot accept rejected offer")
+        if db_offer.status == OfferStatus.ACTIVE:
+            return None
         await self.offer_repo.update(db_offer.id, **{"status": OfferStatus.ACTIVE})
 
         return None
