@@ -1,4 +1,5 @@
-from datetime import UTC, datetime
+import json
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -7,7 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 import pytest_asyncio
 from fastapi import HTTPException
-from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
 import app.service.OfferService as offer_service_module
 from app.database.models.enums import OfferStatus, SourceType
@@ -92,6 +93,15 @@ def test_parse_facebook_post_to_offer_uses_filename_when_invalid_date():
     assert offer.timestamp == datetime(2025, 8, 19, 11, 8, 12)
     assert offer.source == SourceType.BOT
     assert offer.author == "Test User"
+
+
+class _UploadFileStub:
+    def __init__(self, filename: str | None, content: bytes):
+        self.filename = filename
+        self._content = content
+
+    async def read(self) -> bytes:
+        return self._content
 
 
 @pytest.mark.asyncio
@@ -181,6 +191,134 @@ async def test_create_offer_raises_when_legal_roles_missing(service, legal_role_
         await service.create_offer(offer_add)
 
     assert exc.value.status_code == HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_create_offer_defaults_valid_to_when_no_date_or_hour(service, offer_repo_mock, city_repo_mock):
+    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=2, lat=50.0, lon=20.0)
+    offer_add = OfferAdd(
+        author="Author",
+        city_uuid=uuid4(),
+        email="author@example.com",
+        source=SourceType.USER,
+    )
+
+    before_call = datetime.now(UTC)
+    await service.create_offer(offer_add)
+    after_call = datetime.now(UTC)
+
+    created_kwargs = offer_repo_mock.create.call_args.kwargs
+    assert before_call + timedelta(days=7) <= created_kwargs["valid_to"] <= after_call + timedelta(days=7)
+
+
+@pytest.mark.asyncio
+async def test_import_raw_offers_rejects_non_json_extension(service):
+    file = _UploadFileStub(filename="offers.txt", content=b"[]")
+    with pytest.raises(HTTPException) as exc:
+        await service.import_raw_offers(file)
+    assert exc.value.status_code == HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.asyncio
+async def test_import_raw_offers_rejects_invalid_json(service):
+    file = _UploadFileStub(filename="offers.json", content=b"{not-json")
+    with pytest.raises(HTTPException) as exc:
+        await service.import_raw_offers(file)
+    assert exc.value.status_code == HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.asyncio
+async def test_import_raw_offers_rejects_non_list_json(service):
+    file = _UploadFileStub(filename="offers.json", content=b"{\"a\":1}")
+    with pytest.raises(HTTPException) as exc:
+        await service.import_raw_offers(file)
+    assert exc.value.status_code == HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.asyncio
+async def test_import_raw_offers_handles_skips_and_conflicts(service, offer_repo_mock, monkeypatch):
+    offer_repo_mock.get_by_offer_uid.return_value = None
+    monkeypatch.setattr(offer_service_module, "extract_and_fix_email", lambda _: None)
+
+    def _get_by_offer_uid_side_effect(offer_uid):
+        if offer_uid == "dup":
+            return SimpleNamespace()
+        return None
+
+    offer_repo_mock.get_by_offer_uid.side_effect = _get_by_offer_uid_side_effect
+    posts = [
+        {
+            "User Name": "A",
+            "User Profile URL": "u1",
+            "Post URL": "dup",
+            "Post Content": "content",
+            "Date Posted": "2025-01-01T10:00:00",
+        },
+        {
+            "User Name": "B",
+            "User Profile URL": "u2",
+            "Post URL": "u2",
+            "Post Content": "nieaktualne offer",
+            "Date Posted": "2025-01-02T10:00:00",
+        },
+        {
+            "User Name": "C",
+            "User Profile URL": "u3",
+            "Post URL": "u3",
+            "Post Content": "valid",
+            "Date Posted": "2025-01-03T10:00:00",
+        },
+    ]
+    file = _UploadFileStub(filename="offers.json", content=json.dumps(posts).encode("utf-8"))
+
+    result = await service.import_raw_offers(file)
+
+    assert result.total_records == 3
+    assert result.imported_records == 1
+    assert result.skipped_records == 2
+    assert len(result.errors) == 2
+
+
+@pytest.mark.asyncio
+async def test_update_offers_rejects_invalid_date(service, offer_repo_mock):
+    offer_uuid = uuid4()
+    db_offer = SimpleNamespace(
+        id=1,
+        uuid="offer-uuid",
+        legal_roles=[],
+        place=None,
+        city=None,
+        status=OfferStatus.NEW,
+        email="old@example.com",
+        source=SourceType.BOT,
+    )
+    offer_repo_mock.get_by_uuid.return_value = db_offer
+
+    offer_update = OfferUpdate(date="2025-13-01")
+
+    with pytest.raises(HTTPException) as exc:
+        await service.update_offers(offer_uuid, offer_update)
+    assert exc.value.status_code == HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.asyncio
+async def test_parse_raw_offer_raises_when_no_raw_data(service, offer_repo_mock):
+    offer_uuid = uuid4()
+    offer_repo_mock.get_by_uuid.return_value = SimpleNamespace(raw_data=None)
+
+    with pytest.raises(HTTPException) as exc:
+        await service.parse_raw_offer(offer_uuid)
+    assert exc.value.status_code == HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_accept_raw_offer_skips_when_active(service, offer_repo_mock):
+    offer_uuid = uuid4()
+    offer_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=1, status=OfferStatus.ACTIVE)
+
+    await service.accept_raw_offer(offer_uuid)
+
+    offer_repo_mock.update.assert_not_awaited()
 
 
 @pytest.mark.asyncio

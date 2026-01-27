@@ -80,6 +80,8 @@ class OfferService:
         self._validate_json_upload(file)
         try:
             json_data = self._parse_json_upload(await file.read())
+        except HTTPException:
+            raise
         except json.JSONDecodeError as err:
             raise HTTPException(status_code=400, detail="Invalid JSON file") from err
         except Exception as e:
