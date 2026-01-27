@@ -205,9 +205,10 @@ class OfferService:
         # --- Create in DB ---
         await self.offer_repo.create(**offer_data)
 
-        await self.slack_notifier.send_new_offer_notification(
-            author=offer_add.author, email=offer_add.email, description=offer_add.description, offer_uuid=offer_uuid
-        )
+        if offer_add.source != SourceType.BOT:
+            await self.slack_notifier.send_new_offer_notification(
+                author=offer_add.author, email=offer_add.email, description=offer_add.description, offer_uuid=offer_uuid
+            )
         return None
 
     async def parse_raw_offer(self, offer_uuid: UUID) -> ParseResponse:
