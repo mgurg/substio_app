@@ -1,20 +1,16 @@
-from typing import Annotated
+from collections.abc import Sequence
 from uuid import UUID
 
-from fastapi import Depends
-from sqlalchemy import Sequence, desc, func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.db import get_db
 from app.database.models.models import City
 from app.database.repository.generics import GenericRepo
 from app.exceptions import NotFoundError
 
-UserDB = Annotated[AsyncSession, Depends(get_db)]
-
 
 class CityRepo(GenericRepo[City]):
-    def __init__(self, session: UserDB) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.Model = City
         super().__init__(session, self.Model)
 

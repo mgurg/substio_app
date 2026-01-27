@@ -1,20 +1,15 @@
 from collections.abc import Sequence
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.db import get_db
 from app.database.models.models import LegalRole
 from app.database.repository.generics import GenericRepo
 
-UserDB = Annotated[AsyncSession, Depends(get_db)]
-
 
 class LegalRoleRepo(GenericRepo[LegalRole]):
-    def __init__(self, session: UserDB) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.Model = LegalRole
         super().__init__(session, self.Model)
 

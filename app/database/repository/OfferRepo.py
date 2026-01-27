@@ -1,28 +1,23 @@
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends
 from sqlalchemy import BinaryExpression, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.database.db import get_db
 from app.database.models.enums import OfferStatus
 from app.database.models.models import LegalRole, Offer, Place
 from app.database.repository.filters.offer_filters import OfferFilters
 from app.database.repository.generics import GenericRepo
 from app.exceptions import NotFoundError
 
-UserDB = Annotated[AsyncSession, Depends(get_db)]
-
 
 class OfferRepo(GenericRepo[Offer]):
     EARTH_RADIUS_KM = 6371
     KM_PER_DEGREE_LAT = 111.0
 
-    def __init__(self, session: UserDB) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.Model = Offer
         super().__init__(session, self.Model)
 
