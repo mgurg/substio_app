@@ -710,7 +710,7 @@ def test_list_raw_offers_with_status_filter(client):
     client.patch(f"/offers/raw/{offer_uuid}/accept")
 
     # Filter by active status
-    response = client.get("/offers/raw", params={"status": "ACTIVE"})
+    response = client.get("/offers/raw", params={"status": "active"})
     assert response.status_code == 200
     data = response.json()["data"]
 
