@@ -23,7 +23,7 @@ RUN adduser \
 WORKDIR /src
 
 # Install uv.
-COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /bin/uv
 ENV UV_PYTHON_PREFERENCE=only-system
 
 # Copy dependency files first
