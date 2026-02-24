@@ -13,6 +13,7 @@ class OfferFilters(BaseModel):
     sort_order: str = "desc"
     status: OfferStatus | None = None
     search: str | None = None
+    search_fields: list[str] | None = None
     load_relations: list[str] | str | None = None
     lat: float | None = None
     lon: float | None = None

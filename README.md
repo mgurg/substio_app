@@ -64,6 +64,7 @@ Detailed View: Use `.venv/bin/alembic show <revision>` to get detailed informati
 ```
 
 ## Tests
+
 ```bash
 pytest -q tests
 ```
@@ -118,10 +119,17 @@ TRUNCATE TABLE places RESTART IDENTITY CASCADE ;
 ```
 
 ## LLM prices
+
 ```bash
 uvx genai-prices list
 ```
 
 ```bash
-uvx genai-prices calc --input-tokens 100000 --output-tokens 3000 GPT-5-nano GPT-4.1-nano GPT-5 claude-sonnet-4-0 claude-sonnet-4-5
+uvx genai-prices calc --input-tokens 1000000 --output-tokens 30000 \
+  GPT-5-nano \
+  GPT-5-mini \
+  GPT-5.1 \
+  GPT-5.2 \
+  claude-sonnet-3-7 \
+  claude-sonnet-4-5 \
 ```

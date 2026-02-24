@@ -100,7 +100,9 @@ async def list_raw_offers(
     field: Literal["name", "created_at"] = "created_at",
     order: Literal["asc", "desc"] = "desc",
 ) -> RawOffersPaginated:
-    filters = OfferFilters(search=search, limit=limit, offset=offset, sort_column=field, sort_order=order, status=status)
+    filters = OfferFilters(
+        search=search, limit=limit, offset=offset, sort_column=field, sort_order=order, status=status
+    )
 
     db_offers, count = await offer_service.list_raw_offers(offset, limit, field, order, filters)
 
