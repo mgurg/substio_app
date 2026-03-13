@@ -107,12 +107,7 @@ class PolandFacilityFetcher:
             return None
 
         # Coordinates
-        if element_type == "node" and hasattr(element, "lat") and hasattr(element, "lon"):
-            lat, lon = element.lat, element.lon
-        elif hasattr(element, "center_lat") and hasattr(element, "center_lon"):
-            lat, lon = element.center_lat, element.center_lon
-        else:
-            lat = lon = None
+        lat, lon = self._get_coordinates(element, element_type)
 
         if lat is None or lon is None:
             return None
@@ -121,7 +116,45 @@ class PolandFacilityFetcher:
         lon = float(lon)
 
         # Name-based type mapping
-        name = tags.get("name", "").lower()
+        type_code = self._get_facility_type_code(tags.get("name", ""), facility_type)
+
+        # Address parts
+        street = tags.get("addr:street")
+        housenumber = tags.get("addr:housenumber")
+        postal_code = tags.get("addr:postcode")
+        city = tags.get("addr:city")
+        street_full = f"{street} {housenumber}".strip() if street or housenumber else None
+
+        # Contact
+        phone = tags.get("phone") or tags.get("contact:phone")
+        email = tags.get("email") or tags.get("contact:email")
+        website = tags.get("website") or tags.get("contact:website")
+
+        return {
+            "type": type_code,
+            "name": facility_name,
+            "street": street_full,
+            "postal_code": postal_code,
+            "city": city,
+            "phone": phone,
+            "email": email,
+            "epuap": None,
+            "department": None,
+            "lat": lat,
+            "lon": lon,
+            "category": facility_type,
+            "website": website,
+        }
+
+    def _get_coordinates(self, element, element_type: str) -> tuple[Any, Any]:
+        if element_type == "node" and hasattr(element, "lat") and hasattr(element, "lon"):
+            return element.lat, element.lon
+        elif hasattr(element, "center_lat") and hasattr(element, "center_lon"):
+            return element.center_lat, element.center_lon
+        return None, None
+
+    def _get_facility_type_code(self, name: str, facility_type: str) -> str:
+        name = name.lower()
         type_code = None
 
         police_types = {
@@ -154,33 +187,7 @@ class PolandFacilityFetcher:
             if not type_code:
                 type_code = "PRO"
 
-        # Address parts
-        street = tags.get("addr:street")
-        housenumber = tags.get("addr:housenumber")
-        postal_code = tags.get("addr:postcode")
-        city = tags.get("addr:city")
-        street_full = f"{street} {housenumber}".strip() if street or housenumber else None
-
-        # Contact
-        phone = tags.get("phone") or tags.get("contact:phone")
-        email = tags.get("email") or tags.get("contact:email")
-        website = tags.get("website") or tags.get("contact:website")
-
-        return {
-            "type": type_code,
-            "name": facility_name,
-            "street": street_full,
-            "postal_code": postal_code,
-            "city": city,
-            "phone": phone,
-            "email": email,
-            "epuap": None,
-            "department": None,
-            "lat": lat,
-            "lon": lon,
-            "category": facility_type,
-            "website": website,
-        }
+        return type_code
 
     def save_to_json(self, data: list[dict[str, Any]], filename: str,
                      facility_type: str) -> None:

@@ -31,7 +31,7 @@ def send_places_to_api(item, api_url):
 
         response = requests.post(api_url, json=item, headers=AUTH_HEADER)
         response.raise_for_status()
-        print('.', end='', flush=True)
+        print(".", end="", flush=True)
     except RequestException as e:
         logger.error(f"Error sending item `{item['id']}` - {item['name']}: {e}")
 
@@ -44,11 +44,11 @@ def send_cities_to_api(item, api_url):
         if e.response is not None and e.response.status_code != 409:
             logger.error(f"Error, city: {item['city_name']} {e.response.text}")
         else:
-            print('.', end='', flush=True)
+            print(".", end="", flush=True)
 
 
 def main(mode, env):
-    api_url = PROD_API_URL if env == 'prod' else LOCAL_API_URL
+    api_url = PROD_API_URL if env == "prod" else LOCAL_API_URL
     json_file = JSON_FILES[mode]
 
     data = load_json_file(json_file)
@@ -71,8 +71,8 @@ if __name__ == "__main__":
     # uv run uploader.py --env prod --mode cities
 
     parser = argparse.ArgumentParser(description="Send place/city data to API.")
-    parser.add_argument('--env', choices=['local', 'prod'], default='local', help="Environment to use: local or prod")
-    parser.add_argument('--mode', choices=['places', 'cities'], required=True,
+    parser.add_argument("--env", choices=["local", "prod"], default="local", help="Environment to use: local or prod")
+    parser.add_argument("--mode", choices=["places", "cities"], required=True,
                         help="Data type to send: places or cities")
 
     args = parser.parse_args()

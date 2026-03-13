@@ -3,15 +3,53 @@ import types
 import pytest
 
 
+class DummySettings:
+    API_KEY_MAILERSEND = "key"
+    APP_ADMIN_MAIL = "admin@example.com"
+    APP_DOMAIN = "example.com"
+    APP_URL = "http://app.example"
+
+
+class DummyBuilderBase:
+    def __init__(self):
+        self.bcc_calls = 0
+
+    def from_email(self, email, name):
+        return self
+
+    def to_many(self, arr):
+        return self
+
+    def subject(self, s):
+        return self
+
+    def template(self, t):
+        return self
+
+    def personalize_many(self, arr):
+        return self
+
+    def bcc(self, email):
+        self.bcc_calls += 1
+        return self
+
+    def build(self):
+        return {}
+
+
+class DummyEmailClient:
+    class Emails:
+        def send(self, email):
+            return types.SimpleNamespace(data={"ok": True})
+
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.emails = self.Emails()
+
+
 @pytest.mark.asyncio
 async def test_mailersend_send_custom_email_success(monkeypatch):
     from app.common.email import MailerSendNotifier as email_mod
-
-    class DummySettings:
-        API_KEY_MAILERSEND = "key"
-        APP_ADMIN_MAIL = "admin@example.com"
-        APP_DOMAIN = "example.com"
-        APP_URL = "http://app.example"
 
     monkeypatch.setattr(email_mod, "settings", DummySettings)
 
@@ -21,7 +59,7 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
     # Dummy builder with chainable API
     calls = {"from_email": None, "to_many": None, "subject": None, "template": None, "personalize_many": None, "bcc": 0, "build": 0}
 
-    class DummyBuilder:
+    class DummyBuilder(DummyBuilderBase):
         def from_email(self, email, name):
             calls["from_email"] = (email, name)
             return self
@@ -50,15 +88,6 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
             calls["build"] += 1
             return {"built": True}
 
-    class DummyEmailClient:
-        class Emails:
-            def send(self, email):
-                return types.SimpleNamespace(data={"ok": True})
-
-        def __init__(self, api_key):
-            self.api_key = api_key
-            self.emails = self.Emails()
-
     monkeypatch.setattr(email_mod, "EmailBuilder", lambda: DummyBuilder())
     monkeypatch.setattr(email_mod, "MailerSendClient", DummyEmailClient)
 
@@ -86,53 +115,12 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
 async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
     from app.common.email import MailerSendNotifier as email_mod
 
-    class DummySettings:
-        API_KEY_MAILERSEND = "key"
-        APP_ADMIN_MAIL = "admin@example.com"
-        APP_DOMAIN = "example.com"
-        APP_URL = "http://app.example"
-
     monkeypatch.setattr(email_mod, "settings", DummySettings)
 
     # Force randint to trigger BCC branch
     monkeypatch.setattr(email_mod, "randint", lambda a, b: 1)
 
-    class DummyBuilder:
-        def __init__(self):
-            self.bcc_calls = 0
-
-        def from_email(self, email, name):
-            return self
-
-        def to_many(self, arr):
-            return self
-
-        def subject(self, s):
-            return self
-
-        def template(self, t):
-            return self
-
-        def personalize_many(self, arr):
-            return self
-
-        def bcc(self, email):
-            self.bcc_calls += 1
-            return self
-
-        def build(self):
-            return {}
-
-    class DummyEmailClient:
-        class Emails:
-            def send(self, email):
-                return types.SimpleNamespace(data={"ok": True})
-
-        def __init__(self, api_key):
-            self.api_key = api_key
-            self.emails = self.Emails()
-
-    dummy_builder = DummyBuilder()
+    dummy_builder = DummyBuilderBase()
 
     monkeypatch.setattr(email_mod, "EmailBuilder", lambda: dummy_builder)
     monkeypatch.setattr(email_mod, "MailerSendClient", DummyEmailClient)
