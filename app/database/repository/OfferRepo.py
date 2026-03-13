@@ -107,14 +107,7 @@ class OfferRepo(GenericRepo[Offer]):
             conditions.append(self.Model.status == filters.status)
 
         if filters.search:
-            search_terms = []
-            search_fields = filters.search_fields or ["description"]
-            for field in search_fields:
-                column = getattr(self.Model, field, None)
-                if column is not None:
-                    search_terms.append(column.ilike(f"%{filters.search}%"))
-            if search_terms:
-                conditions.append(or_(*search_terms))
+            self._add_search_filter(conditions, filters)
 
         if filters.invoice is not None:
             conditions.append(self.Model.invoice == filters.invoice)
@@ -133,6 +126,16 @@ class OfferRepo(GenericRepo[Offer]):
         if conditions:
             query = query.filter(and_(*conditions))
         return query
+
+    def _add_search_filter(self, conditions, filters: OfferFilters):
+        search_terms = []
+        search_fields = filters.search_fields or ["description"]
+        for field in search_fields:
+            column = getattr(self.Model, field, None)
+            if column is not None:
+                search_terms.append(column.ilike(f"%{filters.search}%"))
+        if search_terms:
+            conditions.append(or_(*search_terms))
 
     def _distance_filter(self, lat: float, lon: float, distance_km: float):
         lat_diff = distance_km / self.KM_PER_DEGREE_LAT
