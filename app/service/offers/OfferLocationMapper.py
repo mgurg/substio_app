@@ -1,4 +1,3 @@
-from uuid import UUID
 from app.database.models.models import Offer
 
 
