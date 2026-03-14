@@ -1,9 +1,12 @@
-from loguru import logger
 from uuid import UUID
+
+from loguru import logger
+
 from app.common.email.EmailNotifierBase import EmailNotifierBase
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.database.models.models import Offer
 from app.database.models.enums import SourceType
+from app.database.models.models import Offer
+
 
 class OfferNotificationService:
     def __init__(

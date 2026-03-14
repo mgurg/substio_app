@@ -1,17 +1,13 @@
-import json
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time
 from uuid import UUID, uuid4
-from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, UploadFile
 from loguru import logger
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.common.email.EmailNotifierBase import EmailNotifierBase
-from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.config import get_settings
-from app.database.models.enums import OfferStatus, SourceType
+from app.database.models.enums import OfferStatus
 from app.database.models.models import Offer
 from app.database.repository.CityRepo import CityRepo
 from app.database.repository.filters.offer_filters import OfferFilters

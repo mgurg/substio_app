@@ -1,10 +1,8 @@
 import json
 from datetime import UTC, datetime
-from typing import Annotated
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
-from loguru import logger
 from starlette.status import HTTP_409_CONFLICT
 
 from app.database.models.enums import OfferStatus, SourceType
