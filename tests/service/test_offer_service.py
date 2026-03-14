@@ -10,10 +10,12 @@ import pytest_asyncio
 from fastapi import HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-import app.service.OfferService as offer_service_module
+import app.service.offers.OfferImportService as offer_import_service_module
 from app.database.models.enums import OfferStatus, SourceType
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
-from app.service.OfferService import OfferService, parse_facebook_post_to_offer
+from app.service.OfferService import OfferService
+from app.service.offers.OfferImportService import OfferImportService, parse_facebook_post_to_offer
+from app.service.offers.OfferNotificationService import OfferNotificationService
 
 
 @pytest_asyncio.fixture
@@ -57,25 +59,30 @@ def email_validator_mock():
 
 
 @pytest_asyncio.fixture
+def notification_service_mock():
+    return AsyncMock()
+
+
+@pytest_asyncio.fixture
 def service(
     offer_repo_mock,
     place_repo_mock,
     city_repo_mock,
     legal_role_repo_mock,
-    slack_notifier_mock,
-    email_notifier_mock,
     ai_parser_mock,
     email_validator_mock,
+    notification_service_mock,
 ):
+    offer_import_service = OfferImportService(offer_repo=offer_repo_mock)
     return OfferService(
         offer_repo=offer_repo_mock,
         place_repo=place_repo_mock,
         city_repo=city_repo_mock,
         legal_role_repo=legal_role_repo_mock,
-        slack_notifier=slack_notifier_mock,
-        email_notifier=email_notifier_mock,
         ai_parser=ai_parser_mock,
         email_validator=email_validator_mock,
+        offer_import_service=offer_import_service,
+        notification_service=notification_service_mock,
     )
 
 
@@ -106,7 +113,7 @@ class _UploadFileStub:
 
 @pytest.mark.asyncio
 async def test_create_raw_offer_sets_email_and_status_new(service, offer_repo_mock, monkeypatch):
-    monkeypatch.setattr(offer_service_module, "extract_and_fix_email", lambda _: "user@example.com")
+    monkeypatch.setattr(offer_import_service_module, "extract_and_fix_email", lambda _: "user@example.com")
     offer_repo_mock.get_by_offer_uid.return_value = None
 
     offer = OfferRawAdd(
@@ -146,7 +153,7 @@ async def test_create_raw_offer_duplicate_raises_conflict(service, offer_repo_mo
 
 
 @pytest.mark.asyncio
-async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mock, city_repo_mock, slack_notifier_mock):
+async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mock, city_repo_mock, notification_service_mock):
     city_uuid = uuid4()
     city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=12, lat=52.1, lon=21.0)
 
@@ -171,7 +178,7 @@ async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mo
     assert created_kwargs["city_id"] == 12
     assert created_kwargs["lat"] == 52.1
     assert created_kwargs["lon"] == 21.0
-    slack_notifier_mock.send_new_offer_notification.assert_awaited_once()
+    notification_service_mock.notify_new_offer_slack.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -238,7 +245,7 @@ async def test_import_raw_offers_rejects_non_list_json(service):
 @pytest.mark.asyncio
 async def test_import_raw_offers_handles_skips_and_conflicts(service, offer_repo_mock, monkeypatch):
     offer_repo_mock.get_by_offer_uid.return_value = None
-    monkeypatch.setattr(offer_service_module, "extract_and_fix_email", lambda _: None)
+    monkeypatch.setattr(offer_import_service_module, "extract_and_fix_email", lambda _: None)
 
     def _get_by_offer_uid_side_effect(offer_uid):
         if offer_uid == "dup":
@@ -326,7 +333,7 @@ async def test_update_offers_sends_email_when_validator_allows(
     service,
     offer_repo_mock,
     legal_role_repo_mock,
-    email_notifier_mock,
+    notification_service_mock,
     email_validator_mock,
 ):
     offer_uuid = uuid4()
@@ -344,7 +351,7 @@ async def test_update_offers_sends_email_when_validator_allows(
     offer_repo_mock.get_by_uuid.side_effect = [db_offer, updated_offer]
     legal_role_repo_mock.get_by_uuids.return_value = [SimpleNamespace(uuid=uuid4())]
     email_validator_mock.should_send_offer_email.return_value = True
-    email_notifier_mock.send_offer_imported_email.return_value = True
+    notification_service_mock.send_offer_imported_email.return_value = True
 
     offer_update = OfferUpdate(
         description="Updated",
@@ -360,8 +367,7 @@ async def test_update_offers_sends_email_when_validator_allows(
     assert offer_repo_mock.update.call_args.args[0] == 1
     assert offer_repo_mock.update.call_args.kwargs["description"] == "Updated"
     assert db_offer.legal_roles == legal_role_repo_mock.get_by_uuids.return_value
-    email_notifier_mock.send_offer_imported_email.assert_awaited_once_with(
-        recipient_email="new@example.com",
-        recipient_name="Ann",
-        offer_uuid="offer-uuid",
+    notification_service_mock.send_offer_imported_email.assert_awaited_once_with(
+        updated_offer,
+        "offer-uuid",
     )
