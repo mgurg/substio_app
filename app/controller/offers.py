@@ -149,7 +149,7 @@ async def import_raw_offers(offer_service: offerServiceDependency, file: Annotat
 
 @offer_router.get("/raw/{offer_uuid}")
 async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> RawOfferIndexResponse:
-    return await offer_service.get_raw_offer(offer_uuid)
+    return await offer_service.get_offer_by_id(offer_uuid)
 
 
 @offer_router.get("/raw/{offer_uuid}/parse")
