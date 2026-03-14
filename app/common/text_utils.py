@@ -65,3 +65,27 @@ def sanitize_name(input_str: str) -> str:
 
     # Remove leading and trailing hyphens
     return hyphenated_str.strip("-")
+
+
+def split_street(street: str) -> tuple[str, str | None]:
+    """
+    Splits a street string into (street_name, street_number).
+    Handles Polish-style house numbers with letters, slashes, commas, and ranges.
+    Normalizes street_number (removes internal spaces).
+    """
+    pattern = (
+        r"\s("
+        r"\d+\s*[A-Za-z]?"  # 22, 4d, 18 a
+        r"(?:[-/]\d+\s*[A-Za-z]?)*"  # -13, /25, /2a, -13B
+        r"(?:,\s*\d+\s*[A-Za-z]?(?:[-/]\d+\s*[A-Za-z]?)*?)*"  # , 23, , 25a/2, , 12-13
+        r")$"
+    )
+
+    match = re.search(pattern, street)
+    if match:
+        street_number = re.sub(r"\s+", "", match.group(1))  # normalize: remove spaces
+        street_name = street[:match.start(1)].strip()
+    else:
+        street_name = street.strip()
+        street_number = None
+    return street_name, street_number

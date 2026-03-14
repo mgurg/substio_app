@@ -22,6 +22,7 @@ from app.service.offers.OfferDateHandler import OfferDateHandler
 from app.service.offers.OfferImportService import OfferImportService
 from app.service.offers.OfferLocationMapper import OfferLocationMapper
 from app.service.offers.OfferNotificationService import OfferNotificationService
+from app.service.offers.OfferRoleMapper import OfferRoleMapper
 from app.service.parsers.base import AIParser
 
 settings = get_settings()
@@ -64,7 +65,7 @@ class OfferService:
         date_obj, hour_obj = OfferDateHandler.parse_date_hour(relations["date_str"], relations["hour_str"])
         self._apply_datetime_data(offer_data, date_obj, hour_obj)
         await self._apply_offer_location_data(offer_data, relations["facility_uuid"], relations["city_uuid"])
-        await self._apply_offer_roles(offer_data, relations["roles_uuids"], require_all=True)
+        await OfferRoleMapper.apply_offer_roles(offer_data, self.legal_role_repo, relations["roles_uuids"], require_all=True)
 
         await self.offer_repo.create(**offer_data)
 
@@ -101,7 +102,7 @@ class OfferService:
 
         # Handle complex updates through helper methods
         await self._update_datetime_fields(db_offer, relations["date_str"], relations["hour_str"])
-        await self._update_legal_roles(db_offer, relations["roles_uuids"])
+        await OfferRoleMapper.update_legal_roles(db_offer, self.legal_role_repo, relations["roles_uuids"])
         await self._update_facility(db_offer, relations["facility_uuid"])
         await self._update_city(db_offer, relations["city_uuid"])
 
@@ -118,13 +119,6 @@ class OfferService:
         """Handle date/hour parsing and valid_to computation"""
         date_obj, hour_obj = OfferDateHandler.parse_date_hour(date_str, hour_str)
         self._apply_datetime_fields(db_offer, date_obj, hour_obj)
-
-    async def _update_legal_roles(self, db_offer: Offer, roles_uuids: list | None) -> None:
-        """Update legal roles if provided"""
-        if roles_uuids is not None:
-            roles = await self._load_roles(roles_uuids, require_all=False)
-            db_offer.legal_roles.clear()
-            db_offer.legal_roles.extend(roles)
 
     async def _update_facility(self, db_offer: Offer, facility_uuid: UUID | None) -> None:
         """Update facility/place if provided"""
@@ -248,15 +242,3 @@ class OfferService:
         if city_uuid:
             city = await self.city_repo.get_by_uuid(city_uuid)
             OfferLocationMapper.assign_city_to_data(offer_data, city)
-
-    async def _apply_offer_roles(
-        self, offer_data: dict, roles_uuids: list | None, require_all: bool
-    ) -> None:
-        if roles_uuids:
-            offer_data["legal_roles"] = await self._load_roles(roles_uuids, require_all=require_all)
-
-    async def _load_roles(self, roles_uuids: list, require_all: bool) -> list:
-        roles = await self.legal_role_repo.get_by_uuids(roles_uuids)
-        if require_all and len(roles) != len(set(roles_uuids)):
-            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="Legal role not found")
-        return roles
