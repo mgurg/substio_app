@@ -51,7 +51,8 @@ class PlaceIndexResponse(BaseResponse):
 class CityIndexResponse(BaseResponse):
     uuid: UUID
     name: str
-    coordinates: Coordinates | None = None
+    lat: float | None = None
+    lon: float | None = None
     voivodeship_name: str | None = None
 
 
