@@ -97,6 +97,9 @@ class OfferService:
         db_offer = await self.offer_repo.get_by_uuid(offer_uuid, ["legal_roles", "place"])
 
         update_data = offer_update.model_dump(exclude_unset=True)
+        # Ensure status is not set to None if it's passed as null in JSON
+        if "status" in update_data and update_data["status"] is None:
+            update_data.pop("status")
 
         # Extract special fields
         relations = self._extract_offer_relations(update_data)
@@ -221,8 +224,8 @@ class OfferService:
             "author_uid": None,
             "raw_data": None,
             "added_at": datetime.now(UTC),
-            "status": offer_data.get("status") or OfferStatus.ACTIVE,
-            "source": offer_data.get("source") or SourceType.USER,
+            "status": offer_data.get("status") if offer_data.get("status") is not None else OfferStatus.ACTIVE,
+            "source": offer_data.get("source") if offer_data.get("source") is not None else SourceType.USER,
         }
 
     def _apply_datetime_data(self, offer_data: dict, date_obj: date | None, hour_obj: time | None) -> None:
