@@ -37,11 +37,13 @@ class PlaceRepo(GenericRepo[Place]):
 
     async def get_by_name_and_distance(self, name: str, lat: float, lon: float, min_distance_km: float = 1.0) -> Sequence[Place]:
         haversine = EARTH_RADIUS_KM * func.acos(
-            func.cos(func.radians(lat)) *
-            func.cos(func.radians(self.model.lat)) *
-            func.cos(func.radians(self.model.lon) - func.radians(lon)) +
-            func.sin(func.radians(lat)) *
-            func.sin(func.radians(self.model.lat))
+            func.least(1.0, func.greatest(-1.0,
+                func.cos(func.radians(lat)) *
+                func.cos(func.radians(self.model.lat)) *
+                func.cos(func.radians(self.model.lon) - func.radians(lon)) +
+                func.sin(func.radians(lat)) *
+                func.sin(func.radians(self.model.lat))
+            ))
         )
 
         # Detect places WITHIN the given distance threshold (potential duplicates)

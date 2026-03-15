@@ -28,6 +28,7 @@ class LegalRole(BaseModel):
 
     uuid: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False, unique=True, index=True)
     name: Mapped[str] = mapped_column(Text(), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(16), nullable=False)
 
     offers: Mapped[list["Offer"]] = relationship(
         back_populates="legal_roles",
