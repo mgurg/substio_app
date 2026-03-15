@@ -1,6 +1,6 @@
 from loguru import logger
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 
@@ -10,8 +10,11 @@ settings = get_settings()
 class EmailValidationService:
     """Service for validating email sending conditions"""
 
-    @staticmethod
+    def __init__(self, settings: Settings | None = None):
+        self.settings = settings or get_settings()
+
     def should_send_user_offer_creation_email(
+        self,
         offer: Offer,
     ) -> bool:
         """
@@ -27,7 +30,7 @@ class EmailValidationService:
             logger.info(f"Skipping email sending for offer {offer.uuid}: no email set")
             return False
 
-        if settings.APP_ENV != "PROD":
+        if self.settings.APP_ENV != "PROD":
             logger.info(f"Skipping email sending for offer {offer.uuid}: not running in PROD")
             return False
 
@@ -41,8 +44,8 @@ class EmailValidationService:
 
         return True
 
-    @staticmethod
     def should_send_offer_email(
+        self,
         updated_offer: Offer,
         original_offer: Offer,
         submit_email: bool
@@ -62,7 +65,7 @@ class EmailValidationService:
             logger.info("Skipping email sending: no email set on offer")
             return False
 
-        if settings.APP_ENV != "PROD":
+        if self.settings.APP_ENV != "PROD":
             logger.info("Skipping email sending: not running in PROD")
             return False
 

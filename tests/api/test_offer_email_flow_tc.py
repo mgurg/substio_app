@@ -1,7 +1,7 @@
 import pytest
 from uuid import uuid4
 from unittest.mock import AsyncMock
-from app.infrastructure.notifications.email.factory import get_email_notifier
+from app.core.dependencies import get_email_notifier, get_email_validator
 from app.core.config import get_settings
 from tests.api.test_offers_controller_tc import make_offer_create_payload, setup_test_city
 
@@ -19,10 +19,15 @@ def mock_email_notifier(client):
         client.app.dependency_overrides.pop(get_email_notifier, None)
 
 @pytest.fixture
-def prod_env(monkeypatch):
+def prod_env(client, monkeypatch):
     settings = get_settings()
     # We monkeypatch the settings instance which is a singleton and used by services
     monkeypatch.setattr(settings, "APP_ENV", "PROD")
+    
+    # We also need to ensure that the EmailValidationService uses the patched settings.
+    # Since our get_email_validator dependency now calls get_settings(), it should 
+    # pick up the patched singleton.
+    
     yield settings
 
 @pytest.mark.integration
