@@ -1,4 +1,3 @@
-from pydantic import EmailStr
 
 from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
 
