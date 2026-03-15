@@ -49,8 +49,8 @@ class GenericRepo[T]:
         """
         obj = self.model(**kwargs)
         self.session.add(obj)
-        await self.session.commit()  # await commit
-        await self.session.refresh(obj)  # await refresh
+        await self.session.commit()
+        await self.session.refresh(obj)
 
         return obj
 
@@ -58,14 +58,14 @@ class GenericRepo[T]:
         for user_data in data_list:
             obj = self.model(**user_data)
             self.session.add(obj)
-        await self.session.commit()  # await commit
+        await self.session.commit()
 
     async def update(self, id: int, **kwargs: Any) -> None:
         """
         Updates an object with the given ID and keyword arguments.
         """
-        await self.session.execute(update(self.model).where(self.model.id == id).values(**kwargs))  # await update
-        await self.session.commit()  # await commit
+        await self.session.execute(update(self.model).where(self.model.id == id).values(**kwargs))
+        await self.session.commit()
 
     async def delete(self, id: int) -> T | None:
         """
@@ -74,10 +74,10 @@ class GenericRepo[T]:
         :param id: The ID of the object to delete.
         :return: The deleted object if found, None otherwise.
         """
-        obj = await self.get_by_id(id)  # await get_by_id
+        obj = await self.get_by_id(id)
         if obj:
-            await self.session.delete(obj)  # await delete
-            await self.session.commit()  # await commit
+            await self.session.delete(obj)
+            await self.session.commit()
         return obj
 
     async def filter(self, page: int = 1, per_page: int = 10, **kwargs: Any) -> Sequence[T]:

@@ -11,11 +11,10 @@ from app.repositories.generics import GenericRepo
 
 class CityRepo(GenericRepo[City]):
     def __init__(self, session: AsyncSession) -> None:
-        self.Model = City
-        super().__init__(session, self.Model)
+        super().__init__(session, City)
 
     async def get_by_uuid(self, uuid: UUID) -> City:
-        query = select(self.Model).where(self.Model.uuid == uuid)
+        query = select(self.model).where(self.model.uuid == uuid)
 
         result = await self.session.execute(query)
         city = result.scalar_one_or_none()
@@ -25,15 +24,15 @@ class CityRepo(GenericRepo[City]):
         return city
 
     async def find_by_teryt(self, teryt: str) -> City | None:
-        query = select(self.Model).where(
-            self.Model.teryt_simc == teryt
+        query = select(self.model).where(
+            self.model.teryt_simc == teryt
         )
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_partial_name(self, name: str) -> Sequence[City]:
-        query = select(self.Model).where(func.lower(self.Model.name_ascii).ilike(f"%{name}%")).order_by(
-            desc(self.Model.importance)).limit(5)
+        query = select(self.model).where(func.lower(self.model.name_ascii).ilike(f"%{name}%")).order_by(
+            desc(self.model.importance)).limit(5)
         result = await self.session.execute(query)
         return result.scalars().all()
