@@ -93,8 +93,8 @@ def test_slack_notifier_requires_webhook(monkeypatch):
 
 
 def test_slack_factory_returns_instance(monkeypatch):
-    from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
     from app.infrastructure.notifications.slack.factory import get_slack_notifier
+    from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
 
     class DummySettings:
         SLACK_WEBHOOK_URL = "https://hooks.slack.test/T000/B000/XYZ"

@@ -6,8 +6,8 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
-from app.database.models.enums import PlaceCategory
 from app.core.exceptions import ConflictError, NotFoundError
+from app.database.models.enums import PlaceCategory
 from app.schemas.domain.place import PlaceAdd
 from app.services.place_service import PlaceService
 

@@ -15,7 +15,6 @@ from app.database.models.enums import OfferStatus, SourceType
 from app.schemas.domain.offer import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
 from app.services.offer_service import OfferService
 from app.services.offers.offer_import_service import OfferImportService, parse_facebook_post_to_offer
-from app.services.offers.offer_notification_service import OfferNotificationService
 
 
 @pytest_asyncio.fixture
