@@ -41,6 +41,7 @@ class Settings(BaseSettings):
 
     API_KEY_OPENAI: str | None = os.getenv("API_KEY_OPENAI")
     API_KEY_MAILERSEND: str | None = os.getenv("API_KEY_MAILERSEND")
+    APP_SECRET_KEY: str = os.getenv("APP_SECRET_KEY", "change-me-in-production-for-security")
     OPENAI_MODEL: Literal["gpt-5-nano"] = "gpt-5-nano"
 
     SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")

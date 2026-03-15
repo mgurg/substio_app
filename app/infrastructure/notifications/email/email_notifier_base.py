@@ -6,6 +6,32 @@ class EmailNotifierBase(ABC):
     """Base class for email notification services"""
 
     @abstractmethod
+    async def send_user_offer_created_email(
+            self,
+            recipient_email: str,
+            recipient_name: str,
+            offer_uuid: str,
+            offer_text: str,
+            token: str,
+            **kwargs
+    ) -> bool:
+        """
+        Send an email notification when a user creates a new offer.
+
+        Args:
+            recipient_email: Email address of the recipient
+            recipient_name: Name of the recipient
+            offer_uuid: UUID of the offer
+            offer_text: Description/text of the offer
+            token: Security token for management link
+            **kwargs: Additional template variables
+
+        Returns:
+            bool: True if email was sent successfully, False otherwise
+        """
+        pass
+
+    @abstractmethod
     async def send_offer_imported_email(
             self,
             recipient_email: str,

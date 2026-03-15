@@ -1,10 +1,34 @@
 
+from datetime import datetime
+
 from app.common.text_utils import (
+    generate_offer_management_token,
     remove_html_tags,
     sanitize_and_normalize_text,
     sanitize_name,
     split_street,
 )
+
+
+def test_generate_offer_management_token():
+    offer_uuid = "123e4567-e89b-12d3-a456-426614174000"
+    created_at = datetime(2025, 1, 1, 12, 0, 0)
+
+    token1 = generate_offer_management_token(offer_uuid, created_at)
+    token2 = generate_offer_management_token(offer_uuid, created_at)
+
+    # Same inputs should produce same token
+    assert token1 == token2
+    assert len(token1) == 64  # SHA-256 hex digest length
+
+    # Different UUID should produce different token
+    token3 = generate_offer_management_token("different-uuid", created_at)
+    assert token1 != token3
+
+    # Different created_at should produce different token
+    created_at2 = datetime(2025, 1, 1, 12, 0, 1)
+    token4 = generate_offer_management_token(offer_uuid, created_at2)
+    assert token1 != token4
 
 
 def test_remove_html_tags_simple():

@@ -1,8 +1,8 @@
 import json
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock, Mock
+from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -85,7 +85,73 @@ def service(
     )
 
 
-def test_parse_facebook_post_to_offer_uses_filename_when_invalid_date():
+@pytest.mark.asyncio
+async def test_create_offer_triggers_email_notification(
+    service,
+    offer_repo_mock,
+    email_validator_mock,
+    notification_service_mock
+):
+    offer_add = OfferAdd(
+        source=SourceType.USER,
+        author="Test Author",
+        email="test@example.com",
+        description="Test Description",
+        city_uuid=uuid4(),
+        facility_uuid=uuid4(),
+        roles_uuids=[uuid4()],
+        date_str="2025-07-30",
+        hour_str="10:00"
+    )
+
+    new_offer_mock = MagicMock()
+    offer_repo_mock.get_by_uuid.return_value = new_offer_mock
+    email_validator_mock.should_send_user_offer_creation_email.return_value = True
+
+    await service.create_offer(offer_add)
+
+    # Check repository calls
+    assert offer_repo_mock.create.called
+    
+    # Check that it fetched the new offer to pass to validator
+    offer_repo_mock.get_by_uuid.assert_called()
+    
+    # Check validator and notification calls
+    email_validator_mock.should_send_user_offer_creation_email.assert_called_once_with(new_offer_mock)
+    notification_service_mock.send_user_offer_created_email.assert_called_once_with(new_offer_mock)
+
+
+@pytest.mark.asyncio
+async def test_create_offer_no_email_if_validator_returns_false(
+    service,
+    offer_repo_mock,
+    email_validator_mock,
+    notification_service_mock
+):
+    offer_add = OfferAdd(
+        source=SourceType.USER,
+        author="Test Author",
+        email="test@example.com",
+        description="Test Description",
+        city_uuid=uuid4(),
+        facility_uuid=uuid4(),
+        roles_uuids=[uuid4()],
+        date_str="2025-07-30",
+        hour_str="10:00"
+    )
+
+    new_offer_mock = MagicMock()
+    offer_repo_mock.get_by_uuid.return_value = new_offer_mock
+    email_validator_mock.should_send_user_offer_creation_email.return_value = False
+
+    await service.create_offer(offer_add)
+
+    # Validator should be called, but notification service should not
+    email_validator_mock.should_send_user_offer_creation_email.assert_called_once_with(new_offer_mock)
+    notification_service_mock.send_user_offer_created_email.assert_not_called()
+
+
+async def test_parse_facebook_post_to_offer_uses_filename_when_invalid_date():
     post = FacebookPost(
         user_name="Test User",
         user_profile_url="https://example.com/user",

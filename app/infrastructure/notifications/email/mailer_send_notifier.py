@@ -23,6 +23,33 @@ class MailerSendNotifier(EmailNotifierBase):
         self.from_name = settings.APP_DOMAIN
         self.bcc_email = settings.APP_ADMIN_MAIL
 
+    async def send_user_offer_created_email(
+            self,
+            recipient_email: str,
+            recipient_name: str,
+            offer_uuid: str,
+            offer_text: str,
+            token: str,
+            **kwargs
+    ) -> bool:
+        """Send notification email for a newly created user offer"""
+        template_vars = {
+            "offer_uuid": offer_uuid,
+            "offer_text": offer_text,
+            "management_url": f"{settings.APP_URL}/substytucje-procesowe/manage-{offer_uuid}?token={token}",
+            "website_name": settings.APP_DOMAIN,
+            "support_email": settings.APP_ADMIN_MAIL,
+            **kwargs
+        }
+
+        return await self.send_custom_email(
+            recipient_email=recipient_email,
+            recipient_name=recipient_name,
+            subject="Twoje ogłoszenie zostało dodane",
+            template_id="v69oxl5e0yog785k",  # Placeholder ID for new template
+            template_vars=template_vars
+        )
+
     async def send_offer_imported_email(
             self,
             recipient_email: str,

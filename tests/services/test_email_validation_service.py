@@ -88,13 +88,47 @@ def test_should_send_offer_email_requires_active_status(prod_settings):
     assert result is False
 
 
-def test_should_send_offer_email_requires_bot_source(prod_settings):
-    updated_offer, original_offer = _make_offers(source=SourceType.USER)
+def test_should_send_user_offer_creation_email_returns_true_in_prod(prod_settings):
+    offer = SimpleNamespace(email="test@example.com", status=OfferStatus.ACTIVE, source=SourceType.USER, uuid="test-uuid")
 
-    result = email_validation_service_module.EmailValidationService.should_send_offer_email(
-        updated_offer=updated_offer,
-        original_offer=original_offer,
-        submit_email=True,
+    result = email_validation_service_module.EmailValidationService.should_send_user_offer_creation_email(
+        offer=offer
+    )
+
+    assert result is True
+
+
+def test_should_send_user_offer_creation_email_requires_user_source(prod_settings):
+    offer = SimpleNamespace(email="test@example.com", status=OfferStatus.ACTIVE, source=SourceType.BOT, uuid="test-uuid")
+
+    result = email_validation_service_module.EmailValidationService.should_send_user_offer_creation_email(
+        offer=offer
+    )
+
+    assert result is False
+
+
+def test_should_send_user_offer_creation_email_requires_active_status(prod_settings):
+    offer = SimpleNamespace(email="test@example.com", status=OfferStatus.NEW, source=SourceType.USER, uuid="test-uuid")
+
+    result = email_validation_service_module.EmailValidationService.should_send_user_offer_creation_email(
+        offer=offer
+    )
+
+    assert result is False
+
+
+def test_should_send_user_offer_creation_email_requires_prod(monkeypatch):
+    monkeypatch.setattr(
+        email_validation_service_module,
+        "settings",
+        SimpleNamespace(APP_ENV="DEV"),
+        raising=True,
+    )
+    offer = SimpleNamespace(email="test@example.com", status=OfferStatus.ACTIVE, source=SourceType.USER, uuid="test-uuid")
+
+    result = email_validation_service_module.EmailValidationService.should_send_user_offer_creation_email(
+        offer=offer
     )
 
     assert result is False
