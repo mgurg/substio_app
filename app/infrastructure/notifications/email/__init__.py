@@ -1,2 +1,0 @@
-from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier
-from app.infrastructure.notifications.email.factory import get_email_notifier
