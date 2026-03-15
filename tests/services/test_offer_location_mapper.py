@@ -49,3 +49,35 @@ def test_assign_city_to_offer():
     assert db_offer.lat == 50.0647
     assert db_offer.lon == 19.9450
     assert db_offer.city == city
+
+
+def test_assign_place_to_data_none():
+    offer_data = {}
+    OfferLocationMapper.assign_place_to_data(offer_data, None)
+    assert "place_id" not in offer_data
+    assert "lat" not in offer_data
+    assert "lon" not in offer_data
+
+
+def test_assign_city_to_data_none():
+    offer_data = {}
+    OfferLocationMapper.assign_city_to_data(offer_data, None)
+    assert "city_id" not in offer_data
+    assert "lat" not in offer_data
+    assert "lon" not in offer_data
+
+
+def test_assign_place_to_offer_none():
+    db_offer = MagicMock(spec=Offer)
+    db_offer.lat = 1.0
+    OfferLocationMapper.assign_place_to_offer(db_offer, None)
+    # Should not change anything
+    assert db_offer.lat == 1.0
+
+
+def test_assign_city_to_offer_none():
+    db_offer = MagicMock(spec=Offer)
+    db_offer.lat = 1.0
+    OfferLocationMapper.assign_city_to_offer(db_offer, None)
+    # Should not change anything
+    assert db_offer.lat == 1.0
