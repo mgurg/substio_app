@@ -14,6 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+
 def pytest_configure(config):
     """Set environment variables before tests are collected."""
     os.environ.setdefault("APP_ENV", "DEV")
@@ -22,6 +23,7 @@ def pytest_configure(config):
     os.environ.setdefault("APP_ADMIN_MAIL", "admin@test.local")
     os.environ.setdefault("SLACK_WEBHOOK_URL", "http://localhost/fake-webhook")
     os.environ.setdefault("OPENAI_API_KEY", "test_openai_key")
+
 
 @pytest.fixture(scope="session")
 def postgres_url_env() -> Generator[dict, None, None]:
