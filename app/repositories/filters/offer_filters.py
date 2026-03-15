@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.schemas.domain.common import Coordinates
 from app.database.models.enums import OfferStatus
 from app.schemas.domain.common import Coordinates
 

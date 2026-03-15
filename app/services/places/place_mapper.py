@@ -19,8 +19,8 @@ class PlaceMapper:
             "category": place_add.category,
             "postal_code": place_add.postal_code,
             "city": place_add.city,
-            "lat": place_add.lat,
-            "lon": place_add.lon
+            "lat": place_add.coordinates.lat if place_add.coordinates else None,
+            "lon": place_add.coordinates.lon if place_add.coordinates else None
         }
 
         # Handle street splitting if only combined street is provided

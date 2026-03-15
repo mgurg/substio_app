@@ -9,6 +9,7 @@ from app.core.dependencies import get_offer_service
 from app.database.models.enums import OfferStatus
 from app.repositories.filters.offer_filters import OfferFilters
 from app.schemas.domain.ai import ParseResponse
+from app.schemas.domain.common import Coordinates
 from app.schemas.domain.offer import (
     ImportResult,
     OfferAdd,
@@ -68,9 +69,14 @@ async def list_offers(
     legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
     invoice: Annotated[bool | None, Query()] = None,
 ) -> OffersPaginated:
-    location_params = [lat, lon, distance_km]
-    if any(param is not None for param in location_params) and not all(param is not None for param in location_params):
-        raise HTTPException(status_code=400, detail="lat, lon, and distance_km must all be provided together for location filtering")
+    if (lat is not None or lon is not None or distance_km is not None) and not (
+        lat is not None and lon is not None and distance_km is not None
+    ):
+        raise HTTPException(
+            status_code=400, detail="lat, lon, and distance_km must all be provided together for location filtering"
+        )
+
+    coordinates = Coordinates(lat=lat, lon=lon) if lat is not None and lon is not None else None
 
     filters = OfferFilters(
         search=search,
@@ -78,8 +84,7 @@ async def list_offers(
         offset=offset,
         sort_column=field,
         sort_order=order,
-        lat=lat,
-        lon=lon,
+        coordinates=coordinates,
         distance_km=distance_km,
         legal_role_uuids=legal_role_uuids,
         invoice=invoice,
