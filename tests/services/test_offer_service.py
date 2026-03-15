@@ -436,3 +436,25 @@ async def test_update_offers_sends_email_when_validator_allows(
         updated_offer,
         "offer-uuid",
     )
+
+
+@pytest.mark.asyncio
+async def test_update_offers_ignores_null_status(service, offer_repo_mock):
+    offer_uuid = uuid4()
+    db_offer = MagicMock(
+        id=1,
+        status=OfferStatus.NEW,
+        legal_roles=[],
+        place=None,
+        city=None,
+    )
+    offer_repo_mock.get_by_uuid.return_value = db_offer
+
+    # Pydantic model with status explicitly set to None
+    offer_update = OfferUpdate(status=None, description="New Desc")
+
+    await service.update_offers(offer_uuid, offer_update)
+
+    # Check that status was NOT changed to None on the model
+    assert db_offer.status == OfferStatus.NEW
+    assert db_offer.description == "New Desc"
