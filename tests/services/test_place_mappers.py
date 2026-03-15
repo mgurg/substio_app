@@ -2,7 +2,8 @@ from decimal import Decimal
 from uuid import UUID
 
 from app.database.models.enums import PlaceCategory
-from app.schemas.domain.place import CityAdd, PlaceAdd
+from app.schemas.domain.common import Coordinates
+from app.schemas.domain.place import Address, CityAdd, PlaceAdd
 from app.services.places.city_mapper import CityMapper
 from app.services.places.place_mapper import PlaceMapper
 
@@ -11,10 +12,11 @@ def test_place_mapper_to_db_dict():
     place_add = PlaceAdd(
         category=PlaceCategory.COURT,
         name="Test Court",
-        lat=Decimal("52.2297"),
-        lon=Decimal("21.0122"),
-        city="Warszawa",
-        street="Al. Solidarności 127"
+        coordinates=Coordinates(lat=Decimal("52.2297"), lon=Decimal("21.0122")),
+        address=Address(
+            city="Warszawa",
+            street="Al. Solidarności 127"
+        )
     )
 
     result = PlaceMapper.map_to_db_dict(place_add)
@@ -33,8 +35,7 @@ def test_place_mapper_to_db_dict():
 def test_city_mapper_to_db_dict():
     city_add = CityAdd(
         city_name="Warszawa",
-        lat=Decimal("52.2297"),
-        lon=Decimal("21.0122"),
+        coordinates=Coordinates(lat=Decimal("52.2297"), lon=Decimal("21.0122")),
         category="city",
         voivodeship_name="Mazowieckie",
         voivodeship_iso="MZ",
