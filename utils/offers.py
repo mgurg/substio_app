@@ -22,7 +22,7 @@ class FacebookPost:
     content: str
     author_link: str
     post_link: str
-    delay: str
+    delay: str | None
     timestamp: str
     posinset: str
 
@@ -134,7 +134,7 @@ class FacebookPageParser:
 
         return new_dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-    def extract_links_and_author(self, div, base_timestamp: str) -> tuple[str, str, str, str, str]:
+    def extract_links_and_author(self, div, base_timestamp: str) -> tuple[str, str, str, str, str | None]:
         """Extract author, author link, post link, and timestamp from the message div."""
         author = ""
         author_link = ""
@@ -188,7 +188,8 @@ class FacebookPageParser:
         posts = []
 
         for i, div in enumerate(message_divs, start=1):
-            posinset = div.get("aria-posinset", "")
+            posinset_val = div.get("aria-posinset")
+            posinset = str(posinset_val) if posinset_val is not None else ""
 
             # Skip empty messages
             full_text = div.get_text(separator=" ", strip=True)
