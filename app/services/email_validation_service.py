@@ -11,6 +11,37 @@ class EmailValidationService:
     """Service for validating email sending conditions"""
 
     @staticmethod
+    def should_send_user_offer_creation_email(
+        offer: Offer,
+    ) -> bool:
+        """
+        Determine if a creation email should be sent for a user-submitted offer.
+
+        Args:
+            offer: The newly created offer
+
+        Returns:
+            bool: True if email should be sent, False otherwise
+        """
+        if not offer.email:
+            logger.info(f"Skipping email sending for offer {offer.uuid}: no email set")
+            return False
+
+        if settings.APP_ENV != "PROD":
+            logger.info(f"Skipping email sending for offer {offer.uuid}: not running in PROD")
+            return False
+
+        if offer.source != SourceType.USER:
+            logger.info(f"Skipping email sending for offer {offer.uuid}: source is not USER ({offer.source})")
+            return False
+
+        if offer.status != OfferStatus.ACTIVE:
+            logger.info(f"Skipping email sending for offer {offer.uuid}: offer status is {offer.status}")
+            return False
+
+        return True
+
+    @staticmethod
     def should_send_offer_email(
         updated_offer: Offer,
         original_offer: Offer,

@@ -68,7 +68,14 @@ class OfferService:
 
         await self.offer_repo.create(**offer_data)
 
+        # Notify via Slack
         await self.notification_service.notify_new_offer_slack(offer_add, offer_uuid)
+
+        # Notify via Email if conditions met
+        new_offer = await self.offer_repo.get_by_uuid(UUID(offer_uuid))
+        if self.email_validator.should_send_user_offer_creation_email(new_offer):
+            await self.notification_service.send_user_offer_created_email(new_offer)
+
         return None
 
     async def parse_raw_offer(self, offer_uuid: UUID) -> ParseResponse:
