@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
-from app.exceptions import NotFoundError
-from app.service.CityService import CityService
+from app.core.exceptions import NotFoundError
+from app.services.city_service import CityService
 
 
 @pytest_asyncio.fixture

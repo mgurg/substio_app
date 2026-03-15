@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_fake_slack_notifier_captures_messages():
-    from app.common.slack.FakeSlackNotifier import FakeSlackNotifier
+    from app.infrastructure.notifications.slack.fake_slack_notifier import FakeSlackNotifier
 
     n = FakeSlackNotifier()
 
@@ -29,7 +29,7 @@ async def test_fake_slack_notifier_captures_messages():
 @pytest.mark.asyncio
 async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
     # Import after monkeypatch setup
-    from app.common.slack import SlackNotifier as slack_mod
+    from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
 
     # Provide fake settings
     class DummySettings:
@@ -60,7 +60,7 @@ async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
 
     monkeypatch.setattr(httpx, "AsyncClient", DummyClient)
 
-    notifier = slack_mod.SlackNotifier()
+    notifier = slack_mod()
 
     await notifier.send_message("hi")
     await notifier.send_rich_message({"blocks": [1]})
@@ -80,7 +80,7 @@ async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
 
 
 def test_slack_notifier_requires_webhook(monkeypatch):
-    from app.common.slack import SlackNotifier as slack_mod
+    from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
 
     class DummySettings:
         SLACK_WEBHOOK_URL = ""
@@ -89,12 +89,12 @@ def test_slack_notifier_requires_webhook(monkeypatch):
     monkeypatch.setattr(slack_mod, "settings", DummySettings)
 
     with pytest.raises(ValueError):
-        slack_mod.SlackNotifier()
+        slack_mod()
 
 
 def test_slack_factory_returns_instance(monkeypatch):
-    from app.common.slack import SlackNotifier as slack_mod
-    from app.common.slack.factory import get_slack_notifier
+    from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
+    from app.infrastructure.notifications.slack.factory import get_slack_notifier
 
     class DummySettings:
         SLACK_WEBHOOK_URL = "https://hooks.slack.test/T000/B000/XYZ"

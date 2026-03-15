@@ -5,7 +5,7 @@ from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Numeri
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.db import Base
+from app.core.database import Base
 from app.database.models.enums import OfferStatus, PlaceCategory, SourceType
 
 

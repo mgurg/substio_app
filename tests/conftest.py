@@ -14,6 +14,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+def pytest_configure(config):
+    """Set environment variables before tests are collected."""
+    os.environ.setdefault("APP_ENV", "DEV")
+    os.environ.setdefault("APP_URL", "http://testserver")
+    os.environ.setdefault("APP_DOMAIN", "test.local")
+    os.environ.setdefault("APP_ADMIN_MAIL", "admin@test.local")
+    os.environ.setdefault("SLACK_WEBHOOK_URL", "http://localhost/fake-webhook")
+    os.environ.setdefault("OPENAI_API_KEY", "test_openai_key")
 
 @pytest.fixture(scope="session")
 def postgres_url_env() -> Generator[dict, None, None]:
@@ -62,7 +70,7 @@ def postgres_url_env() -> Generator[dict, None, None]:
 @pytest.fixture(scope="session")
 def apply_migrations(postgres_url_env) -> None:
     """Run Alembic migrations against the container DB."""
-    from app.config import get_settings
+    from app.core.config import get_settings
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
 

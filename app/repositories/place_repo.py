@@ -1,0 +1,57 @@
+from collections.abc import Sequence
+from uuid import UUID
+
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database.models.models import Place
+from app.repositories.generics import GenericRepo
+from app.core.exceptions import NotFoundError
+
+EARTH_RADIUS_KM = 6371.0
+
+
+class PlaceRepo(GenericRepo[Place]):
+    def __init__(self, session: AsyncSession) -> None:
+        self.Model = Place
+        super().__init__(session, self.Model)
+
+    async def get_by_uuid(self, uuid: UUID) -> Place:
+        query = select(self.Model).where(self.Model.uuid == uuid)
+
+        result = await self.session.execute(query)
+        place = result.scalar_one_or_none()
+        if place is None:
+            raise NotFoundError("Place", str(uuid))
+
+        return place
+
+    async def get_by_partial_name(self, name: str, facility_type: str | None = None) -> Sequence[Place]:
+        conditions = [func.lower(self.Model.name_ascii).ilike(f"%{name.lower()}%")]
+
+        if facility_type:
+            conditions.append(self.Model.type == facility_type)
+
+        query = select(self.Model).where(and_(*conditions)).limit(7)
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_by_name_and_distance(self, name: str, lat: float, lon: float, min_distance_km: float = 1.0) -> Sequence[Place]:
+        haversine = EARTH_RADIUS_KM * func.acos(
+            func.cos(func.radians(lat)) *
+            func.cos(func.radians(self.Model.lat)) *
+            func.cos(func.radians(self.Model.lon) - func.radians(lon)) +
+            func.sin(func.radians(lat)) *
+            func.sin(func.radians(self.Model.lat))
+        )
+
+        # Detect places WITHIN the given distance threshold (potential duplicates)
+        query = select(self.Model).where(
+            and_(
+                func.lower(self.Model.name) == name.lower(),
+                haversine < min_distance_km
+            )
+        )
+
+        result = await self.session.execute(query)
+        return result.scalars().all()

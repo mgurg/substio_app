@@ -2,7 +2,7 @@ import pytest
 from datetime import date, time, datetime, UTC, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import HTTPException
-from app.service.offers.OfferDateHandler import OfferDateHandler
+from app.services.offers.offer_date_handler import OfferDateHandler
 
 def test_parse_date_success():
     assert OfferDateHandler.parse_date("2024-03-14") == date(2024, 3, 14)
