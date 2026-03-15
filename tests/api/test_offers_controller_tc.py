@@ -43,12 +43,13 @@ def make_city_payload(
 ) -> dict:
     return {
         "city_name": name,
-        "lat": lat,
-        "lon": lon,
-        "lat_min": lat - 0.1,
-        "lat_max": lat + 0.1,
-        "lon_min": lon - 0.1,
-        "lon_max": lon + 0.1,
+        "coordinates": {"lat": lat, "lon": lon},
+        "range": {
+            "lat_min": lat - 0.1,
+            "lat_max": lat + 0.1,
+            "lon_min": lon - 0.1,
+            "lon_max": lon + 0.1,
+        },
         "population": 100000,
         "importance": 0.9,
         "category": "city",
@@ -61,10 +62,18 @@ def make_city_payload(
 
 def setup_test_city(client, name_prefix="TestCity") -> str:
     """Helper to create a test city and return its UUID"""
+    from app.common.text_utils import sanitize_name
     city_name = f"{name_prefix}-{uuid4().hex[:6]}"
-    client.post("/places/city", json=make_city_payload(city_name, teryt=f"SIMC-{uuid4().hex[:6]}"))
-    response = client.get(f"/places/city/{city_name}")
-    return response.json()[0]["uuid"]
+    res = client.post("/places/city", json=make_city_payload(city_name, teryt=f"SIMC-{uuid4().hex[:6]}"))
+    assert res.status_code == 200, f"Failed to create city: {res.text}"
+    
+    # Search by sanitized name since GET /city/{city_name} uses it
+    sanitized = sanitize_name(city_name)
+    response = client.get(f"/places/city/{sanitized}")
+    assert response.status_code == 200, f"Failed to get city: {response.text}"
+    data = response.json()
+    assert len(data) > 0, f"City not found: {city_name} (sanitized: {sanitized})"
+    return data[0]["uuid"]
 
 
 def create_test_offer(client, description=None, **kwargs) -> str:
