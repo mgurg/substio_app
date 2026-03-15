@@ -6,24 +6,24 @@ from loguru import logger
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.config import get_settings
-from app.database.models.enums import OfferStatus
+from app.core.config import get_settings
+from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
-from app.database.repository.CityRepo import CityRepo
-from app.database.repository.filters.offer_filters import OfferFilters
-from app.database.repository.LegalRoleRepo import LegalRoleRepo
-from app.database.repository.OfferRepo import OfferRepo
-from app.database.repository.PlaceRepo import PlaceRepo
-from app.schemas.api.api_responses import ParseResponse
-from app.schemas.rest.requests import OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import ImportResult
-from app.service.EmailValidationService import EmailValidationService
-from app.service.offers.OfferDateHandler import OfferDateHandler
-from app.service.offers.OfferImportService import OfferImportService
-from app.service.offers.OfferLocationMapper import OfferLocationMapper
-from app.service.offers.OfferNotificationService import OfferNotificationService
-from app.service.offers.OfferRoleMapper import OfferRoleMapper
-from app.service.parsers.base import AIParser
+from app.repositories.city_repo import CityRepo
+from app.repositories.filters.offer_filters import OfferFilters
+from app.repositories.legal_role_repo import LegalRoleRepo
+from app.repositories.offer_repo import OfferRepo
+from app.repositories.place_repo import PlaceRepo
+from app.schemas.domain.ai import ParseResponse
+from app.schemas.domain.offer import OfferAdd, OfferRawAdd, OfferUpdate
+from app.schemas.domain.offer import ImportResult
+from app.services.email_validation_service import EmailValidationService
+from app.services.offers.offer_date_handler import OfferDateHandler
+from app.services.offers.offer_import_service import OfferImportService
+from app.services.offers.offer_location_mapper import OfferLocationMapper
+from app.services.offers.offer_notification_service import OfferNotificationService
+from app.services.offers.offer_role_mapper import OfferRoleMapper
+from app.infrastructure.ai.parsers.base import AIParser
 
 settings = get_settings()
 
@@ -216,6 +216,7 @@ class OfferService:
             "raw_data": None,
             "added_at": datetime.now(UTC),
             "status": offer_data.get("status") or OfferStatus.ACTIVE,
+            "source": offer_data.get("source") or SourceType.USER,
         }
 
     def _apply_datetime_data(self, offer_data: dict, date_obj: date | None, hour_obj: time | None) -> None:

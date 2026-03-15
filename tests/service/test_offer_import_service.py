@@ -6,8 +6,8 @@ from fastapi import HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 
 from app.database.models.enums import OfferStatus, SourceType
-from app.schemas.rest.requests import FacebookPost, OfferRawAdd
-from app.service.offers.OfferImportService import OfferImportService, parse_facebook_post_to_offer
+from app.schemas.domain.offer import FacebookPost, OfferRawAdd
+from app.services.offers.offer_import_service import OfferImportService, parse_facebook_post_to_offer
 
 class _UploadFileStub:
     def __init__(self, filename: str | None, content: bytes):

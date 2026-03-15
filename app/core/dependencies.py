@@ -1,22 +1,22 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.email.EmailNotifierBase import EmailNotifierBase
-from app.common.email.factory import get_email_notifier
-from app.common.slack.factory import get_slack_notifier
-from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.database.db import get_db
-from app.database.repository.CityRepo import CityRepo
-from app.database.repository.LegalRoleRepo import LegalRoleRepo
-from app.database.repository.OfferRepo import OfferRepo
-from app.database.repository.PlaceRepo import PlaceRepo
-from app.service.EmailValidationService import EmailValidationService
-from app.service.offers.OfferImportService import OfferImportService
-from app.service.offers.OfferNotificationService import OfferNotificationService
-from app.service.OfferService import OfferService
-from app.service.parsers.base import AIParser
-from app.service.parsers.factory import get_ai_parser
-from app.service.PlaceService import PlaceService
+from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
+from app.infrastructure.notifications.email.factory import get_email_notifier
+from app.infrastructure.notifications.slack.factory import get_slack_notifier
+from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
+from app.core.database import get_db
+from app.repositories.city_repo import CityRepo
+from app.repositories.legal_role_repo import LegalRoleRepo
+from app.repositories.offer_repo import OfferRepo
+from app.repositories.place_repo import PlaceRepo
+from app.services.email_validation_service import EmailValidationService
+from app.services.offers.offer_import_service import OfferImportService
+from app.services.offers.offer_notification_service import OfferNotificationService
+from app.services.offer_service import OfferService
+from app.infrastructure.ai.parsers.base import AIParser
+from app.infrastructure.ai.parsers.factory import get_ai_parser
+from app.services.place_service import PlaceService
 
 
 def get_city_repo(session: AsyncSession = Depends(get_db)) -> CityRepo:

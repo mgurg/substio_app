@@ -10,12 +10,12 @@ import pytest_asyncio
 from fastapi import HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-import app.service.offers.OfferImportService as offer_import_service_module
+import app.services.offers.offer_import_service as offer_import_service_module
 from app.database.models.enums import OfferStatus, SourceType
-from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
-from app.service.OfferService import OfferService
-from app.service.offers.OfferImportService import OfferImportService, parse_facebook_post_to_offer
-from app.service.offers.OfferNotificationService import OfferNotificationService
+from app.schemas.domain.offer import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
+from app.services.offer_service import OfferService
+from app.services.offers.offer_import_service import OfferImportService, parse_facebook_post_to_offer
+from app.services.offers.offer_notification_service import OfferNotificationService
 
 
 @pytest_asyncio.fixture

@@ -1,6 +1,6 @@
 from loguru import logger
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 

@@ -1,7 +1,7 @@
 from uuid import UUID
-from app.schemas.rest.requests import PlaceAdd, CityAdd
-from app.service.places.PlaceMapper import PlaceMapper
-from app.service.places.CityMapper import CityMapper
+from app.schemas.domain.place import PlaceAdd, CityAdd
+from app.services.places.place_mapper import PlaceMapper
+from app.services.places.city_mapper import CityMapper
 from app.database.models.enums import PlaceCategory
 from decimal import Decimal
 

@@ -5,10 +5,10 @@ from uuid import uuid4
 import pytest
 from pydantic import EmailStr
 
-from app.common.slack.factory import get_slack_notifier
-from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer
-from app.service.parsers.factory import get_ai_parser
+from app.infrastructure.notifications.slack.factory import get_slack_notifier
+from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
+from app.schemas.domain.ai import ParseResponse, SubstitutionOffer
+from app.infrastructure.ai.parsers.factory import get_ai_parser
 
 
 # Helper functions to build payloads

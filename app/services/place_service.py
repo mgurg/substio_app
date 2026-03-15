@@ -6,11 +6,11 @@ from loguru import logger
 
 from app.common.text_utils import sanitize_name
 from app.database.models.models import City, Place
-from app.database.protocols import CityRepoProtocol, PlaceRepoProtocol
-from app.exceptions import ConflictError, NotFoundError
-from app.schemas.rest.requests import CityAdd, PlaceAdd
-from app.service.places.CityMapper import CityMapper
-from app.service.places.PlaceMapper import PlaceMapper
+from app.core.protocols import CityRepoProtocol, PlaceRepoProtocol
+from app.core.exceptions import ConflictError, NotFoundError
+from app.schemas.domain.place import CityAdd, PlaceAdd
+from app.services.places.city_mapper import CityMapper
+from app.services.places.place_mapper import PlaceMapper
 
 
 class PlaceService:

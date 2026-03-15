@@ -1,6 +1,6 @@
 from uuid import uuid4
 from app.common.text_utils import sanitize_name
-from app.schemas.rest.requests import CityAdd
+from app.schemas.domain.place import CityAdd
 
 class CityMapper:
     @staticmethod

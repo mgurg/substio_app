@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import Depends
 
 from app.database.models.models import City
-from app.database.repository.CityRepo import CityRepo
+from app.repositories.city_repo import CityRepo
 
 
 class CityService:

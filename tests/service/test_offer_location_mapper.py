@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from app.database.models.models import Offer
-from app.service.offers.OfferLocationMapper import OfferLocationMapper
+from app.services.offers.offer_location_mapper import OfferLocationMapper
 
 class MockEntity:
     def __init__(self, id, lat, lon):

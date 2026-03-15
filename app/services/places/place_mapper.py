@@ -1,6 +1,6 @@
 from uuid import uuid4
 from app.common.text_utils import sanitize_name, split_street
-from app.schemas.rest.requests import PlaceAdd
+from app.schemas.domain.place import PlaceAdd
 
 class PlaceMapper:
     @staticmethod
