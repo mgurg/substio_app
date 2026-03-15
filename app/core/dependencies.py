@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.infrastructure.ai.parsers.base import AIParser
 from app.infrastructure.ai.parsers.factory import get_ai_parser
@@ -36,7 +37,7 @@ def get_legal_role_repo(session: AsyncSession = Depends(get_db)) -> LegalRoleRep
 
 
 def get_email_validator() -> EmailValidationService:
-    return EmailValidationService()
+    return EmailValidationService(settings=get_settings())
 
 
 def get_place_service(
