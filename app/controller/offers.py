@@ -5,18 +5,20 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
+from app.core.dependencies import get_offer_service
 from app.database.models.enums import OfferStatus
 from app.repositories.filters.offer_filters import OfferFilters
-from app.core.dependencies import get_offer_service
 from app.schemas.domain.ai import ParseResponse
-from app.schemas.domain.offer import OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.domain.offer import (
     ImportResult,
+    OfferAdd,
     OfferEmail,
     OfferIndexResponse,
     OfferMapResponse,
+    OfferRawAdd,
     OffersCount,
     OffersPaginated,
+    OfferUpdate,
     RawOfferIndexResponse,
     RawOffersPaginated,
     SimilarOfferIndexResponse,

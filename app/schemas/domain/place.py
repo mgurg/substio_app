@@ -1,10 +1,13 @@
 from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
+
 from pydantic import BaseModel, Field, field_validator
+
 from app.database.models.enums import PlaceCategory
 from app.schemas.domain.common import BaseResponse
 from app.utils.validators import round_to_7_decimal_places
+
 
 class PlaceAdd(BaseModel):
     category: PlaceCategory
@@ -28,6 +31,7 @@ class PlaceAdd(BaseModel):
     def sanitize_coordinates(cls, v):
         return round_to_7_decimal_places(v)
 
+
 class CityAdd(BaseModel):
     city_name: str
     lat: Annotated[Decimal, Field(max_digits=10, decimal_places=7)]
@@ -49,10 +53,12 @@ class CityAdd(BaseModel):
     def sanitize_coordinates(cls, v):
         return round_to_7_decimal_places(v)
 
+
 class PlaceIndexResponse(BaseResponse):
     uuid: UUID
     name: str
     category: PlaceCategory
+
 
 class CityIndexResponse(BaseResponse):
     uuid: UUID
@@ -60,6 +66,7 @@ class CityIndexResponse(BaseResponse):
     lat: Decimal | None = None
     lon: Decimal | None = None
     voivodeship_name: str | None = None
+
 
 class LegalRoleIndexResponse(BaseResponse):
     uuid: UUID

@@ -1,6 +1,8 @@
 from uuid import uuid4
+
 from app.common.text_utils import sanitize_name, split_street
 from app.schemas.domain.place import PlaceAdd
+
 
 class PlaceMapper:
     @staticmethod
@@ -26,5 +28,5 @@ class PlaceMapper:
             street_name, street_number = split_street(place_add.street)
             place_dict["street_name"] = street_name
             place_dict["street_number"] = street_number
-            
+
         return place_dict

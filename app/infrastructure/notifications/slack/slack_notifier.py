@@ -2,8 +2,8 @@ import httpx
 from loguru import logger
 from pydantic import EmailStr
 
-from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
 from app.core.config import get_settings
+from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
 
 settings = get_settings()
 

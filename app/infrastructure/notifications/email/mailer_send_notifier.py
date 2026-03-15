@@ -4,8 +4,8 @@ from typing import Any
 from loguru import logger
 from mailersend import EmailBuilder, MailerSendClient
 
-from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
 from app.core.config import get_settings
+from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
 
 settings = get_settings()
 

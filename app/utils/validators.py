@@ -1,4 +1,5 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+
 
 def round_to_7_decimal_places(v):
     if v is None:

@@ -2,7 +2,7 @@ from datetime import date as dt_date, datetime as dt_datetime, time as dt_time
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, AliasChoices, model_validator
+from pydantic import AliasChoices, BaseModel, EmailStr, Field, model_validator
 
 from app.database.models.enums import OfferStatus, SourceType
 from app.schemas.domain.common import BaseResponse
@@ -78,9 +78,9 @@ class OfferIndexResponse(BaseResponse):
     @classmethod
     def map_relations(cls, data):
         if hasattr(data, "city") and data.city:
-            setattr(data, "city_uuid", data.city.uuid)
+            data.city_uuid = data.city.uuid
         if hasattr(data, "place") and data.place:
-            setattr(data, "facility_uuid", data.place.uuid)
+            data.facility_uuid = data.place.uuid
         return data
 
 

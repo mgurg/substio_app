@@ -1,13 +1,12 @@
-import re
 from collections.abc import Sequence
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from loguru import logger
 
 from app.common.text_utils import sanitize_name
-from app.database.models.models import City, Place
-from app.core.protocols import CityRepoProtocol, PlaceRepoProtocol
 from app.core.exceptions import ConflictError, NotFoundError
+from app.core.protocols import CityRepoProtocol, PlaceRepoProtocol
+from app.database.models.models import City, Place
 from app.schemas.domain.place import CityAdd, PlaceAdd
 from app.services.places.city_mapper import CityMapper
 from app.services.places.place_mapper import PlaceMapper

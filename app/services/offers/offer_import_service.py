@@ -7,7 +7,7 @@ from starlette.status import HTTP_409_CONFLICT
 
 from app.database.models.enums import OfferStatus, SourceType
 from app.repositories.offer_repo import OfferRepo
-from app.schemas.domain.offer import FacebookPost, OfferRawAdd, ImportResult
+from app.schemas.domain.offer import FacebookPost, ImportResult, OfferRawAdd
 from app.utils.email_utils import extract_and_fix_email
 from app.utils.timestamp_utils import extract_timestamp_from_filename
 
