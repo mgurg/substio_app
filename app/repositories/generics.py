@@ -37,7 +37,7 @@ class GenericRepo[T]:
         """
         # We use getattr to avoid type checker complaints about missing .id on T
         # which is bound to BaseModel.
-        result = await self.session.execute(select(self.model).where(getattr(self.model, "id") == id))
+        result = await self.session.execute(select(self.model).where(self.model.id == id))
         return result.scalar_one_or_none()
 
     async def create(self, **kwargs: Any) -> T:
@@ -64,7 +64,7 @@ class GenericRepo[T]:
         """
         Updates an object with the given ID and keyword arguments.
         """
-        await self.session.execute(update(self.model).where(getattr(self.model, "id") == id).values(**kwargs))  # await update
+        await self.session.execute(update(self.model).where(self.model.id == id).values(**kwargs))  # await update
         await self.session.commit()  # await commit
 
     async def delete(self, id: int) -> T | None:
