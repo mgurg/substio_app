@@ -1,4 +1,19 @@
-from pydantic import BaseModel, ConfigDict
+from decimal import Decimal
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.utils.validators import round_to_7_decimal_places
+
+
+class Coordinates(BaseModel):
+    lat: Annotated[Decimal, Field(ge=-90, le=90, max_digits=10, decimal_places=7)]
+    lon: Annotated[Decimal, Field(ge=-180, le=180, max_digits=10, decimal_places=7)]
+
+    @field_validator("lat", "lon", mode="before")
+    @classmethod
+    def sanitize_coordinates(cls, v):
+        return round_to_7_decimal_places(v)
 
 
 class HealthCheck(BaseModel):

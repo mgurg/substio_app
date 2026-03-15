@@ -32,11 +32,11 @@ class PlaceService:
         return await self.city_repo.get_by_uuid(city_uuid)
 
     async def create(self, place_add: PlaceAdd) -> None:
-        lat = float(place_add.lat) if place_add.lat is not None else None
-        lon = float(place_add.lon) if place_add.lon is not None else None
+        if not place_add.coordinates:
+            raise ValueError("Coordinates are required for distance calculation")
 
-        if lat is None or lon is None:
-            raise ValueError("Latitude and longitude are required for distance calculation")
+        lat = float(place_add.coordinates.lat)
+        lon = float(place_add.coordinates.lon)
 
         db_place = await self.place_repo.get_by_name_and_distance(place_add.name, lat, lon, 1)
 

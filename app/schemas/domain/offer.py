@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import AliasChoices, BaseModel, EmailStr, Field, model_validator
 
 from app.database.models.enums import OfferStatus, SourceType
-from app.schemas.domain.common import BaseResponse
+from app.schemas.domain.common import BaseResponse, Coordinates
 from app.schemas.domain.place import LegalRoleIndexResponse
 
 
@@ -86,8 +86,7 @@ class OfferIndexResponse(BaseResponse):
 
 class OfferMapResponse(BaseResponse):
     uuid: UUID
-    lat: float | None
-    lon: float | None
+    coordinates: Coordinates | None = None
 
 
 class OfferEmail(BaseResponse):
