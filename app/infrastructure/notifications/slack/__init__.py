@@ -1,3 +1,0 @@
-from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier
-from app.infrastructure.notifications.slack.fake_slack_notifier import FakeSlackNotifier
-from app.infrastructure.notifications.slack.factory import get_slack_notifier
