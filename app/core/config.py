@@ -11,10 +11,10 @@ APP_DIR = Path(__file__).parent.parent / "app"
 
 class Settings(BaseSettings):
     APP_DEBUG: bool = False
-    APP_ENV: Literal["DEV", "PROD"]
-    APP_URL: str
-    APP_DOMAIN: str
-    APP_ADMIN_MAIL: str
+    APP_ENV: Literal["DEV", "PROD"] = "DEV"
+    APP_URL: str = "http://localhost"
+    APP_DOMAIN: str = "localhost"
+    APP_ADMIN_MAIL: str = "admin@example.com"
     APP_API_DOCS: str | None = os.getenv("APP_API_DOCS")
 
     PROJECT_DIR: os.PathLike[str] = Path(__file__).parent.parent
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     OPENAI_MODEL: Literal["gpt-5-nano"] = "gpt-5-nano"
 
     SENTRY_DSN: str | None = os.getenv("SENTRY_DSN")
-    SLACK_WEBHOOK_URL: str = os.getenv("SLACK_WEBHOOK_URL")
+    SLACK_WEBHOOK_URL: str | None = os.getenv("SLACK_WEBHOOK_URL")
 
     SYSTEM_PROMPT: str = """
     Z podanego opisu zastępstwa procesowego wyodrębnij następujące informacje:
@@ -66,5 +66,5 @@ class Settings(BaseSettings):
 
 
 @lru_cache
-def get_settings() -> BaseSettings:
+def get_settings() -> Settings:
     return Settings()

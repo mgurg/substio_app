@@ -9,7 +9,7 @@ class SlackNotifierBase(ABC):
         pass
 
     @abstractmethod
-    async def send_rich_message(self, text: str) -> None:
+    async def send_rich_message(self, payload: dict) -> None:
         pass
 
     @abstractmethod

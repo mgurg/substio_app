@@ -26,11 +26,11 @@ class PlaceRepo(GenericRepo[Place]):
 
         return place
 
-    async def get_by_partial_name(self, name: str, facility_type: str | None = None) -> Sequence[Place]:
+    async def get_by_partial_name(self, name: str, place_type: str | None = None) -> Sequence[Place]:
         conditions = [func.lower(self.Model.name_ascii).ilike(f"%{name.lower()}%")]
 
-        if facility_type:
-            conditions.append(self.Model.type == facility_type)
+        if place_type:
+            conditions.append(self.Model.type == place_type)
 
         query = select(self.Model).where(and_(*conditions)).limit(7)
         result = await self.session.execute(query)

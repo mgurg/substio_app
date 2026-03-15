@@ -21,7 +21,7 @@ class PlaceService:
         self.city_repo = city_repo
         self.place_repo = place_repo
 
-    async def get_place_by_uuid(self, place_uuid: UUID) -> Place | None:
+    async def get_place_by_uuid(self, place_uuid: UUID) -> Place:
         db_place = await self.place_repo.get_by_uuid(place_uuid)
         if not db_place:
             raise NotFoundError("Place", str(place_uuid))

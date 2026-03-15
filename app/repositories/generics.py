@@ -35,10 +35,12 @@ class GenericRepo[T]:
         :param id: The ID of the object to retrieve.
         :return: The object if found, None otherwise.
         """
-        result = await self.session.execute(select(self.model).where(self.model.id == id))
+        # We use getattr to avoid type checker complaints about missing .id on T
+        # which is bound to BaseModel.
+        result = await self.session.execute(select(self.model).where(getattr(self.model, "id") == id))
         return result.scalar_one_or_none()
 
-    async def create(self, **kwargs: dict[str, Any]) -> T:
+    async def create(self, **kwargs: Any) -> T:
         """
         Creates a new object with the given keyword arguments.
 
@@ -58,11 +60,11 @@ class GenericRepo[T]:
             self.session.add(obj)
         await self.session.commit()  # await commit
 
-    async def update(self, id: int, **kwargs: dict[str, Any]) -> None:
+    async def update(self, id: int, **kwargs: Any) -> None:
         """
         Updates an object with the given ID and keyword arguments.
         """
-        await self.session.execute(update(self.model).where(self.model.id == id).values(**kwargs))  # await update
+        await self.session.execute(update(self.model).where(getattr(self.model, "id") == id).values(**kwargs))  # await update
         await self.session.commit()  # await commit
 
     async def delete(self, id: int) -> T | None:
@@ -78,7 +80,7 @@ class GenericRepo[T]:
             await self.session.commit()  # await commit
         return obj
 
-    async def filter(self, page: int = 1, per_page: int = 10, **kwargs: dict[str, Any]) -> Sequence[T]:
+    async def filter(self, page: int = 1, per_page: int = 10, **kwargs: Any) -> Sequence[T]:
         """
         Filters objects based on the given keyword arguments and paginate the result.
         """

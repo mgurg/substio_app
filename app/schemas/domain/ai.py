@@ -9,7 +9,10 @@ class SubstitutionOffer(BaseModel):
 
 
 class UsageDetails(BaseModel):
+    input_tokens: int
+    output_tokens: int
     total_tokens: int
+    elapsed_time: float
 
 
 class ParseResponse(BaseModel):

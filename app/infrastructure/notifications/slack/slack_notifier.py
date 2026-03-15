@@ -12,9 +12,10 @@ class SlackNotifier(SlackNotifierBase):
     settings = settings
 
     def __init__(self):
-        self.webhook_url = self.settings.SLACK_WEBHOOK_URL
-        if not self.webhook_url:
+        webhook_url = self.settings.SLACK_WEBHOOK_URL
+        if not webhook_url:
             raise ValueError("Slack webhook URL not configured")
+        self.webhook_url: str = webhook_url
 
     async def send_message(self, text: str) -> None:
         payload = {"text": text}

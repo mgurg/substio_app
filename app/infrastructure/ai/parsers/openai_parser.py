@@ -49,11 +49,18 @@ class OpenAIParser:
                 temperature=1,
             )
 
-            function_args = response.choices[0].message.function_call.arguments
+            message = response.choices[0].message
+            if not message.function_call:
+                raise ValueError("No function call in response")
+
+            function_args = message.function_call.arguments
             args_dict = json.loads(function_args)
             validated = SubstitutionOffer.model_validate(args_dict)
 
             elapsed_time = time.process_time() - start_time
+            if not response.usage:
+                raise ValueError("No usage info in response")
+
             usage_info = UsageDetails(
                 input_tokens=response.usage.prompt_tokens,
                 output_tokens=response.usage.completion_tokens,

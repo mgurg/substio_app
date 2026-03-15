@@ -24,9 +24,9 @@ class CityRepo(GenericRepo[City]):
 
         return city
 
-    async def find_by_teryt(self, name: str) -> City | None:
+    async def find_by_teryt(self, teryt: str) -> City | None:
         query = select(self.Model).where(
-            self.Model.teryt_simc == name
+            self.Model.teryt_simc == teryt
         )
 
         result = await self.session.execute(query)
