@@ -28,6 +28,7 @@ class CoordinateRange(BaseModel):
         return round_to_7_decimal_places(v)
 
 
+
 class HealthCheck(BaseModel):
     status: str = "OK"
 

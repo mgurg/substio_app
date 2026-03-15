@@ -15,6 +15,7 @@ class UsageDetails(BaseModel):
     elapsed_time: float
 
 
+
 class ParseResponse(BaseModel):
     success: bool
     data: SubstitutionOffer | None = None

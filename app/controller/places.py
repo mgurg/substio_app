@@ -4,8 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_place_service
-from app.schemas.domain.place import CityAdd, PlaceAdd
-from app.schemas.domain.place import CityIndexResponse, PlaceIndexResponse
+from app.schemas.domain.place import CityAdd, CityIndexResponse, PlaceAdd, PlaceIndexResponse
 from app.services.place_service import PlaceService
 
 place_router = APIRouter()

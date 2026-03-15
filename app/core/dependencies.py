@@ -1,21 +1,21 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
+from app.infrastructure.ai.parsers.base import AIParser
+from app.infrastructure.ai.parsers.factory import get_ai_parser
 from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
 from app.infrastructure.notifications.email.factory import get_email_notifier
 from app.infrastructure.notifications.slack.factory import get_slack_notifier
 from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
-from app.core.database import get_db
 from app.repositories.city_repo import CityRepo
 from app.repositories.legal_role_repo import LegalRoleRepo
 from app.repositories.offer_repo import OfferRepo
 from app.repositories.place_repo import PlaceRepo
 from app.services.email_validation_service import EmailValidationService
+from app.services.offer_service import OfferService
 from app.services.offers.offer_import_service import OfferImportService
 from app.services.offers.offer_notification_service import OfferNotificationService
-from app.services.offer_service import OfferService
-from app.infrastructure.ai.parsers.base import AIParser
-from app.infrastructure.ai.parsers.factory import get_ai_parser
 from app.services.place_service import PlaceService
 
 

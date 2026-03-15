@@ -1,8 +1,10 @@
 from uuid import UUID
+
 from fastapi import HTTPException
 from starlette.status import HTTP_404_NOT_FOUND
-from app.repositories.legal_role_repo import LegalRoleRepo
+
 from app.database.models.models import Offer
+from app.repositories.legal_role_repo import LegalRoleRepo
 
 
 class OfferRoleMapper:

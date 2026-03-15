@@ -6,6 +6,7 @@ from sqlalchemy import BinaryExpression, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.exceptions import NotFoundError
 from app.database.models.enums import OfferStatus
 from app.database.models.models import LegalRole, Offer, Place
 from app.exceptions import NotFoundError

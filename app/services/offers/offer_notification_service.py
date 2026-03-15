@@ -2,10 +2,10 @@ from uuid import UUID
 
 from loguru import logger
 
-from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
-from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
 from app.database.models.enums import SourceType
 from app.database.models.models import Offer
+from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
+from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
 
 
 class OfferNotificationService:
