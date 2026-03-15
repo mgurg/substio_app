@@ -1,4 +1,4 @@
-# Python
+# Python stuff
 __pycache__/
 *.py[cod]
 *$py.class
@@ -32,13 +32,15 @@ venv.bak/
 .env/
 pyvenv.cfg
 
-# Environment variables
+# Environment variables & secrets
 .env
 .env.local
 .env.development
 .env.test
 .env.production
 .env*.local
+.env.example
+.env.sample
 
 # IDE and editor files
 .vscode/
@@ -46,9 +48,15 @@ pyvenv.cfg
 *.swp
 *.swo
 *~
+\#*\#
+.\#*
 .spyderproject
 .spyproject
 .ropeproject
+.AppleDouble
+.LSOverride
+desktop.ini
+$RECYCLE.BIN/
 
 # OS generated files
 .DS_Store
@@ -76,9 +84,12 @@ CHANGELOG.md
 docs/
 *.md
 .readthedocs.yml
+/site
 
 # Testing
 .coverage
+.coverage.*
+coverage.*
 .pytest_cache/
 .tox/
 .nox/
@@ -110,55 +121,27 @@ dmypy.json
 .isort.cfg
 setup.cfg
 tox.ini
-#pyproject.toml
+.pyre/
+.pytype/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
 
-# pyenv
+# Package managers
 .python-version
-
-# pipenv
 Pipfile.lock
-
-# poetry
 poetry.lock
 
-# celery
+# Celery
 celerybeat-schedule
 celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
 # Cython debug symbols
 cython_debug/
-
-# FastAPI specific
-.pytest_cache/
-__pycache__/
 
 # Database
 *.db
@@ -166,11 +149,12 @@ __pycache__/
 *.sqlite3
 db.sqlite3
 database.db
+dump.rdb
 
 # Logs
-#logs/
-#*.log
-#log/
+logs/
+*.log
+log/
 
 # Runtime data
 pids/
@@ -181,18 +165,6 @@ pids/
 # Dependency directories
 site-packages/
 
-# Unit test / coverage reports
-.coverage
-.pytest_cache/
-.tox/
-.coverage.*
-coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-
 # Translations
 *.mo
 *.pot
@@ -200,74 +172,35 @@ coverage.xml
 # Local development
 requirements-dev.txt
 dev-requirements.txt
-.env.example
-.env.sample
 
-# Alembic (database migrations)
-# alembic.ini
+# Alembic
 migrations/versions/*.pyc
-
-# Redis dump file
-dump.rdb
-
-# Temporary folders
-tmp/
-temp/
-.tmp/
 
 # Docker
 Dockerfile*
 .dockerignore
 docker-compose*.yml
 
-# Kubernetes
+# Infrastructure (K8s, Terraform)
 k8s/
 *.yaml
 *.yml
-
-# Terraform
 *.tf
 *.tfstate
 *.tfvars
 
-# Static files (if using static file serving)
+# Static files & Media
 static/
 media/
 
-# Backup files
+# Backup and profiling
 *.bak
 *.backup
-
-# Profiling data
 .prof
 
-# MacOS
-.AppleDouble
-.LSOverride
-
-# Windows
-desktop.ini
-$RECYCLE.BIN/
-
-# Linux
-*~
-
-# PyCharm
-.idea/
-
-# VS Code
-.vscode/
-
-# Vim
-*.swp
-*.swo
-
-# Emacs
-*~
-\#*\#
+# Emacs & other
 /.emacs.desktop
 /.emacs.desktop.lock
 *.elc
 auto-save-list
 tramp
-.\#*
