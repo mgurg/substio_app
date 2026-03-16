@@ -66,7 +66,7 @@ Detailed View: Use `.venv/bin/alembic show <revision>` to get detailed informati
 ## Tests
 
 ```bash
-pytest -q tests
+uv run pytest -q tests
 ```
 
 ## Update python dependencies
@@ -84,11 +84,11 @@ uv cache clean
 ### Check & format project
 
 ```bash
-ruff check app/
+uv run ruff check app/
 ```
 
 ```bash
-ruff check app/ --fix
+uv run ruff check  app/ --fix
 ```
 
 ## Cold start
