@@ -229,7 +229,7 @@ async def test_import_raw_offers_rejects_invalid_json(service):
 
 @pytest.mark.asyncio
 async def test_import_raw_offers_rejects_non_list_json(service):
-    file = _UploadFileStub(filename="offers.json", content=b"{\"a\":1}")
+    file = _UploadFileStub(filename="offers.json", content=b'{"a":1}')
     with pytest.raises(HTTPException) as exc:
         await service.import_raw_offers(file)
     assert exc.value.status_code == HTTP_400_BAD_REQUEST

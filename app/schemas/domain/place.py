@@ -1,12 +1,9 @@
-from decimal import Decimal
-from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 
 from app.database.models.enums import PlaceCategory
 from app.schemas.domain.common import BaseResponse, CoordinateRange, Coordinates
-from app.utils.validators import round_to_7_decimal_places
 
 
 class Address(BaseModel):

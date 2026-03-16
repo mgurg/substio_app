@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.utils.validators import round_to_7_decimal_places
+from app.schemas.validators.validators import round_to_7_decimal_places
 
 
 class Coordinates(BaseModel):
