@@ -88,7 +88,7 @@ uv run ruff check app/
 ```
 
 ```bash
-uv run ruff check  app/ --fix
+uv run ruff check app/ --fix
 ```
 
 ## Cold start
