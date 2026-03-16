@@ -84,11 +84,11 @@ uv cache clean
 ### Check & format project
 
 ```bash
-uv run ruff check .
+uv run ruff check app/
 ```
 
 ```bash
-uv run ruff check . --fix
+uv run ruff check  app/ --fix
 ```
 
 ## Cold start
