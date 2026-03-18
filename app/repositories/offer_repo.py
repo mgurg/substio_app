@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database.models.enums import OfferStatus
 from app.database.models.models import LegalRole, Offer, Place
-from app.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError
 from app.repositories.filters.offer_filters import OfferFilters
 from app.repositories.generics import GenericRepo
 

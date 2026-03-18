@@ -7,7 +7,7 @@ from loguru import logger
 from app.common.text_utils import sanitize_name
 from app.database.models.models import City, Place
 from app.database.protocols import CityRepoProtocol, PlaceRepoProtocol
-from app.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.schemas.rest.requests import CityAdd, PlaceAdd
 
 

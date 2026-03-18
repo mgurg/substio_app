@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.models import Place
 from app.database.repository.generics import GenericRepo
-from app.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError
 
 EARTH_RADIUS_KM = 6371.0
 

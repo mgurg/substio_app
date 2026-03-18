@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.models import City
 from app.database.repository.generics import GenericRepo
-from app.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError
 
 
 class CityRepo(GenericRepo[City]):

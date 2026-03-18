@@ -7,7 +7,7 @@ import pytest
 import pytest_asyncio
 
 from app.database.models.enums import PlaceCategory
-from app.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.schemas.rest.requests import PlaceAdd
 from app.service.PlaceService import PlaceService
 

@@ -5,7 +5,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.models import City
-from app.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError
 from app.repositories.generics import GenericRepo
 
 
