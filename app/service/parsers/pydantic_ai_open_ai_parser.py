@@ -6,7 +6,7 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 
 settings = get_settings()

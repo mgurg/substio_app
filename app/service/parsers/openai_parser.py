@@ -4,7 +4,7 @@ import time
 from loguru import logger
 from openai import AsyncOpenAI
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer, UsageDetails
 
 settings = get_settings()

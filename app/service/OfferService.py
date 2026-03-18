@@ -10,7 +10,7 @@ from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_
 
 from app.common.email.EmailNotifierBase import EmailNotifierBase
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.config import get_settings
+from app.core.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 from app.database.repository.CityRepo import CityRepo

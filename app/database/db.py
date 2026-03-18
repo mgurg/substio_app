@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import declarative_base
 
-from app.config import get_settings
+from app.core.config import get_settings
 
 engine = None
 async_session: async_sessionmaker[AsyncSession] | None = None

@@ -3,7 +3,7 @@ from loguru import logger
 from pydantic import EmailStr
 
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
 

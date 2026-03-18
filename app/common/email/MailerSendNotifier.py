@@ -5,7 +5,7 @@ from loguru import logger
 from mailersend import EmailBuilder, MailerSendClient
 
 from app.common.email.EmailNotifierBase import EmailNotifierBase
-from app.config import get_settings
+from app.core.config import get_settings
 
 settings = get_settings()
 

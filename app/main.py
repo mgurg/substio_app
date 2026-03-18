@@ -11,7 +11,7 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.status import HTTP_200_OK
 
 from app.common.auth import check_token
-from app.config import get_settings
+from app.core.config import get_settings
 from app.controller.offers import offer_router
 from app.controller.places import place_router
 from app.exceptions import ConflictError, NotFoundError
