@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from app.dependencies import get_place_service
+from app.core.dependencies import get_place_service
 from app.schemas.rest.requests import CityAdd, PlaceAdd
 from app.schemas.rest.responses import CityIndexResponse, PlaceIndexResponse
 from app.service.PlaceService import PlaceService

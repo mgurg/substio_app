@@ -62,7 +62,7 @@ def postgres_url_env() -> Generator[dict, None, None]:
 @pytest.fixture(scope="session")
 def apply_migrations(postgres_url_env) -> None:
     """Run Alembic migrations against the container DB."""
-    from app.config import get_settings
+    from app.core.config import get_settings
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
 

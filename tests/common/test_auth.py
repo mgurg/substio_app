@@ -1,7 +1,7 @@
 import pytest
 from fastapi import HTTPException
 
-from app.common.auth import check_token
+from app.core.auth import check_token
 
 
 class Creds:

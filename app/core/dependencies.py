@@ -5,7 +5,7 @@ from app.common.email.EmailNotifierBase import EmailNotifierBase
 from app.common.email.factory import get_email_notifier
 from app.common.slack.factory import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.database.db import get_db
+from app.core.database import get_db
 from app.database.repository.CityRepo import CityRepo
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
@@ -18,22 +18,27 @@ from app.service.PlaceService import PlaceService
 
 
 def get_city_repo(session: AsyncSession = Depends(get_db)) -> CityRepo:
+    from app.database.repository.CityRepo import CityRepo
     return CityRepo(session)
 
 
 def get_place_repo(session: AsyncSession = Depends(get_db)) -> PlaceRepo:
+    from app.database.repository.PlaceRepo import PlaceRepo
     return PlaceRepo(session)
 
 
 def get_offer_repo(session: AsyncSession = Depends(get_db)) -> OfferRepo:
+    from app.database.repository.OfferRepo import OfferRepo
     return OfferRepo(session)
 
 
 def get_legal_role_repo(session: AsyncSession = Depends(get_db)) -> LegalRoleRepo:
+    from app.database.repository.LegalRoleRepo import LegalRoleRepo
     return LegalRoleRepo(session)
 
 
 def get_email_validator() -> EmailValidationService:
+    from app.service.EmailValidationService import EmailValidationService
     return EmailValidationService()
 
 
@@ -41,6 +46,7 @@ def get_place_service(
         city_repo: CityRepo = Depends(get_city_repo),
         place_repo: PlaceRepo = Depends(get_place_repo),
 ) -> PlaceService:
+    from app.service.PlaceService import PlaceService
     return PlaceService(city_repo=city_repo, place_repo=place_repo)
 
 
@@ -52,8 +58,8 @@ def get_offer_service(
         slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
         email_notifier: EmailNotifierBase = Depends(get_email_notifier),
         ai_parser: AIParser = Depends(get_ai_parser),
-        email_validator: EmailValidationService = Depends(get_email_validator),
 ) -> OfferService:
+
     return OfferService(
         offer_repo=offer_repo,
         place_repo=place_repo,
@@ -62,5 +68,5 @@ def get_offer_service(
         slack_notifier=slack_notifier,
         email_notifier=email_notifier,
         ai_parser=ai_parser,
-        email_validator=email_validator,
+        email_validator=EmailValidationService(),
     )

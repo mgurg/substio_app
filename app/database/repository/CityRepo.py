@@ -4,9 +4,9 @@ from uuid import UUID
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import NotFoundError
 from app.database.models.models import City
 from app.database.repository.generics import GenericRepo
-from app.exceptions import NotFoundError
 
 
 class CityRepo(GenericRepo[City]):
