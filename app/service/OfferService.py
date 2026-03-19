@@ -13,9 +13,9 @@ from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.core.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
-from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.repositories.city_repo import CityRepo
 from app.repositories.filters.offer_filters import OfferFilters
+from app.repositories.legal_role_repo import LegalRoleRepo
 from app.repositories.offer_repo import OfferRepo
 from app.repositories.place_repo import PlaceRepo
 from app.schemas.api.api_responses import ParseResponse
