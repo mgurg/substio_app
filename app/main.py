@@ -10,10 +10,10 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from starlette.status import HTTP_200_OK
 
-from app.core.auth import check_token
-from app.core.config import get_settings
 from app.controller.offers import offer_router
 from app.controller.places import place_router
+from app.core.auth import check_token
+from app.core.config import get_settings
 from app.core.exceptions import ConflictError, NotFoundError
 from app.schemas.rest.rest_responses import HealthCheck
 

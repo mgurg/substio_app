@@ -5,9 +5,9 @@ from uuid import UUID, uuid4
 from loguru import logger
 
 from app.common.text_utils import sanitize_name
-from app.database.models.models import City, Place
-from app.core.protocols import CityRepoProtocol, PlaceRepoProtocol
 from app.core.exceptions import ConflictError, NotFoundError
+from app.core.protocols import CityRepoProtocol, PlaceRepoProtocol
+from app.database.models.models import City, Place
 from app.schemas.rest.requests import CityAdd, PlaceAdd
 
 

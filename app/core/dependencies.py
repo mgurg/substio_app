@@ -5,7 +5,7 @@ from app.common.email.EmailNotifierBase import EmailNotifierBase
 from app.common.email.factory import get_email_notifier
 from app.common.slack.factory import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.database.db import get_db
+from app.core.database import get_db
 from app.database.repository.CityRepo import CityRepo
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
