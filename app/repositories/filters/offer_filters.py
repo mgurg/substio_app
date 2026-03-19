@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.database.models.enums import OfferStatus
-from app.schemas.domain.common import Coordinates
 
 
 class OfferFilters(BaseModel):
@@ -16,7 +15,8 @@ class OfferFilters(BaseModel):
     search: str | None = None
     search_fields: list[str] | None = None
     load_relations: list[str] | str | None = None
-    coordinates: Coordinates | None = None
+    lat: float | None = None
+    lon: float | None = None
     distance_km: float | None = None
     legal_role_uuids: list[UUID] | None = None
     invoice: bool | None = None
@@ -24,7 +24,7 @@ class OfferFilters(BaseModel):
 
     @property
     def has_location_filter(self) -> bool:
-        return all([self.coordinates is not None, self.distance_km is not None])
+        return all([self.lat is not None, self.lon is not None, self.distance_km is not None])
 
     @property
     def has_legal_role_filter(self) -> bool:

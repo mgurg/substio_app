@@ -14,10 +14,10 @@ from app.core.config import get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 from app.database.repository.CityRepo import CityRepo
-from app.database.repository.filters.offer_filters import OfferFilters
 from app.database.repository.LegalRoleRepo import LegalRoleRepo
 from app.database.repository.OfferRepo import OfferRepo
 from app.database.repository.PlaceRepo import PlaceRepo
+from app.repositories.filters.offer_filters import OfferFilters
 from app.schemas.api.api_responses import ParseResponse
 from app.schemas.rest.requests import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
 from app.schemas.rest.responses import ImportResult
