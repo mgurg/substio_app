@@ -14,7 +14,7 @@ from app.service.EmailValidationService import EmailValidationService
 from app.service.OfferService import OfferService
 from app.service.parsers.base import AIParser
 from app.service.parsers.factory import get_ai_parser
-from app.service.PlaceService import PlaceService
+from app.services.place_service import PlaceService
 
 
 def get_city_repo(session: AsyncSession = Depends(get_db)) -> CityRepo:
@@ -46,7 +46,6 @@ def get_place_service(
         city_repo: CityRepo = Depends(get_city_repo),
         place_repo: PlaceRepo = Depends(get_place_repo),
 ) -> PlaceService:
-    from app.service.PlaceService import PlaceService
     return PlaceService(city_repo=city_repo, place_repo=place_repo)
 
 
