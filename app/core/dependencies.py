@@ -6,10 +6,10 @@ from app.common.email.factory import get_email_notifier
 from app.common.slack.factory import get_slack_notifier
 from app.common.slack.SlackNotifierBase import SlackNotifierBase
 from app.core.database import get_db
-from app.database.repository.CityRepo import CityRepo
-from app.database.repository.LegalRoleRepo import LegalRoleRepo
-from app.database.repository.OfferRepo import OfferRepo
-from app.database.repository.PlaceRepo import PlaceRepo
+from app.repositories.city_repo import CityRepo
+from app.repositories.legal_role_repo import LegalRoleRepo
+from app.repositories.offer_repo import OfferRepo
+from app.repositories.place_repo import PlaceRepo
 from app.service.EmailValidationService import EmailValidationService
 from app.service.OfferService import OfferService
 from app.service.parsers.base import AIParser
@@ -18,22 +18,22 @@ from app.service.PlaceService import PlaceService
 
 
 def get_city_repo(session: AsyncSession = Depends(get_db)) -> CityRepo:
-    from app.database.repository.CityRepo import CityRepo
+    from app.repositories.city_repo import CityRepo
     return CityRepo(session)
 
 
 def get_place_repo(session: AsyncSession = Depends(get_db)) -> PlaceRepo:
-    from app.database.repository.PlaceRepo import PlaceRepo
+    from app.repositories.place_repo import PlaceRepo
     return PlaceRepo(session)
 
 
 def get_offer_repo(session: AsyncSession = Depends(get_db)) -> OfferRepo:
-    from app.database.repository.OfferRepo import OfferRepo
+    from app.repositories.offer_repo import OfferRepo
     return OfferRepo(session)
 
 
 def get_legal_role_repo(session: AsyncSession = Depends(get_db)) -> LegalRoleRepo:
-    from app.database.repository.LegalRoleRepo import LegalRoleRepo
+    from app.repositories.legal_role_repo import LegalRoleRepo
     return LegalRoleRepo(session)
 
 
