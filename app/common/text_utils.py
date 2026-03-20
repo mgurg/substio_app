@@ -1,7 +1,25 @@
+import hashlib
+import hmac
 import re
 import unicodedata
+from datetime import datetime
 
 from unidecode import unidecode
+
+from app.core.config import get_settings
+
+settings = get_settings()
+
+
+def generate_offer_management_token(offer_uuid: str, created_at: datetime) -> str:
+    """
+    Generate a secure token for offer management based on UUID and created_at date.
+    Uses HMAC-SHA256 with APP_SECRET_KEY.
+    """
+    secret = settings.APP_SECRET_KEY.encode()
+    # Using ISO format with microseconds for better uniqueness
+    message = f"{offer_uuid}:{created_at.isoformat()}".encode()
+    return hmac.new(secret, message, hashlib.sha256).hexdigest()
 
 
 def remove_html_tags(text):

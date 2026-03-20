@@ -8,21 +8,24 @@ from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 from app.core.dependencies import get_offer_service
 from app.database.models.enums import OfferStatus
 from app.repositories.filters.offer_filters import OfferFilters
-from app.schemas.api.api_responses import ParseResponse
-from app.schemas.rest.requests import OfferAdd, OfferRawAdd, OfferUpdate
-from app.schemas.rest.responses import (
+from app.schemas.domain.ai import ParseResponse
+from app.schemas.domain.common import Coordinates
+from app.schemas.domain.offer import (
     ImportResult,
-    LegalRoleIndexResponse,
+    OfferAdd,
     OfferEmail,
     OfferIndexResponse,
     OfferMapResponse,
+    OfferRawAdd,
     OffersCount,
     OffersPaginated,
+    OfferUpdate,
     RawOfferIndexResponse,
     RawOffersPaginated,
     SimilarOfferIndexResponse,
 )
-from app.service.OfferService import OfferService
+from app.schemas.domain.place import LegalRoleIndexResponse
+from app.services.offer_service import OfferService
 
 offer_router = APIRouter()
 
@@ -66,9 +69,14 @@ async def list_offers(
     legal_role_uuids: Annotated[list[UUID] | None, Query()] = None,
     invoice: Annotated[bool | None, Query()] = None,
 ) -> OffersPaginated:
-    location_params = [lat, lon, distance_km]
-    if any(param is not None for param in location_params) and not all(param is not None for param in location_params):
-        raise HTTPException(status_code=400, detail="lat, lon, and distance_km must all be provided together for location filtering")
+    if (lat is not None or lon is not None or distance_km is not None) and not (
+        lat is not None and lon is not None and distance_km is not None
+    ):
+        raise HTTPException(
+            status_code=400, detail="lat, lon, and distance_km must all be provided together for location filtering"
+        )
+
+    coordinates = Coordinates(lat=lat, lon=lon) if lat is not None and lon is not None else None
 
     filters = OfferFilters(
         search=search,
@@ -76,8 +84,7 @@ async def list_offers(
         offset=offset,
         sort_column=field,
         sort_order=order,
-        lat=lat,
-        lon=lon,
+        coordinates=coordinates,
         distance_km=distance_km,
         legal_role_uuids=legal_role_uuids,
         invoice=invoice,
@@ -149,7 +156,7 @@ async def import_raw_offers(offer_service: offerServiceDependency, file: Annotat
 
 @offer_router.get("/raw/{offer_uuid}")
 async def get_raw_offer(offer_service: offerServiceDependency, offer_uuid: UUID) -> RawOfferIndexResponse:
-    return await offer_service.get_raw_offer(offer_uuid)
+    return await offer_service.get_offer_by_id(offer_uuid)
 
 
 @offer_router.get("/raw/{offer_uuid}/parse")
