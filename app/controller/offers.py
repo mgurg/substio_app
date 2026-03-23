@@ -120,7 +120,7 @@ async def list_raw_offers(
 async def list_map_offers(offer_service: offerServiceDependency) -> list[OfferMapResponse]:
     filters = OfferFilters(limit=100, offset=0, status=OfferStatus.ACTIVE, valid_to=datetime.now(UTC) - timedelta(hours=12))
 
-    db_offers, count = await offer_service.list_raw_offers(0, 100, "created_at", "desc", filters)
+    db_offers, count = await offer_service.list_map_offers(0, 100, "created_at", "desc", filters)
 
     return db_offers
 
