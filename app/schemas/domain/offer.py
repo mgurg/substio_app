@@ -29,7 +29,7 @@ class OfferRawAdd(BaseModel):
 class OfferAdd(BaseModel):
     author: str
     facility_uuid: UUID | None = None
-    city_uuid: UUID
+    city_uuid: UUID | None = None
     roles: list[UUID] | None = None
     date: str | None = None
     hour: str | None = None
