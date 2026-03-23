@@ -5,10 +5,10 @@ from uuid import uuid4
 import pytest
 from pydantic import EmailStr
 
-from app.common.slack.factory import get_slack_notifier
-from app.common.slack.SlackNotifierBase import SlackNotifierBase
-from app.schemas.api.api_responses import ParseResponse, SubstitutionOffer
-from app.service.parsers.factory import get_ai_parser
+from app.infrastructure.ai.parsers.factory import get_ai_parser
+from app.infrastructure.notifications.slack.factory import get_slack_notifier
+from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
+from app.schemas.domain.ai import ParseResponse, SubstitutionOffer
 
 
 # Helper functions to build payloads
@@ -43,12 +43,13 @@ def make_city_payload(
 ) -> dict:
     return {
         "city_name": name,
-        "lat": lat,
-        "lon": lon,
-        "lat_min": lat - 0.1,
-        "lat_max": lat + 0.1,
-        "lon_min": lon - 0.1,
-        "lon_max": lon + 0.1,
+        "coordinates": {"lat": lat, "lon": lon},
+        "range": {
+            "lat_min": lat - 0.1,
+            "lat_max": lat + 0.1,
+            "lon_min": lon - 0.1,
+            "lon_max": lon + 0.1,
+        },
         "population": 100000,
         "importance": 0.9,
         "category": "city",
@@ -61,10 +62,19 @@ def make_city_payload(
 
 def setup_test_city(client, name_prefix="TestCity") -> str:
     """Helper to create a test city and return its UUID"""
+    from app.common.text_utils import sanitize_name
+
     city_name = f"{name_prefix}-{uuid4().hex[:6]}"
-    client.post("/places/city", json=make_city_payload(city_name, teryt=f"SIMC-{uuid4().hex[:6]}"))
-    response = client.get(f"/places/city/{city_name}")
-    return response.json()[0]["uuid"]
+    res = client.post("/places/city", json=make_city_payload(city_name, teryt=f"SIMC-{uuid4().hex[:6]}"))
+    assert res.status_code == 200, f"Failed to create city: {res.text}"
+
+    # Search by sanitized name since GET /city/{city_name} uses it
+    sanitized = sanitize_name(city_name)
+    response = client.get(f"/places/city/{sanitized}")
+    assert response.status_code == 200, f"Failed to get city: {response.text}"
+    data = response.json()
+    assert len(data) > 0, f"City not found: {city_name} (sanitized: {sanitized})"
+    return data[0]["uuid"]
 
 
 def create_test_offer(client, description=None, **kwargs) -> str:
@@ -128,15 +138,15 @@ def client_with_overrides(client):
 
 
 @pytest.mark.integration
-def test_create_and_list_raw_offers(client_with_overrides):
+def test_create_and_list_raw_offers(client):
     """Test creating and listing raw offers"""
-    r1 = client_with_overrides.post("/offers/raw", json=make_offer_payload("o-1"))
+    r1 = client.post("/offers/raw", json=make_offer_payload("o-1"))
     assert r1.status_code == 201
 
-    r2 = client_with_overrides.post("/offers/raw", json=make_offer_payload("o-2", author="alice", author_uid="u2"))
+    r2 = client.post("/offers/raw", json=make_offer_payload("o-2", author="alice", author_uid="u2"))
     assert r2.status_code == 201
 
-    res = client_with_overrides.get("/offers/raw", params={"limit": 10, "offset": 0, "order": "asc", "field": "created_at"})
+    res = client.get("/offers/raw", params={"limit": 10, "offset": 0, "order": "asc", "field": "created_at"})
     assert res.status_code == 200
     body = res.json()
 
@@ -152,104 +162,104 @@ def test_create_and_list_raw_offers(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_duplicate_offer_returns_409(client_with_overrides):
+def test_duplicate_offer_returns_409(client):
     """Test that duplicate raw offers return 409 conflict"""
     payload = make_offer_payload("o-dup")
 
-    r1 = client_with_overrides.post("/offers/raw", json=payload)
+    r1 = client.post("/offers/raw", json=payload)
     assert r1.status_code == 201
 
-    r2 = client_with_overrides.post("/offers/raw", json=payload)
+    r2 = client.post("/offers/raw", json=payload)
     assert r2.status_code == 409
     assert "already exists" in r2.json()["detail"]
 
 
 @pytest.mark.integration
-def test_get_nonexistent_raw_offer_returns_404(client_with_overrides):
+def test_get_nonexistent_raw_offer_returns_404(client):
     """Test fetching a raw offer that doesn't exist"""
     fake_uuid = uuid4()
-    response = client_with_overrides.get(f"/offers/raw/{fake_uuid}")
+    response = client.get(f"/offers/raw/{fake_uuid}")
     assert response.status_code == 404
 
 
 @pytest.mark.integration
-def test_accept_raw_offer_and_status_changes(client_with_overrides):
+def test_accept_raw_offer_and_status_changes(client):
     """Test accepting a raw offer changes its status to active"""
-    client_with_overrides.post("/offers/raw", json=make_offer_payload("o-acc"))
+    client.post("/offers/raw", json=make_offer_payload("o-acc"))
 
-    raw = client_with_overrides.get("/offers/raw")
+    raw = client.get("/offers/raw")
     uuids = [item["uuid"] for item in raw.json()["data"] if item["offer_uid"] == "o-acc"]
     assert uuids, "Newly created offer should be retrievable"
     offer_uuid = uuids[0]
 
-    patch = client_with_overrides.patch(f"/offers/raw/{offer_uuid}/accept")
+    patch = client.patch(f"/offers/raw/{offer_uuid}/accept")
     assert patch.status_code == 204
 
-    got = client_with_overrides.get(f"/offers/raw/{offer_uuid}")
+    got = client.get(f"/offers/raw/{offer_uuid}")
     assert got.status_code == 200
     assert got.json()["status"].lower() == "active"
 
 
 @pytest.mark.integration
-def test_reject_raw_offer_and_status_changes(client_with_overrides):
+def test_reject_raw_offer_and_status_changes(client):
     """Test rejecting a raw offer changes its status to rejected"""
-    client_with_overrides.post("/offers/raw", json=make_offer_payload("o-rej"))
+    client.post("/offers/raw", json=make_offer_payload("o-rej"))
 
-    raw = client_with_overrides.get("/offers/raw")
+    raw = client.get("/offers/raw")
     uuids = [item["uuid"] for item in raw.json()["data"] if item["offer_uid"] == "o-rej"]
     assert uuids, "Newly created offer should be retrievable"
     offer_uuid = uuids[0]
 
-    patch = client_with_overrides.patch(f"/offers/raw/{offer_uuid}/reject")
+    patch = client.patch(f"/offers/raw/{offer_uuid}/reject")
     assert patch.status_code == 204
 
-    got = client_with_overrides.get(f"/offers/raw/{offer_uuid}")
+    got = client.get(f"/offers/raw/{offer_uuid}")
     assert got.status_code == 200
     assert got.json()["status"].lower() == "rejected"
 
 
 @pytest.mark.integration
-def test_accept_already_accepted_offer_idempotent(client_with_overrides):
+def test_accept_already_accepted_offer_idempotent(client):
     """Test that accepting an already accepted offer is idempotent"""
-    client_with_overrides.post("/offers/raw", json=make_offer_payload("o-double-accept"))
+    client.post("/offers/raw", json=make_offer_payload("o-double-accept"))
 
-    raw = client_with_overrides.get("/offers/raw")
+    raw = client.get("/offers/raw")
     offer_uuid = next(item["uuid"] for item in raw.json()["data"] if item["offer_uid"] == "o-double-accept")
 
-    response1 = client_with_overrides.patch(f"/offers/raw/{offer_uuid}/accept")
+    response1 = client.patch(f"/offers/raw/{offer_uuid}/accept")
     assert response1.status_code == 204
 
-    response2 = client_with_overrides.patch(f"/offers/raw/{offer_uuid}/accept")
+    response2 = client.patch(f"/offers/raw/{offer_uuid}/accept")
     assert response2.status_code in [204, 409]
 
 
 @pytest.mark.integration
-def test_cannot_accept_rejected_offer(client_with_overrides):
+def test_cannot_accept_rejected_offer(client):
     """Test that accepting a rejected offer fails appropriately"""
-    client_with_overrides.post("/offers/raw", json=make_offer_payload("o-reject-then-accept"))
+    client.post("/offers/raw", json=make_offer_payload("o-reject-then-accept"))
 
-    raw = client_with_overrides.get("/offers/raw")
+    raw = client.get("/offers/raw")
     offer_uuid = next(item["uuid"] for item in raw.json()["data"] if item["offer_uid"] == "o-reject-then-accept")
 
-    client_with_overrides.patch(f"/offers/raw/{offer_uuid}/reject")
+    client.patch(f"/offers/raw/{offer_uuid}/reject")
 
-    response = client_with_overrides.patch(f"/offers/raw/{offer_uuid}/accept")
+    response = client.patch(f"/offers/raw/{offer_uuid}/accept")
     assert response.status_code in [400, 409]
 
 
 @pytest.mark.integration
-def test_accept_nonexistent_raw_offer_returns_404(client_with_overrides):
+def test_accept_nonexistent_raw_offer_returns_404(client):
     """Test accepting a raw offer that doesn't exist"""
     fake_uuid = uuid4()
-    response = client_with_overrides.patch(f"/offers/raw/{fake_uuid}/accept")
+    response = client.patch(f"/offers/raw/{fake_uuid}/accept")
     assert response.status_code == 404
 
 
 @pytest.mark.integration
-def test_reject_nonexistent_raw_offer_returns_404(client_with_overrides):
+def test_reject_nonexistent_raw_offer_returns_404(client):
     """Test rejecting a raw offer that doesn't exist"""
     fake_uuid = uuid4()
-    response = client_with_overrides.patch(f"/offers/raw/{fake_uuid}/reject")
+    response = client.patch(f"/offers/raw/{fake_uuid}/reject")
     assert response.status_code == 404
 
 
@@ -698,19 +708,19 @@ def test_similar_offers_same_email(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_raw_offers_with_status_filter(client_with_overrides):
+def test_list_raw_offers_with_status_filter(client):
     """Test filtering raw offers by status"""
     offer_uid = f"o-status-{uuid4().hex[:6]}"
-    client_with_overrides.post("/offers/raw", json=make_offer_payload(offer_uid))
+    client.post("/offers/raw", json=make_offer_payload(offer_uid))
 
-    raw = client_with_overrides.get("/offers/raw")
+    raw = client.get("/offers/raw")
     offer_uuid = next(item["uuid"] for item in raw.json()["data"] if item["offer_uid"] == offer_uid)
 
     # Accept the offer
-    client_with_overrides.patch(f"/offers/raw/{offer_uuid}/accept")
+    client.patch(f"/offers/raw/{offer_uuid}/accept")
 
     # Filter by active status
-    response = client_with_overrides.get("/offers/raw", params={"status": "active"})
+    response = client.get("/offers/raw", params={"status": "active"})
     assert response.status_code == 200
     data = response.json()["data"]
 
@@ -720,22 +730,22 @@ def test_list_raw_offers_with_status_filter(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_raw_offers_sorting_by_name(client_with_overrides):
+def test_list_raw_offers_sorting_by_name(client):
     """Test sorting raw offers by name"""
-    response_asc = client_with_overrides.get("/offers/raw", params={"field": "name", "order": "asc", "limit": 5})
+    response_asc = client.get("/offers/raw", params={"field": "name", "order": "asc", "limit": 5})
     assert response_asc.status_code == 200
 
-    response_desc = client_with_overrides.get("/offers/raw", params={"field": "name", "order": "desc", "limit": 5})
+    response_desc = client.get("/offers/raw", params={"field": "name", "order": "desc", "limit": 5})
     assert response_desc.status_code == 200
 
 
 @pytest.mark.integration
-def test_list_raw_offers_with_search(client_with_overrides):
+def test_list_raw_offers_with_search(client):
     """Test searching raw offers"""
     unique_text = f"searchable-{uuid4().hex[:8]}"
-    client_with_overrides.post("/offers/raw", json=make_offer_payload(f"o-{unique_text}"))
+    client.post("/offers/raw", json=make_offer_payload(f"o-{unique_text}"))
 
-    response = client_with_overrides.get("/offers/raw", params={"search": unique_text})
+    response = client.get("/offers/raw", params={"search": unique_text})
     assert response.status_code == 200
     body = response.json()
 
@@ -978,14 +988,14 @@ def test_special_characters_in_description(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_concurrent_duplicate_prevention(client_with_overrides):
+def test_concurrent_duplicate_prevention(client):
     """Test that duplicate prevention works"""
     payload = make_offer_payload(f"o-concurrent-{uuid4().hex[:6]}")
 
     # First creation should succeed
-    resp1 = client_with_overrides.post("/offers/raw", json=payload)
+    resp1 = client.post("/offers/raw", json=payload)
     assert resp1.status_code == 201
 
     # Immediate duplicate should fail
-    resp2 = client_with_overrides.post("/offers/raw", json=payload)
+    resp2 = client.post("/offers/raw", json=payload)
     assert resp2.status_code == 409

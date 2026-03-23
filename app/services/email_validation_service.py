@@ -1,6 +1,6 @@
 from loguru import logger
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import Offer
 
@@ -10,8 +10,42 @@ settings = get_settings()
 class EmailValidationService:
     """Service for validating email sending conditions"""
 
-    @staticmethod
+    def __init__(self, settings: Settings | None = None):
+        self.settings = settings or get_settings()
+
+    def should_send_user_offer_creation_email(
+        self,
+        offer: Offer,
+    ) -> bool:
+        """
+        Determine if a creation email should be sent for a user-submitted offer.
+
+        Args:
+            offer: The newly created offer
+
+        Returns:
+            bool: True if email should be sent, False otherwise
+        """
+        if not offer.email:
+            logger.info(f"Skipping email sending for offer {offer.uuid}: no email set")
+            return False
+
+        if self.settings.APP_ENV != "PROD":
+            logger.info(f"Skipping email sending for offer {offer.uuid}: not running in PROD")
+            return False
+
+        if offer.source != SourceType.USER:
+            logger.info(f"Skipping email sending for offer {offer.uuid}: source is not USER ({offer.source})")
+            return False
+
+        if offer.status != OfferStatus.ACTIVE:
+            logger.info(f"Skipping email sending for offer {offer.uuid}: offer status is {offer.status}")
+            return False
+
+        return True
+
     def should_send_offer_email(
+        self,
         updated_offer: Offer,
         original_offer: Offer,
         submit_email: bool
@@ -31,7 +65,7 @@ class EmailValidationService:
             logger.info("Skipping email sending: no email set on offer")
             return False
 
-        if settings.APP_ENV != "PROD":
+        if self.settings.APP_ENV != "PROD":
             logger.info("Skipping email sending: not running in PROD")
             return False
 

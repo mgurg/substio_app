@@ -24,12 +24,12 @@ class OfferRepo(GenericRepo[Offer]):
         if not load_relations:
             return query
 
-        for relation in load_relations:  # load_relations=["*"]
+        for relation in load_relations:
             if relation == "*":
                 query = query.options(selectinload("*"))
-            elif isinstance(relation, str):  # load_relations=["city", "location"]
+            elif isinstance(relation, str):
                 query = query.options(selectinload(getattr(self.model, relation)))
-            elif isinstance(relation, BinaryExpression):  # load_relations=[Room.city, Room.location]
+            elif isinstance(relation, BinaryExpression):
                 query = query.options(selectinload(relation))
 
         return query
@@ -118,8 +118,8 @@ class OfferRepo(GenericRepo[Offer]):
                 self.model.legal_roles.any(LegalRole.uuid.in_(filters.legal_role_uuids))
             )
 
-        if all([filters.lat, filters.lon, filters.distance_km]):
-            conditions.append(self._distance_filter(filters.lat, filters.lon, filters.distance_km))
+        if filters.coordinates and filters.distance_km:
+            conditions.append(self._distance_filter(float(filters.coordinates.lat), float(filters.coordinates.lon), filters.distance_km))
 
         if conditions:
             query = query.filter(and_(*conditions))
@@ -156,7 +156,7 @@ class OfferRepo(GenericRepo[Offer]):
         if filters.legal_role_uuids:
             count_query = count_query.join(self.model.legal_roles)
 
-        if all([filters.lat, filters.lon, filters.distance_km]) and not filters.legal_role_uuids:
+        if filters.coordinates and filters.distance_km and not filters.legal_role_uuids:
             count_query = count_query.join(Place, self.model.place_id == Place.id, isouter=True)
 
         return self._apply_filters(count_query, filters)

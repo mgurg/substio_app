@@ -6,10 +6,11 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
-from app.database.models.enums import PlaceCategory
 from app.core.exceptions import ConflictError, NotFoundError
-from app.schemas.rest.requests import PlaceAdd
-from app.service.PlaceService import PlaceService
+from app.database.models.enums import PlaceCategory
+from app.schemas.domain.common import Coordinates
+from app.schemas.domain.place import Address, PlaceAdd
+from app.services.place_service import PlaceService
 
 
 @pytest_asyncio.fixture
@@ -51,15 +52,19 @@ async def test_create_place_conflict(service, place_repo_mock):
     place_add = PlaceAdd(
         name="Sąd rejonowy",
         type="SR",
-        street="Main 12",
-        city="Warsaw",
         category=PlaceCategory.COURT,
-        postal_code="00-001",
         department=None,
-        street_name=None,
-        street_number=None,
-        lat=52.0,
-        lon=21.0,
+        phone=None,
+        email=None,
+        website=None,
+        address=Address(
+            street="Main 12",
+            city="Warsaw",
+            postal_code="00-001",
+            street_name=None,
+            street_number=None,
+        ),
+        coordinates=Coordinates(lat=52.0, lon=21.0),
     )
 
     # ✅ Return something with a .uuid attribute (like ORM model would)
@@ -74,9 +79,21 @@ async def test_create_place_conflict(service, place_repo_mock):
 @pytest.mark.asyncio
 async def test_create_place_success(service, place_repo_mock):
     place_add = PlaceAdd(
-        name="New Room", type="room", street="Main 12", city="Warsaw",
-        category=PlaceCategory.COURT, postal_code="00-001", department=None,
-        street_name=None, street_number=None, lat=52.0, lon=21.0
+        name="New Room",
+        type="room",
+        category=PlaceCategory.COURT,
+        department=None,
+        phone=None,
+        email=None,
+        website=None,
+        address=Address(
+            street="Main 12",
+            city="Warsaw",
+            postal_code="00-001",
+            street_name=None,
+            street_number=None,
+        ),
+        coordinates=Coordinates(lat=52.0, lon=21.0),
     )
     place_repo_mock.get_by_name_and_distance.return_value = []
     place_repo_mock.create.return_value = None

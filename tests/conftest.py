@@ -15,6 +15,16 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
+def pytest_configure(config):
+    """Set environment variables before tests are collected."""
+    os.environ.setdefault("APP_ENV", "DEV")
+    os.environ.setdefault("APP_URL", "http://testserver")
+    os.environ.setdefault("APP_DOMAIN", "test.local")
+    os.environ.setdefault("APP_ADMIN_MAIL", "admin@test.local")
+    os.environ.setdefault("SLACK_WEBHOOK_URL", "http://localhost/fake-webhook")
+    os.environ.setdefault("OPENAI_API_KEY", "test_openai_key")
+
+
 @pytest.fixture(scope="session")
 def postgres_url_env() -> Generator[dict, None, None]:
     """Start a Postgres testcontainer and expose env vars required by the app.
@@ -34,7 +44,8 @@ def postgres_url_env() -> Generator[dict, None, None]:
             "DB_HOST": host,
             "DB_PORT": str(port),
             "DB_DATABASE": db,
-            "API_KEY_OPENAI": "",
+            "API_KEY_OPENAI": "test_openai_key",
+            "OPENAI_API_KEY": "test_openai_key",
             "API_KEY_MAILERSEND": "test_dummy_key",
             "MAILERSEND_API_KEY": "test_dummy_key",
             "APP_ENV": "DEV",
