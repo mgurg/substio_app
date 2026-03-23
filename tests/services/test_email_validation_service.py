@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 import pytest
 
-import app.services.email_validation_service as email_validation_service_module
 from app.database.models.enums import OfferStatus, SourceType
 
 
