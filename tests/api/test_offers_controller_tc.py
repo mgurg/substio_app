@@ -305,11 +305,19 @@ def test_list_offers(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_offer_without_required_city_fails(client_with_overrides):
-    """Test that creating an offer without city_uuid fails"""
-    payload = make_offer_create_payload("test", email="test@example.com")
+def test_create_offer_without_city_uuid_succeeds(client_with_overrides):
+    """Test that creating an offer without city_uuid succeeds (now allowed)"""
+    description = f"no-city-{uuid4().hex[:8]}"
+    payload = make_offer_create_payload(description, email="test@example.com")
+    # No city_uuid in payload
     response = client_with_overrides.post("/offers", json=payload)
-    assert response.status_code == 422
+    assert response.status_code == 201
+
+    listed = client_with_overrides.get("/offers", params={"search": description})
+    assert listed.status_code == 200
+    offer_data = listed.json()["data"][0]
+    assert offer_data["description"] == description
+    assert offer_data["city_uuid"] is None
 
 
 @pytest.mark.integration
