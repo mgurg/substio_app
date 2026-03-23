@@ -58,7 +58,10 @@ def sanitize_and_normalize_text(input_text: str) -> str:
     normalized_text = normalized_text.strip()
 
     # Replace fancy quotes with standard quotes
-    normalized_text = normalized_text.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
+    normalized_text = (
+        normalized_text.replace("“", '"').replace("”", '"')
+        .replace("‘", "'").replace("’", "'")
+    )
 
     return normalized_text
 
@@ -99,7 +102,7 @@ def split_street(street: str) -> tuple[str, str | None]:
     match = re.search(pattern, street)
     if match:
         street_number = re.sub(r"\s+", "", match.group(1))  # normalize: remove spaces
-        street_name = street[: match.start(1)].strip()
+        street_name = street[:match.start(1)].strip()
     else:
         street_name = street.strip()
         street_number = None
