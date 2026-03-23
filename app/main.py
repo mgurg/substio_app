@@ -15,7 +15,7 @@ from app.controller.places import place_router
 from app.core.auth import check_token
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError, NotFoundError
-from app.schemas.rest.rest_responses import HealthCheck
+from app.schemas.domain.common import HealthCheck
 
 settings = get_settings()
 
