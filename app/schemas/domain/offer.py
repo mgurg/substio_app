@@ -102,8 +102,7 @@ class OfferIndexResponse(BaseResponse):
 
 class OfferMapResponse(BaseResponse):
     uuid: UUID
-    lat: str | None = None
-    lon: str | None = None
+    coordinates: Coordinates | None = None
     place_name: str | None = None
     description: str | None = None
     date: dt_date | None = None
@@ -135,10 +134,8 @@ class OfferMapResponse(BaseResponse):
             elif hasattr(data, "city") and data.city and data.city.name is not None:
                 place_name = data.city.name
 
-        if lat is not None:
-            data.lat = str(lat)
-        if lon is not None:
-            data.lon = str(lon)
+        if lat is not None and lon is not None:
+            data.coordinates = Coordinates(lat=lat, lon=lon)
         if place_name is not None:
             data.place_name = place_name
 
