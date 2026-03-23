@@ -306,9 +306,24 @@ def test_list_offers(client_with_overrides):
 
 @pytest.mark.integration
 def test_create_offer_without_city_uuid_succeeds(client_with_overrides):
-    """Test that creating an offer without city_uuid succeeds (now allowed)"""
+    """Test that creating an offer without city_uuid succeeds if facility_uuid is provided"""
+    # Create a facility first
+    from app.database.models.enums import PlaceCategory
+    facility_name = f"facility-{uuid4().hex[:8]}"
+    facility_payload = {
+        "name": facility_name,
+        "category": PlaceCategory.POLICE.value,
+        "city": "TestCity",
+        "coordinates": {"lat": 52.2297, "lon": 21.0122},
+    }
+    client_with_overrides.post("/places/", json=facility_payload)
+
+    fac_resp = client_with_overrides.get(f"/places/facility/{facility_name}")
+    facility_uuid = fac_resp.json()[0]["uuid"]
+
     description = f"no-city-{uuid4().hex[:8]}"
     payload = make_offer_create_payload(description, email="test@example.com")
+    payload["facility_uuid"] = facility_uuid
     # No city_uuid in payload
     response = client_with_overrides.post("/offers", json=payload)
     assert response.status_code == 201
@@ -318,6 +333,32 @@ def test_create_offer_without_city_uuid_succeeds(client_with_overrides):
     offer_data = listed.json()["data"][0]
     assert offer_data["description"] == description
     assert offer_data["city_uuid"] is None
+    assert offer_data["facility_uuid"] == facility_uuid
+
+
+@pytest.mark.integration
+def test_create_offer_without_both_city_and_facility_fails(client_with_overrides):
+    """Test that creating an offer without both city_uuid and facility_uuid fails"""
+    description = f"no-location-{uuid4().hex[:8]}"
+    payload = make_offer_create_payload(description, email="test@example.com")
+    # Both are None
+    response = client_with_overrides.post("/offers", json=payload)
+    assert response.status_code == 422
+    assert "Either city_uuid or facility_uuid must be provided" in response.text
+
+
+@pytest.mark.integration
+def test_update_offer_with_null_location_fails(client_with_overrides):
+    """Test that updating an offer to have both city_uuid and facility_uuid as null fails"""
+    offer_uuid = create_test_offer(client_with_overrides, description="update-loc")
+
+    # Attempt to set both to null
+    response = client_with_overrides.patch(f"/offers/{offer_uuid}", json={
+        "city_uuid": None,
+        "facility_uuid": None
+    })
+    assert response.status_code == 422
+    assert "Either city_uuid or facility_uuid must be provided" in response.text
 
 
 @pytest.mark.integration

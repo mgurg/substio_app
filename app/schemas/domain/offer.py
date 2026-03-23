@@ -41,6 +41,12 @@ class OfferAdd(BaseModel):
     source: SourceType | None = None
     email: EmailStr | None = None
 
+    @model_validator(mode="after")
+    def check_location(self) -> "OfferAdd":
+        if not self.facility_uuid and not self.city_uuid:
+            raise ValueError("Either city_uuid or facility_uuid must be provided")
+        return self
+
 
 class OfferUpdate(BaseModel):
     author: str | None = None
@@ -55,6 +61,13 @@ class OfferUpdate(BaseModel):
     submit_email: bool | None = False
     status: OfferStatus | None = None
     email: EmailStr | None = None
+
+    @model_validator(mode="after")
+    def check_location(self) -> "OfferUpdate":
+        if "facility_uuid" in self.model_fields_set or "city_uuid" in self.model_fields_set:
+            if not self.facility_uuid and not self.city_uuid:
+                raise ValueError("Either city_uuid or facility_uuid must be provided")
+        return self
 
 
 class OfferIndexResponse(BaseResponse):
