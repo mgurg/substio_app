@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 
@@ -38,45 +40,46 @@ async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
 
     monkeypatch.setattr(slack_mod, "settings", DummySettings)
 
-    # Capture requests made via httpx.AsyncClient.post
-    calls = []
-
-    class DummyResponse:
-        def raise_for_status(self):
-            return None
-
-    class DummyClient:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc, tb):
-            return False
-
-        async def post(self, url, json):
-            calls.append((url, json))
-            return DummyResponse()
-
     import httpx
+    # Use AsyncMock to mock httpx.AsyncClient
+    mock_client_instance = AsyncMock(spec=httpx.AsyncClient)
+    # mock_client_instance.__aenter__.return_value = mock_client_instance is default for AsyncMock if configured correctly
+    # But let's be explicit if needed. AsyncMock usually handles async context managers.
+    mock_client_instance.__aenter__.return_value = mock_client_instance
+    
+    mock_response = MagicMock()
+    mock_response.raise_for_status.return_value = None
+    mock_client_instance.post.return_value = mock_response
 
-    monkeypatch.setattr(httpx, "AsyncClient", DummyClient)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda *args, **kwargs: mock_client_instance)
 
     notifier = slack_mod()
 
     await notifier.send_message("hi")
     await notifier.send_rich_message({"blocks": [1]})
 
-    assert calls[0][0] == DummySettings.SLACK_WEBHOOK_URL
-    assert calls[0][1] == {"text": "hi"}
-    assert calls[1][1] == {"blocks": [1]}
+    # Verify calls
+    assert mock_client_instance.post.call_count == 2
+    
+    call1 = mock_client_instance.post.call_args_list[0]
+    assert call1.args[0] == DummySettings.SLACK_WEBHOOK_URL
+    assert call1.kwargs["json"] == {"text": "hi"}
+
+    call2 = mock_client_instance.post.call_args_list[1]
+    assert call2.kwargs["json"] == {"blocks": [1]}
 
     # Also verify formatted helpers use APP_URL correctly
-    calls.clear()
+    mock_client_instance.post.reset_mock()
     await notifier.send_new_offer_notification("Ann", "ann@example.com", "desc", "uuid-x")
-    assert calls and "uuid-x" in calls[0][1]["text"]
+    assert mock_client_instance.post.called
+    assert "uuid-x" in mock_client_instance.post.call_args.kwargs["json"]["text"]
 
-    calls.clear()
+    mock_client_instance.post.reset_mock()
     await notifier.send_new_offer_rich_notification("Tom", "tom@example.com", "dsc", "uuid-y")
-    assert calls and any("uuid-y" in str(v) for v in calls[0][1].values())
+    assert mock_client_instance.post.called
+    # Check if uuid-y is in the JSON payload
+    payload_str = str(mock_client_instance.post.call_args.kwargs["json"])
+    assert "uuid-y" in payload_str
 
 
 def test_slack_notifier_requires_webhook(monkeypatch):
