@@ -17,6 +17,7 @@ async def db_session(client) -> AsyncSession:
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_city_repo_operations(db_session: AsyncSession):
     repo = CityRepo(db_session)
 

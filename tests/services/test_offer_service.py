@@ -45,16 +45,20 @@ def legal_role_repo_mock():
 
 @pytest_asyncio.fixture
 def slack_notifier_mock():
-    return AsyncMock()
+    from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
+    return AsyncMock(spec=SlackNotifierBase)
 
 
 @pytest_asyncio.fixture
 def email_notifier_mock():
-    return AsyncMock()
+    from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
+    return AsyncMock(spec=EmailNotifierBase)
 
 
 @pytest_asyncio.fixture
 def ai_parser_mock():
+    # If there is a base class for ai_parser, it should be used here.
+    # For now, keeping it as a generic AsyncMock but better than nothing.
     return AsyncMock()
 
 

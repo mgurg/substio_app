@@ -29,7 +29,7 @@ def test_create_and_search_cities(client):
     ("/places/city/{}", "a"),        # too short
     ("/places/city/{}", "a" * 101),  # too long
     ("/places/facility/{}", "a"),       # too short
-    ("/places/facility/{}", "a" * 101), # too long
+    ("/places/facility/{}", "a" * 101),  # too long
 ])
 @pytest.mark.integration
 def test_search_length_validation(client, endpoint, search_term):

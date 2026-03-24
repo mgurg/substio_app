@@ -10,10 +10,6 @@ class DummySettings:
     APP_URL = "http://app.example"
 
 
-
-
-
-
 @pytest.mark.asyncio
 async def test_mailersend_send_custom_email_success(monkeypatch):
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod

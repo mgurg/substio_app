@@ -46,7 +46,7 @@ async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
     # mock_client_instance.__aenter__.return_value = mock_client_instance is default for AsyncMock if configured correctly
     # But let's be explicit if needed. AsyncMock usually handles async context managers.
     mock_client_instance.__aenter__.return_value = mock_client_instance
-    
+
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_client_instance.post.return_value = mock_response
@@ -60,7 +60,7 @@ async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
 
     # Verify calls
     assert mock_client_instance.post.call_count == 2
-    
+
     call1 = mock_client_instance.post.call_args_list[0]
     assert call1.args[0] == DummySettings.SLACK_WEBHOOK_URL
     assert call1.kwargs["json"] == {"text": "hi"}

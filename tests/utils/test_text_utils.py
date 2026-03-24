@@ -1,5 +1,6 @@
-import pytest
 from datetime import datetime
+
+import pytest
 
 from app.common.text_utils import (
     generate_offer_management_token,

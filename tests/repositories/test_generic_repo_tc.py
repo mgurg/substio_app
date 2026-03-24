@@ -17,6 +17,7 @@ async def db_session(client) -> AsyncSession:
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_generic_repo_operations(db_session: AsyncSession):
     repo = GenericRepo(db_session, LegalRole)
 
