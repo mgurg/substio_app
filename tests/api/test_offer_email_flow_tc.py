@@ -5,7 +5,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.core.dependencies import get_email_notifier
-from tests.api.test_offers_controller_tc import make_offer_create_payload, setup_test_city
+from tests.utils.test_helpers import make_offer_create_payload, setup_test_city
 
 
 @pytest.fixture

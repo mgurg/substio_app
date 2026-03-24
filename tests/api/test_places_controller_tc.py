@@ -1,64 +1,6 @@
 
 import pytest
-
-# Helpers to build payloads compatible with Places API
-
-
-def make_city_payload(
-    name: str,
-    *,
-    teryt: str,
-    voivodeship_name: str = "Mazowieckie",
-    voivodeship_iso: str = "MZ",
-    lat: float = 52.2297,
-    lon: float = 21.0122,
-) -> dict:
-    return {
-        "city_name": name,
-        "coordinates": {"lat": lat, "lon": lon},
-        "range": {
-            "lat_min": lat - 0.1,
-            "lat_max": lat + 0.1,
-            "lon_min": lon - 0.1,
-            "lon_max": lon + 0.1,
-        },
-        "population": 100000,
-        "importance": 0.9,
-        "category": "city",
-        "state": None,
-        "voivodeship_name": voivodeship_name,
-        "voivodeship_iso": voivodeship_iso,
-        "teryt_simc": teryt,
-    }
-
-
-def make_place_payload(
-    name: str,
-    *,
-    category: str = "court",
-    ptype: str = "SR",
-    street: str = "Main 12",
-    city: str = "Warszawa",
-    lat: float = 52.2297,
-    lon: float = 21.0122,
-) -> dict:
-    return {
-        "category": category,
-        "type": ptype,
-        "name": name,
-        "address": {
-            "street": street,
-            "street_name": None,
-            "street_number": None,
-            "postal_code": "00-001",
-            "city": city,
-        },
-        "phone": None,
-        "email": None,
-        "department": None,
-        "coordinates": {"lat": lat, "lon": lon},
-        "website": None,
-    }
+from tests.utils.test_helpers import make_city_payload, make_place_payload
 
 
 @pytest.mark.integration
