@@ -6,17 +6,20 @@ import pytest
 
 from app.database.models.enums import SourceType
 from app.database.models.models import Offer
+from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
+from app.infrastructure.notifications.slack.slack_notifier_base import SlackNotifierBase
+from app.schemas.domain.offer import OfferAdd
 from app.services.offers.offer_notification_service import OfferNotificationService
 
 
 @pytest.fixture
 def mock_slack_notifier():
-    return AsyncMock()
+    return AsyncMock(spec=SlackNotifierBase)
 
 
 @pytest.fixture
 def mock_email_notifier():
-    return AsyncMock()
+    return AsyncMock(spec=EmailNotifierBase)
 
 
 @pytest.fixture
@@ -26,7 +29,7 @@ def notification_service(mock_slack_notifier, mock_email_notifier):
 
 @pytest.mark.asyncio
 async def test_notify_new_offer_slack_from_user(notification_service, mock_slack_notifier):
-    offer_add = MagicMock()
+    offer_add = MagicMock(spec=OfferAdd)
     offer_add.source = SourceType.USER
     offer_add.author = "Test Author"
     offer_add.email = "test@example.com"
@@ -42,7 +45,7 @@ async def test_notify_new_offer_slack_from_user(notification_service, mock_slack
 
 @pytest.mark.asyncio
 async def test_notify_new_offer_slack_from_bot_no_notify(notification_service, mock_slack_notifier):
-    offer_add = MagicMock()
+    offer_add = MagicMock(spec=OfferAdd)
     offer_add.source = SourceType.BOT
     offer_uuid = str(uuid.uuid4())
 

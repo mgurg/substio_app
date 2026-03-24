@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 from uuid import uuid4
-from pydantic import EmailStr
 
 # --- Places Payloads ---
+
 
 def make_city_payload(
     name: str,

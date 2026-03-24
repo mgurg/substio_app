@@ -1,4 +1,4 @@
-import types
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -28,13 +28,10 @@ class DummyBuilderBase:
 
 
 class DummyEmailClient:
-    class Emails:
-        def send(self, email):
-            return types.SimpleNamespace(data={"ok": True})
-
     def __init__(self, api_key=None, **kwargs):
         self.api_key = api_key or kwargs.get("api_key")
-        self.emails = self.Emails()
+        self.emails = MagicMock()
+        self.emails.send.return_value = MagicMock(data={"ok": True})
 
 
 @pytest.mark.asyncio
@@ -133,11 +130,10 @@ async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
         def build(self): return {}
 
     class DummyEmailClient:
-        class Emails:
-            def send(self, email): raise RuntimeError("boom")
-
         def __init__(self, **kwargs):
-            self.emails = self.Emails()
+            self.emails = MagicMock()
+            self.emails.send.side_effect = RuntimeError("boom")
+
     monkeypatch.setattr(email_mod, "EmailBuilder", lambda *args: DummyBuilder())
     monkeypatch.setattr(email_mod, "MailerSendClient", DummyEmailClient)
     notifier = email_mod()

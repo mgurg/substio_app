@@ -7,6 +7,8 @@ from fastapi import HTTPException
 from starlette.status import HTTP_409_CONFLICT
 
 from app.database.models.enums import OfferStatus, SourceType
+from app.database.models.models import Offer
+from app.repositories.offer_repo import OfferRepo
 from app.schemas.domain.offer import FacebookPost, OfferRawAdd
 from app.services.offers.offer_import_service import OfferImportService, parse_facebook_post_to_offer
 
@@ -22,7 +24,7 @@ class _UploadFileStub:
 
 @pytest.fixture
 def offer_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=OfferRepo)
 
 
 @pytest.fixture
@@ -79,7 +81,7 @@ async def test_create_raw_offer_success(import_service, offer_repo_mock):
 
 @pytest.mark.asyncio
 async def test_create_raw_offer_duplicate(import_service, offer_repo_mock):
-    offer_repo_mock.get_by_offer_uid.return_value = MagicMock()
+    offer_repo_mock.get_by_offer_uid.return_value = MagicMock(spec=Offer)
     offer = OfferRawAdd(
         raw_data="data",
         author="Author",

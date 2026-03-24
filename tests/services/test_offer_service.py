@@ -1,7 +1,6 @@
 import json
 from datetime import UTC, datetime, timedelta
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
@@ -12,29 +11,36 @@ from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_
 
 import app.services.offers.offer_import_service as offer_import_service_module
 from app.database.models.enums import OfferStatus, SourceType
+from app.database.models.models import City, LegalRole, Offer
+from app.repositories.city_repo import CityRepo
+from app.repositories.legal_role_repo import LegalRoleRepo
+from app.repositories.offer_repo import OfferRepo
+from app.repositories.place_repo import PlaceRepo
 from app.schemas.domain.offer import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
+from app.services.email_validation_service import EmailValidationService
 from app.services.offer_service import OfferService
 from app.services.offers.offer_import_service import OfferImportService, parse_facebook_post_to_offer
+from app.services.offers.offer_notification_service import OfferNotificationService
 
 
 @pytest_asyncio.fixture
 def offer_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=OfferRepo)
 
 
 @pytest_asyncio.fixture
 def place_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=PlaceRepo)
 
 
 @pytest_asyncio.fixture
 def city_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=CityRepo)
 
 
 @pytest_asyncio.fixture
 def legal_role_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=LegalRoleRepo)
 
 
 @pytest_asyncio.fixture
@@ -54,12 +60,12 @@ def ai_parser_mock():
 
 @pytest_asyncio.fixture
 def email_validator_mock():
-    return Mock()
+    return MagicMock(spec=EmailValidationService)
 
 
 @pytest_asyncio.fixture
 def notification_service_mock():
-    return AsyncMock()
+    return AsyncMock(spec=OfferNotificationService)
 
 
 @pytest_asyncio.fixture
@@ -99,7 +105,7 @@ async def test_create_offer_triggers_email_notification(service, offer_repo_mock
         hour_str="10:00",
     )
 
-    new_offer_mock = MagicMock()
+    new_offer_mock = MagicMock(spec=Offer)
     offer_repo_mock.get_by_uuid.return_value = new_offer_mock
     email_validator_mock.should_send_user_offer_creation_email.return_value = True
 
@@ -130,7 +136,7 @@ async def test_create_offer_no_email_if_validator_returns_false(service, offer_r
         hour_str="10:00",
     )
 
-    new_offer_mock = MagicMock()
+    new_offer_mock = MagicMock(spec=Offer)
     offer_repo_mock.get_by_uuid.return_value = new_offer_mock
     email_validator_mock.should_send_user_offer_creation_email.return_value = False
 
@@ -190,7 +196,7 @@ async def test_create_raw_offer_sets_email_and_status_new(service, offer_repo_mo
 
 @pytest.mark.asyncio
 async def test_create_raw_offer_duplicate_raises_conflict(service, offer_repo_mock):
-    offer_repo_mock.get_by_offer_uid.return_value = SimpleNamespace()
+    offer_repo_mock.get_by_offer_uid.return_value = MagicMock(spec=Offer)
 
     offer = OfferRawAdd(
         raw_data="data",
@@ -210,7 +216,7 @@ async def test_create_raw_offer_duplicate_raises_conflict(service, offer_repo_mo
 @pytest.mark.asyncio
 async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mock, city_repo_mock, notification_service_mock):
     city_uuid = uuid4()
-    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=12, lat=52.1, lon=21.0, name="City 12")
+    city_repo_mock.get_by_uuid.return_value = MagicMock(spec=City, id=12, lat=52.1, lon=21.0, name="City 12")
 
     offer_add = OfferAdd(
         author="Author",
@@ -255,7 +261,7 @@ async def test_create_offer_raises_when_legal_roles_missing(service, legal_role_
 
 @pytest.mark.asyncio
 async def test_create_offer_defaults_valid_to_when_no_date_or_hour(service, offer_repo_mock, city_repo_mock):
-    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=2, lat=50.0, lon=20.0, name="City 2")
+    city_repo_mock.get_by_uuid.return_value = MagicMock(spec=City, id=2, lat=50.0, lon=20.0, name="City 2")
     offer_add = OfferAdd(
         author="Author",
         city_uuid=uuid4(),
@@ -302,7 +308,7 @@ async def test_import_raw_offers_handles_skips_and_conflicts(service, offer_repo
 
     def _get_by_offer_uid_side_effect(offer_uid):
         if offer_uid == "dup":
-            return SimpleNamespace()
+            return MagicMock(spec=Offer)
         return None
 
     offer_repo_mock.get_by_offer_uid.side_effect = _get_by_offer_uid_side_effect
@@ -342,7 +348,8 @@ async def test_import_raw_offers_handles_skips_and_conflicts(service, offer_repo
 @pytest.mark.asyncio
 async def test_update_offers_rejects_invalid_date(service, offer_repo_mock):
     offer_uuid = uuid4()
-    db_offer = SimpleNamespace(
+    db_offer = MagicMock(
+        spec=Offer,
         id=1,
         uuid="offer-uuid",
         legal_roles=[],
@@ -364,7 +371,7 @@ async def test_update_offers_rejects_invalid_date(service, offer_repo_mock):
 @pytest.mark.asyncio
 async def test_parse_raw_offer_raises_when_no_raw_data(service, offer_repo_mock):
     offer_uuid = uuid4()
-    offer_repo_mock.get_by_uuid.return_value = SimpleNamespace(raw_data=None)
+    offer_repo_mock.get_by_uuid.return_value = MagicMock(spec=Offer, raw_data=None)
 
     with pytest.raises(HTTPException) as exc:
         await service.parse_raw_offer(offer_uuid)
@@ -374,7 +381,7 @@ async def test_parse_raw_offer_raises_when_no_raw_data(service, offer_repo_mock)
 @pytest.mark.asyncio
 async def test_accept_raw_offer_skips_when_active(service, offer_repo_mock):
     offer_uuid = uuid4()
-    offer_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=1, status=OfferStatus.ACTIVE)
+    offer_repo_mock.get_by_uuid.return_value = MagicMock(spec=Offer, id=1, status=OfferStatus.ACTIVE)
 
     await service.accept_raw_offer(offer_uuid)
 
@@ -390,7 +397,8 @@ async def test_update_offers_sends_email_when_validator_allows(
     email_validator_mock,
 ):
     offer_uuid = uuid4()
-    db_offer = SimpleNamespace(
+    db_offer = MagicMock(
+        spec=Offer,
         id=1,
         uuid="offer-uuid",
         legal_roles=[],
@@ -400,9 +408,9 @@ async def test_update_offers_sends_email_when_validator_allows(
         email="old@example.com",
         source=SourceType.BOT,
     )
-    updated_offer = SimpleNamespace(email="new@example.com", author="Ann", status=OfferStatus.ACTIVE)
+    updated_offer = MagicMock(spec=Offer, email="new@example.com", author="Ann", status=OfferStatus.ACTIVE)
     offer_repo_mock.get_by_uuid.side_effect = [db_offer, updated_offer]
-    legal_role_repo_mock.get_by_uuids.return_value = [SimpleNamespace(uuid=uuid4())]
+    legal_role_repo_mock.get_by_uuids.return_value = [MagicMock(spec=LegalRole, uuid=uuid4())]
     email_validator_mock.should_send_offer_email.return_value = True
     notification_service_mock.send_offer_imported_email.return_value = True
 
@@ -430,6 +438,7 @@ async def test_update_offers_sends_email_when_validator_allows(
 async def test_update_offers_ignores_null_status(service, offer_repo_mock):
     offer_uuid = uuid4()
     db_offer = MagicMock(
+        spec=Offer,
         id=1,
         status=OfferStatus.NEW,
         legal_roles=[],

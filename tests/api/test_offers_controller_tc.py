@@ -1,5 +1,4 @@
 import json
-from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -910,7 +909,7 @@ def test_create_offer_validation(client_with_overrides, payload_updates, expecte
     payload.update(payload_updates)
 
     response = client_with_overrides.post("/offers", json=payload)
-    # Some implementations might return 404 for non-existent entities, 
+    # Some implementations might return 404 for non-existent entities,
     # but FastAPI/Pydantic validation usually returns 422.
     # The previous tests were asserting in [404, 422] for non-existent UUIDs.
     if expected_status == 422:

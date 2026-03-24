@@ -5,12 +5,13 @@ import pytest
 
 from app.core.config import get_settings
 from app.core.dependencies import get_email_notifier
+from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
 from tests.utils.test_helpers import make_offer_create_payload, setup_test_city
 
 
 @pytest.fixture
 def mock_email_notifier(client):
-    mock = AsyncMock()
+    mock = AsyncMock(spec=EmailNotifierBase)
     # Mock send methods to return True (success)
     mock.send_user_offer_created_email.return_value = True
     mock.send_offer_imported_email.return_value = True

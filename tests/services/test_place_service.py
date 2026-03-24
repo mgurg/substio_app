@@ -1,6 +1,5 @@
 # tests/service/test_place_service.py
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -8,6 +7,9 @@ import pytest_asyncio
 
 from app.core.exceptions import ConflictError, NotFoundError
 from app.database.models.enums import PlaceCategory
+from app.database.models.models import Place
+from app.repositories.city_repo import CityRepo
+from app.repositories.place_repo import PlaceRepo
 from app.schemas.domain.common import Coordinates
 from app.schemas.domain.place import Address, PlaceAdd
 from app.services.place_service import PlaceService
@@ -15,12 +17,12 @@ from app.services.place_service import PlaceService
 
 @pytest_asyncio.fixture
 def city_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=CityRepo)
 
 
 @pytest_asyncio.fixture
 def place_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=PlaceRepo)
 
 
 @pytest_asyncio.fixture
@@ -31,7 +33,7 @@ def service(city_repo_mock, place_repo_mock):
 @pytest.mark.asyncio
 async def test_get_place_by_uuid_found(service, place_repo_mock):
     place_uuid = uuid4()
-    fake_place = {"uuid": str(place_uuid), "name": "Test Place"}
+    fake_place = MagicMock(spec=Place, uuid=place_uuid, name="Test Place")
     place_repo_mock.get_by_uuid.return_value = fake_place
 
     result = await service.get_place_by_uuid(place_uuid)
@@ -69,7 +71,7 @@ async def test_create_place_conflict(service, place_repo_mock):
 
     # ✅ Return something with a .uuid attribute (like ORM model would)
     place_repo_mock.get_by_name_and_distance.return_value = [
-        SimpleNamespace(uuid=uuid4())
+        MagicMock(spec=Place, uuid=uuid4())
     ]
 
     with pytest.raises(ConflictError):
