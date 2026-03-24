@@ -210,7 +210,7 @@ async def test_create_raw_offer_duplicate_raises_conflict(service, offer_repo_mo
 @pytest.mark.asyncio
 async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mock, city_repo_mock, notification_service_mock):
     city_uuid = uuid4()
-    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=12, lat=52.1, lon=21.0)
+    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=12, lat=52.1, lon=21.0, name="City 12")
 
     offer_add = OfferAdd(
         author="Author",
@@ -255,7 +255,7 @@ async def test_create_offer_raises_when_legal_roles_missing(service, legal_role_
 
 @pytest.mark.asyncio
 async def test_create_offer_defaults_valid_to_when_no_date_or_hour(service, offer_repo_mock, city_repo_mock):
-    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=2, lat=50.0, lon=20.0)
+    city_repo_mock.get_by_uuid.return_value = SimpleNamespace(id=2, lat=50.0, lon=20.0, name="City 2")
     offer_add = OfferAdd(
         author="Author",
         city_uuid=uuid4(),

@@ -5,15 +5,16 @@ from app.services.offers.offer_location_mapper import OfferLocationMapper
 
 
 class MockEntity:
-    def __init__(self, id, lat, lon):
+    def __init__(self, id, lat, lon, name):
         self.id = id
         self.lat = lat
         self.lon = lon
+        self.name = name
 
 
 def test_assign_place_to_data():
     offer_data = {}
-    place = MockEntity(id=1, lat=52.2297, lon=21.0122)
+    place = MockEntity(id=1, lat=52.2297, lon=21.0122, name="Place 1")
     OfferLocationMapper.assign_place_to_data(offer_data, place)
 
     assert offer_data["place_id"] == 1
@@ -23,7 +24,7 @@ def test_assign_place_to_data():
 
 def test_assign_city_to_data():
     offer_data = {}
-    city = MockEntity(id=2, lat=50.0647, lon=19.9450)
+    city = MockEntity(id=2, lat=50.0647, lon=19.9450, name="City 2")
     OfferLocationMapper.assign_city_to_data(offer_data, city)
 
     assert offer_data["city_id"] == 2
@@ -33,7 +34,7 @@ def test_assign_city_to_data():
 
 def test_assign_place_to_offer():
     db_offer = MagicMock(spec=Offer)
-    place = MockEntity(id=1, lat=52.2297, lon=21.0122)
+    place = MockEntity(id=1, lat=52.2297, lon=21.0122, name="Place 1")
     OfferLocationMapper.assign_place_to_offer(db_offer, place)
 
     assert db_offer.lat == 52.2297
@@ -43,7 +44,7 @@ def test_assign_place_to_offer():
 
 def test_assign_city_to_offer():
     db_offer = MagicMock(spec=Offer)
-    city = MockEntity(id=2, lat=50.0647, lon=19.9450)
+    city = MockEntity(id=2, lat=50.0647, lon=19.9450, name="City 2")
     OfferLocationMapper.assign_city_to_offer(db_offer, city)
 
     assert db_offer.lat == 50.0647
