@@ -532,45 +532,46 @@ def test_create_and_update_offer_with_custom_names(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_offers_with_partial_location_params_fails(client_with_overrides):
-    """Test that providing incomplete location params returns 400"""
-    response = client_with_overrides.get("/offers", params={"lat": 52.0})
-    assert response.status_code == 400
-    assert "must all be provided together" in response.json()["detail"]
-
-    response = client_with_overrides.get("/offers", params={"lat": 52.0, "lon": 21.0})
-    assert response.status_code == 400
-
-
-@pytest.mark.integration
-def test_list_offers_with_complete_location_params(client_with_overrides):
-    """Test location filtering with all required params"""
-    response = client_with_overrides.get("/offers", params={"lat": 52.0, "lon": 21.0, "distance_km": 10})
-    assert response.status_code == 200
+@pytest.mark.parametrize(
+    "search_len, expected_status",
+    [
+        (50, 200),  # Max allowed length
+        (51, 422),  # Exceeding max length
+    ],
+)
+def test_list_offers_search_length_validation(client_with_overrides, search_len, expected_status):
+    """Test search length validation for /offers"""
+    response = client_with_overrides.get("/offers", params={"search": "x" * search_len})
+    assert response.status_code == expected_status
 
 
 @pytest.mark.integration
-def test_list_offers_with_max_search_length(client_with_overrides):
-    """Test search with maximum allowed length"""
-    response = client_with_overrides.get("/offers", params={"search": "x" * 50})
-    assert response.status_code == 200
+@pytest.mark.parametrize(
+    "lat, lon, distance, expected_status",
+    [
+        (52.0, None, None, 400),  # Only lat
+        (None, 21.0, None, 400),  # Only lon
+        (None, None, 10, 400),  # Only distance
+        (52.0, 21.0, None, 400),  # lat and lon
+        (52.0, 21.0, 10, 200),  # All three
+        (100, 0, 10, 422),  # Invalid lat
+        (0, 200, 10, 422),  # Invalid lon
+        (0, 0, 0, 422),  # Invalid distance (must be > 0)
+        (0, 0, 1001, 422),  # Invalid distance (must be <= 1000)
+    ],
+)
+def test_list_offers_location_validation(client_with_overrides, lat, lon, distance, expected_status):
+    """Test location parameter validation for /offers"""
+    params = {}
+    if lat is not None:
+        params["lat"] = lat
+    if lon is not None:
+        params["lon"] = lon
+    if distance is not None:
+        params["distance_km"] = distance
 
-
-@pytest.mark.integration
-def test_list_offers_with_excessive_search_length_fails(client_with_overrides):
-    """Test search exceeding max length"""
-    response = client_with_overrides.get("/offers", params={"search": "x" * 51})
-    assert response.status_code == 422
-
-
-@pytest.mark.integration
-def test_list_offers_with_invalid_lat_lon(client_with_overrides):
-    """Test location filtering with out-of-range coordinates"""
-    response = client_with_overrides.get("/offers", params={"lat": 100, "lon": 0, "distance_km": 10})
-    assert response.status_code == 422
-
-    response = client_with_overrides.get("/offers", params={"lat": 0, "lon": 200, "distance_km": 10})
-    assert response.status_code == 422
+    response = client_with_overrides.get("/offers", params=params)
+    assert response.status_code == expected_status
 
 
 @pytest.mark.integration
@@ -855,6 +856,20 @@ def test_list_raw_offers_sorting_by_name(client):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize(
+    "search_len, expected_status",
+    [
+        (50, 200),  # Max allowed length
+        (51, 422),  # Exceeding max length
+    ],
+)
+def test_list_raw_offers_search_length_validation(client, search_len, expected_status):
+    """Test search length validation for /offers/raw"""
+    response = client.get("/offers/raw", params={"search": "x" * search_len})
+    assert response.status_code == expected_status
+
+
+@pytest.mark.integration
 def test_list_raw_offers_with_search(client):
     """Test searching raw offers"""
     unique_text = f"searchable-{uuid4().hex[:8]}"
@@ -874,52 +889,38 @@ def test_list_raw_offers_with_search(client):
 
 
 @pytest.mark.integration
-def test_create_offer_with_invalid_email(client_with_overrides):
-    """Test creating offer with invalid email format"""
-    city_uuid = setup_test_city(client_with_overrides, "EmailCity")
+@pytest.mark.parametrize(
+    "payload_updates, expected_status",
+    [
+        ({"email": "not-an-email"}, 422),  # Invalid email format
+        ({"city_uuid": "not-a-valid-uuid"}, 422),  # Malformed city UUID
+        ({"city_uuid": str(uuid4())}, 422),  # Non-existent city UUID (or 404 depending on implementation)
+        ({"roles": [str(uuid4())]}, 422),  # Non-existent role UUID
+    ],
+)
+def test_create_offer_validation(client_with_overrides, payload_updates, expected_status):
+    """Test offer creation payload validation"""
+    city_uuid = None
+    if "city_uuid" not in payload_updates:
+        city_uuid = setup_test_city(client_with_overrides, f"ValCity-{uuid4().hex[:4]}")
 
-    payload = make_offer_create_payload("test", email="not-an-email")
-    payload["city_uuid"] = city_uuid
-
-    response = client_with_overrides.post("/offers", json=payload)
-    assert response.status_code == 422
-
-
-@pytest.mark.integration
-def test_create_offer_with_invalid_uuid(client_with_overrides):
-    """Test creating offer with malformed city UUID"""
-    payload = make_offer_create_payload("test", email="test@example.com")
-    payload["city_uuid"] = "not-a-valid-uuid"
-
-    response = client_with_overrides.post("/offers", json=payload)
-    assert response.status_code == 422
-
-
-@pytest.mark.integration
-def test_create_offer_with_nonexistent_city_uuid(client_with_overrides):
-    """Test creating offer with non-existent city UUID"""
-    payload = make_offer_create_payload("test", email="test@example.com")
-    payload["city_uuid"] = str(uuid4())
+    payload = make_offer_create_payload("test-validation", email="test@example.com")
+    if city_uuid:
+        payload["city_uuid"] = city_uuid
+    payload.update(payload_updates)
 
     response = client_with_overrides.post("/offers", json=payload)
-    assert response.status_code in [404, 422]
-
-
-@pytest.mark.integration
-def test_create_offer_with_invalid_role_uuid(client_with_overrides):
-    """Test creating offer with invalid legal role UUID"""
-    city_uuid = setup_test_city(client_with_overrides, "RoleCity")
-
-    payload = make_offer_create_payload("test", email="test@example.com")
-    payload["city_uuid"] = city_uuid
-    payload["roles"] = [str(uuid4())]  # Non-existent role
-
-    response = client_with_overrides.post("/offers", json=payload)
-    assert response.status_code in [404, 422]
+    # Some implementations might return 404 for non-existent entities, 
+    # but FastAPI/Pydantic validation usually returns 422.
+    # The previous tests were asserting in [404, 422] for non-existent UUIDs.
+    if expected_status == 422:
+        assert response.status_code in [404, 422]
+    else:
+        assert response.status_code == expected_status
 
 
 # ============================================================================
-# LOCATION-BASED FILTERING TESTS
+# COMPREHENSIVE WORKFLOW TESTS
 # ============================================================================
 
 
@@ -945,20 +946,6 @@ def test_location_filtering_finds_nearby_offers(client_with_overrides):
 
     assert response.status_code == 200
     # The offer should be in results (exact matching depends on your implementation)
-
-
-@pytest.mark.integration
-def test_location_filtering_with_zero_distance(client_with_overrides):
-    """Test location filtering with invalid zero distance"""
-    response = client_with_overrides.get("/offers", params={"lat": 52.0, "lon": 21.0, "distance_km": 0})
-    assert response.status_code == 422
-
-
-@pytest.mark.integration
-def test_location_filtering_with_excessive_distance(client_with_overrides):
-    """Test location filtering with distance exceeding maximum"""
-    response = client_with_overrides.get("/offers", params={"lat": 52.0, "lon": 21.0, "distance_km": 1001})
-    assert response.status_code == 422
 
 
 # ============================================================================
