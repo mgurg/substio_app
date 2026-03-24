@@ -28,28 +28,22 @@ def _make_offers(email="test@example.com", status=OfferStatus.ACTIVE, source=Sou
     return updated_offer, original_offer
 
 
-def test_should_send_offer_email_returns_true_in_prod(email_validator, prod_settings):
-    updated_offer, original_offer = _make_offers()
+@pytest.mark.parametrize("updated_email, updated_status, submit_email, expected", [
+    ("test@example.com", OfferStatus.ACTIVE, True, True),
+    (None, OfferStatus.ACTIVE, True, False),
+    ("test@example.com", OfferStatus.ACTIVE, False, False),
+    ("test@example.com", OfferStatus.NEW, True, False),
+])
+def test_should_send_offer_email_parametrized(email_validator, prod_settings, updated_email, updated_status, submit_email, expected):
+    updated_offer, original_offer = _make_offers(email=updated_email, status=updated_status)
 
     result = email_validator.should_send_offer_email(
         updated_offer=updated_offer,
         original_offer=original_offer,
-        submit_email=True,
+        submit_email=submit_email,
     )
 
-    assert result is True
-
-
-def test_should_send_offer_email_requires_email(email_validator, prod_settings):
-    updated_offer, original_offer = _make_offers(email=None)
-
-    result = email_validator.should_send_offer_email(
-        updated_offer=updated_offer,
-        original_offer=original_offer,
-        submit_email=True,
-    )
-
-    assert result is False
+    assert result is expected
 
 
 def test_should_send_offer_email_requires_prod(email_validator, monkeypatch):
@@ -70,58 +64,19 @@ def test_should_send_offer_email_requires_prod(email_validator, monkeypatch):
     assert result is False
 
 
-def test_should_send_offer_email_requires_submit_email(email_validator, prod_settings):
-    updated_offer, original_offer = _make_offers()
-
-    result = email_validator.should_send_offer_email(
-        updated_offer=updated_offer,
-        original_offer=original_offer,
-        submit_email=False,
-    )
-
-    assert result is False
-
-
-def test_should_send_offer_email_requires_active_status(email_validator, prod_settings):
-    updated_offer, original_offer = _make_offers(status=OfferStatus.NEW)
-
-    result = email_validator.should_send_offer_email(
-        updated_offer=updated_offer,
-        original_offer=original_offer,
-        submit_email=True,
-    )
-
-    assert result is False
-
-
-def test_should_send_user_offer_creation_email_returns_true_in_prod(email_validator, prod_settings):
-    offer = MagicMock(spec=Offer, email="test@example.com", status=OfferStatus.ACTIVE, source=SourceType.USER, uuid="test-uuid")
+@pytest.mark.parametrize("email, status, source, expected", [
+    ("test@example.com", OfferStatus.ACTIVE, SourceType.USER, True),
+    ("test@example.com", OfferStatus.ACTIVE, SourceType.BOT, False),
+    ("test@example.com", OfferStatus.NEW, SourceType.USER, False),
+])
+def test_should_send_user_offer_creation_email_parametrized(email_validator, prod_settings, email, status, source, expected):
+    offer = MagicMock(spec=Offer, email=email, status=status, source=source, uuid="test-uuid")
 
     result = email_validator.should_send_user_offer_creation_email(
         offer=offer
     )
 
-    assert result is True
-
-
-def test_should_send_user_offer_creation_email_requires_user_source(email_validator, prod_settings):
-    offer = MagicMock(spec=Offer, email="test@example.com", status=OfferStatus.ACTIVE, source=SourceType.BOT, uuid="test-uuid")
-
-    result = email_validator.should_send_user_offer_creation_email(
-        offer=offer
-    )
-
-    assert result is False
-
-
-def test_should_send_user_offer_creation_email_requires_active_status(email_validator, prod_settings):
-    offer = MagicMock(spec=Offer, email="test@example.com", status=OfferStatus.NEW, source=SourceType.USER, uuid="test-uuid")
-
-    result = email_validator.should_send_user_offer_creation_email(
-        offer=offer
-    )
-
-    assert result is False
+    assert result is expected
 
 
 def test_should_send_user_offer_creation_email_requires_prod(email_validator, monkeypatch):
