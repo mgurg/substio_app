@@ -63,7 +63,9 @@ class OfferService:
 
         date_obj, hour_obj = OfferDateHandler.parse_date_hour(relations["date_str"], relations["hour_str"])
         self._apply_datetime_data(offer_data, date_obj, hour_obj)
-        await self._apply_offer_location_data(offer_data, relations["facility_uuid"], relations["city_uuid"])
+        await self._apply_offer_location_data(
+            offer_data, relations["facility_uuid"], relations["city_uuid"], relations["place_name"], relations["city_name"]
+        )
         await OfferRoleMapper.apply_offer_roles(offer_data, self.legal_role_repo, relations["roles_uuids"], require_all=True)
 
         await self.offer_repo.create(**offer_data)
@@ -112,8 +114,8 @@ class OfferService:
         # Handle complex updates through helper methods
         await self._update_datetime_fields(db_offer, relations["date_str"], relations["hour_str"])
         await OfferRoleMapper.update_legal_roles(db_offer, self.legal_role_repo, relations["roles_uuids"])
-        await self._update_facility(db_offer, relations["facility_uuid"])
-        await self._update_city(db_offer, relations["city_uuid"])
+        await self._update_facility(db_offer, relations["facility_uuid"], relations["place_name"])
+        await self._update_city(db_offer, relations["city_uuid"], relations["city_name"])
 
         await self.offer_repo.update(db_offer.id, **update_data)
         updated_offer = await self.offer_repo.get_by_uuid(offer_uuid, [])
@@ -129,17 +131,21 @@ class OfferService:
         date_obj, hour_obj = OfferDateHandler.parse_date_hour(date_str, hour_str)
         self._apply_datetime_fields(db_offer, date_obj, hour_obj)
 
-    async def _update_facility(self, db_offer: Offer, facility_uuid: UUID | None) -> None:
+    async def _update_facility(self, db_offer: Offer, facility_uuid: UUID | None, place_name: str | None) -> None:
         """Update facility/place if provided"""
         if facility_uuid is not None:
             place = await self.place_repo.get_by_uuid(facility_uuid)
-            OfferLocationMapper.assign_place_to_offer(db_offer, place)
+            OfferLocationMapper.assign_place_to_offer(db_offer, place, place_name)
+        elif place_name is not None:
+            db_offer.place_name = place_name
 
-    async def _update_city(self, db_offer: Offer, city_uuid: UUID | None) -> None:
+    async def _update_city(self, db_offer: Offer, city_uuid: UUID | None, city_name: str | None) -> None:
         """Update city if provided"""
         if city_uuid is not None:
             city = await self.city_repo.get_by_uuid(city_uuid)
-            OfferLocationMapper.assign_city_to_offer(db_offer, city)
+            OfferLocationMapper.assign_city_to_offer(db_offer, city, city_name)
+        elif city_name is not None:
+            db_offer.city_name = city_name
 
     async def list_map_offers(self, offset: int, limit: int, sort_column: str, sort_order: str, filters: OfferFilters):
         return await self._get_paginated_offers(offset, limit, sort_column, sort_order, filters, ["place", "city"])
@@ -212,6 +218,8 @@ class OfferService:
         return {
             "facility_uuid": offer_data.pop("facility_uuid", None),
             "city_uuid": offer_data.pop("city_uuid", None),
+            "place_name": offer_data.pop("place_name", None),
+            "city_name": offer_data.pop("city_name", None),
             "roles_uuids": offer_data.pop("roles", None),
             "date_str": offer_data.pop("date", None),
             "hour_str": offer_data.pop("hour", None),
@@ -243,12 +251,16 @@ class OfferService:
         db_offer.valid_to = OfferDateHandler.compute_valid_to(date_obj, hour_obj)
 
     async def _apply_offer_location_data(
-        self, offer_data: dict, facility_uuid: UUID | None, city_uuid: UUID | None
+        self, offer_data: dict, facility_uuid: UUID | None, city_uuid: UUID | None, place_name: str | None, city_name: str | None
     ) -> None:
         if facility_uuid:
             place = await self.place_repo.get_by_uuid(facility_uuid)
-            OfferLocationMapper.assign_place_to_data(offer_data, place)
+            OfferLocationMapper.assign_place_to_data(offer_data, place, place_name)
+        elif place_name:
+            offer_data["place_name"] = place_name
 
         if city_uuid:
             city = await self.city_repo.get_by_uuid(city_uuid)
-            OfferLocationMapper.assign_city_to_data(offer_data, city)
+            OfferLocationMapper.assign_city_to_data(offer_data, city, city_name)
+        elif city_name:
+            offer_data["city_name"] = city_name

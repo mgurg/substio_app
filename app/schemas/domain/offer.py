@@ -30,6 +30,8 @@ class OfferAdd(BaseModel):
     author: str
     facility_uuid: UUID | None = None
     city_uuid: UUID | None = None
+    place_name: str | None = None
+    city_name: str | None = None
     roles: list[UUID] | None = None
     date: str | None = None
     hour: str | None = None
@@ -52,6 +54,8 @@ class OfferUpdate(BaseModel):
     author: str | None = None
     facility_uuid: UUID | None = None
     city_uuid: UUID | None = None
+    place_name: str | None = None
+    city_name: str | None = None
     roles: list[UUID] | None = None
     date: str | None = None
     hour: str | None = None

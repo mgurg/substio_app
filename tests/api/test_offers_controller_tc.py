@@ -460,6 +460,147 @@ def test_create_list_get_update_offer_and_email_similar(client_with_overrides):
     assert any(item["uuid"] == offer_uuid for item in similar_body)
 
 
+@pytest.mark.integration
+def test_create_offer_for_court_with_facility_and_place_name(client_with_overrides):
+    """Verify offer creation with facility_uuid and place_name (mimics court request)"""
+    from app.database.models.enums import PlaceCategory
+    facility_name = f"court-{uuid4().hex[:8]}"
+    facility_payload = {
+        "name": facility_name,
+        "category": PlaceCategory.COURT.value,
+        "city": "Rawicz",
+        "coordinates": {"lat": 51.609, "lon": 16.858},
+    }
+    client_with_overrides.post("/places/", json=facility_payload)
+    fac_resp = client_with_overrides.get(f"/places/facility/{facility_name}")
+    facility_uuid = fac_resp.json()[0]["uuid"]
+
+    description = f"RAWICZ-{uuid4().hex[:8]}"
+    place_name = "Sąd Rejonowy w Rawiczu"
+    payload = {
+        "description": description,
+        "author": "RAWICZ",
+        "email": "RAWICZ@RAWICZ.pl",
+        "roles": [],
+        "date": None,
+        "hour": None,
+        "invoice": False,
+        "source": "bot",
+        "place_name": place_name,
+        "facility_uuid": facility_uuid,
+    }
+
+    response = client_with_overrides.post("/offers", json=payload)
+    assert response.status_code == 201
+
+    listed = client_with_overrides.get("/offers", params={"search": description})
+    offer_data = listed.json()["data"][0]
+    assert offer_data["place_name"] == place_name
+    assert offer_data["facility_uuid"] == facility_uuid
+
+
+@pytest.mark.integration
+def test_create_offer_for_other_place_with_city_and_custom_names(client_with_overrides):
+    """Verify offer creation with city_uuid, city_name, and place_name (mimics other place request)"""
+    city_uuid = setup_test_city(client_with_overrides, "Winne")
+
+    description = f"WINNE-{uuid4().hex[:8]}"
+    place_name = "KMP WINNE"
+    city_name = "Winne-Podbukowina"
+    payload = {
+        "description": description,
+        "author": "WINNE",
+        "email": "WINNE@WINNE.pl",
+        "roles": [],
+        "date": None,
+        "hour": None,
+        "invoice": False,
+        "source": "user",
+        "place_name": place_name,
+        "city_name": city_name,
+        "city_uuid": city_uuid,
+    }
+
+    response = client_with_overrides.post("/offers", json=payload)
+    assert response.status_code == 201
+
+    listed = client_with_overrides.get("/offers", params={"search": description})
+    offer_data = listed.json()["data"][0]
+    assert offer_data["place_name"] == place_name
+    assert offer_data["city_name"] == city_name
+    assert offer_data["city_uuid"] == city_uuid
+
+
+@pytest.mark.integration
+def test_create_and_update_offer_with_custom_names(client_with_overrides):
+    """Verify place_name and city_name are correctly stored and retrieved including overrides"""
+    city_uuid = setup_test_city(client_with_overrides, "NameCity")
+
+    # 1. Create with custom names
+    description = f"custom-names-{uuid4().hex[:8]}"
+    payload = {
+        "author": "test_author",
+        "email": "test@example.com",
+        "description": description,
+        "source": "user",
+        "city_uuid": city_uuid,
+        "place_name": "Custom Place",
+        "city_name": "Custom City",
+    }
+
+    created = client_with_overrides.post("/offers", json=payload)
+    assert created.status_code == 201
+
+    listed = client_with_overrides.get("/offers", params={"search": description})
+    assert listed.status_code == 200
+    offer_data = listed.json()["data"][0]
+    offer_uuid = offer_data["uuid"]
+
+    assert offer_data["place_name"] == "Custom Place"
+    assert offer_data["city_name"] == "Custom City"
+
+    # 2. Update with new custom names
+    update_payload = {
+        "place_name": "Updated Place",
+        "city_name": "Updated City",
+    }
+    updated = client_with_overrides.patch(f"/offers/{offer_uuid}", json=update_payload)
+    assert updated.status_code == 204
+
+    got_after = client_with_overrides.get(f"/offers/{offer_uuid}")
+    assert got_after.status_code == 200
+    body = got_after.json()
+    assert body["place_name"] == "Updated Place"
+    assert body["city_name"] == "Updated City"
+
+    # 3. Test defaulting when only city_uuid is provided (should use city name)
+    # Get city name first
+    city_resp = client_with_overrides.get("/places/city")  # This might be too broad, but let's assume we can find it
+    # Actually, setup_test_city doesn't easily return the name, let's just create a new one with known name
+    new_city_name = f"DefaultCity-{uuid4().hex[:6]}"
+    new_city_uuid = setup_test_city(client_with_overrides, new_city_name)
+
+    desc_default = f"default-names-{uuid4().hex[:8]}"
+    payload_default = {
+        "author": "test_author",
+        "email": "test@example.com",
+        "description": desc_default,
+        "source": "user",
+        "city_uuid": new_city_uuid,
+    }
+
+    client_with_overrides.post("/offers", json=payload_default)
+    listed_default = client_with_overrides.get("/offers", params={"search": desc_default})
+    offer_default = listed_default.json()["data"][0]
+
+    # When city_uuid is provided, city_name should default to city name
+    assert offer_default["city_name"].startswith("DefaultCity")
+    # place_name might be None if no facility is provided and no place_name override
+    # Based on OfferService._apply_offer_location_data, if facility_uuid is missing,
+    # it only sets place_name if an override is provided.
+    assert offer_default["place_name"] is None
+
+
 # ============================================================================
 # FILTERING & PAGINATION TESTS
 # ============================================================================
