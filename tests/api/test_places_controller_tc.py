@@ -110,3 +110,42 @@ def test_get_city_by_uuid(client):
     body = got.json()
     assert body["uuid"] == city_uuid
     assert body["name"] == cities[0]["name"]
+
+
+@pytest.mark.integration
+def test_place_index_response_fields(client):
+    # This test ensures that the fields added to PlaceIndexResponse are present and correctly populated
+    # city, street_name, street_number
+
+    city_name = "Rawicz"
+    street_name = "ul. Ignacego Buszy"
+    street_number = "5"
+    place_name = "Sąd Rejonowy w Rawiczu"
+
+    client.post("/places/city", json=make_city_payload(city_name, teryt="SIMC-RAW"))
+
+    payload = make_place_payload(place_name, city=city_name)
+    payload["address"]["street_name"] = street_name
+    payload["address"]["street_number"] = street_number
+
+    create_res = client.post("/places/", json=payload)
+    assert create_res.status_code == 200
+
+    search_res = client.get(f"/places/facility/{place_name[:10].lower()}")
+    assert search_res.status_code == 200
+
+    facilities = search_res.json()
+    assert len(facilities) > 0
+
+    # Find our specific place in the results
+    place = next((f for f in facilities if f["name"] == place_name), None)
+    assert place is not None, f"Place '{place_name}' not found in search results"
+
+    # Verify new fields
+    assert "city" in place
+    assert "street_name" in place
+    assert "street_number" in place
+
+    assert place["city"] == city_name
+    assert place["street_name"] == street_name
+    assert place["street_number"] == street_number

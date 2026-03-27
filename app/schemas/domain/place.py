@@ -43,6 +43,9 @@ class PlaceIndexResponse(BaseResponse):
     uuid: UUID
     name: str
     category: PlaceCategory
+    city: str | None = None
+    street_name: str | None = None
+    street_number: str | None = None
 
 
 class CityIndexResponse(BaseResponse):
