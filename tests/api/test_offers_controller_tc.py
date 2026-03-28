@@ -64,16 +64,21 @@ def client_with_overrides(client):
 @pytest.mark.integration
 def test_create_and_list_raw_offers(client):
     """Test creating and listing raw offers"""
-    r1 = client.post("/offers/raw", json=make_offer_payload("o-1"))
-    assert r1.status_code == 201
+    # Given
+    payload1 = make_offer_payload("o-1")
+    payload2 = make_offer_payload("o-2", author="alice", author_uid="u2")
 
-    r2 = client.post("/offers/raw", json=make_offer_payload("o-2", author="alice", author_uid="u2"))
-    assert r2.status_code == 201
-
+    # When
+    r1 = client.post("/offers/raw", json=payload1)
+    r2 = client.post("/offers/raw", json=payload2)
     res = client.get("/offers/raw", params={"limit": 10, "offset": 0, "order": "asc", "field": "created_at"})
-    assert res.status_code == 200
-    body = res.json()
 
+    # Then
+    assert r1.status_code == 201
+    assert r2.status_code == 201
+    assert res.status_code == 200
+
+    body = res.json()
     assert body["limit"] == 10
     assert body["offset"] == 0
     assert body["count"] >= 2
@@ -88,12 +93,14 @@ def test_create_and_list_raw_offers(client):
 @pytest.mark.integration
 def test_duplicate_offer_returns_409(client):
     """Test that duplicate raw offers return 409 conflict"""
+    # Given
     payload = make_offer_payload("o-dup")
+    client.post("/offers/raw", json=payload)
 
-    r1 = client.post("/offers/raw", json=payload)
-    assert r1.status_code == 201
-
+    # When
     r2 = client.post("/offers/raw", json=payload)
+
+    # Then
     assert r2.status_code == 409
     assert "already exists" in r2.json()["detail"]
 

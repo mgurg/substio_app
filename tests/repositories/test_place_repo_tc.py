@@ -20,8 +20,8 @@ async def db_session(client) -> AsyncSession:
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_place_repo_operations(db_session: AsyncSession):
+    # Given
     repo = PlaceRepo(db_session)
-
     place_uuid = uuid.uuid4()
     place = Place(
         uuid=place_uuid,
@@ -36,20 +36,21 @@ async def test_place_repo_operations(db_session: AsyncSession):
     db_session.add(place)
     await db_session.commit()
 
-    # Test get_by_uuid success
+    # When & Then
+    # 1. Test get_by_uuid success
     fetched = await repo.get_by_uuid(place_uuid)
     assert fetched.name == "Test Hospital"
 
-    # Test get_by_uuid failure
+    # 2. Test get_by_uuid failure
     with pytest.raises(NotFoundError):
         await repo.get_by_uuid(uuid.uuid4())
 
-    # Test get_by_partial_name
+    # 3. Test get_by_partial_name
     results = await repo.get_by_partial_name("test", place_type="hospital")
     assert len(results) >= 1
     assert results[0].name == "Test Hospital"
 
-    # Test get_by_name_and_distance
+    # 4. Test get_by_name_and_distance
     # Same location
     nearby = await repo.get_by_name_and_distance("Test Hospital", 52.2297, 21.0122)
     assert len(nearby) == 1

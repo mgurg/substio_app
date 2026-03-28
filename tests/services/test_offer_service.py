@@ -97,6 +97,7 @@ def service(
 
 @pytest.mark.asyncio
 async def test_create_offer_triggers_email_notification(service, offer_repo_mock, email_validator_mock, notification_service_mock):
+    # Given
     offer_add = OfferAdd(
         source=SourceType.USER,
         author="Test Author",
@@ -113,8 +114,10 @@ async def test_create_offer_triggers_email_notification(service, offer_repo_mock
     offer_repo_mock.get_by_uuid.return_value = new_offer_mock
     email_validator_mock.should_send_user_offer_creation_email.return_value = True
 
+    # When
     await service.create_offer(offer_add)
 
+    # Then
     # Check repository calls
     assert offer_repo_mock.create.called
 
@@ -128,6 +131,7 @@ async def test_create_offer_triggers_email_notification(service, offer_repo_mock
 
 @pytest.mark.asyncio
 async def test_create_offer_no_email_if_validator_returns_false(service, offer_repo_mock, email_validator_mock, notification_service_mock):
+    # Given
     offer_add = OfferAdd(
         source=SourceType.USER,
         author="Test Author",
@@ -144,8 +148,10 @@ async def test_create_offer_no_email_if_validator_returns_false(service, offer_r
     offer_repo_mock.get_by_uuid.return_value = new_offer_mock
     email_validator_mock.should_send_user_offer_creation_email.return_value = False
 
+    # When
     await service.create_offer(offer_add)
 
+    # Then
     # Validator should be called, but notification service should not
     email_validator_mock.should_send_user_offer_creation_email.assert_called_once_with(new_offer_mock)
     notification_service_mock.send_user_offer_created_email.assert_not_called()
