@@ -12,6 +12,7 @@ class DummySettings:
 
 @pytest.mark.asyncio
 async def test_mailersend_send_custom_email_success(monkeypatch):
+    # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
     monkeypatch.setattr(email_mod, "settings", DummySettings)
     monkeypatch.setattr(email_mod, "randint", lambda *args: 2)
@@ -35,6 +36,8 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
     monkeypatch.setattr(email_mod, "MailerSendClient", lambda *args, **kwargs: mock_client_instance)
 
     notifier = email_mod()
+
+    # When
     ok = await notifier.send_custom_email(
         recipient_email="user@example.com",
         recipient_name="User",
@@ -42,6 +45,8 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
         template_id="tpl-1",
         template_vars={"x": 1},
     )
+
+    # Then
     assert ok is True
 
     # Verify calls on mock_builder
@@ -60,6 +65,7 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
+    # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
     monkeypatch.setattr(email_mod, "settings", DummySettings)
     monkeypatch.setattr(email_mod, "randint", lambda *args: 1)
@@ -81,6 +87,8 @@ async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
     monkeypatch.setattr(email_mod, "EmailBuilder", lambda *args, **kwargs: mock_builder)
     monkeypatch.setattr(email_mod, "MailerSendClient", lambda *args, **kwargs: mock_client_instance)
     notifier = email_mod()
+
+    # When
     ok = await notifier.send_custom_email(
         recipient_email="user@example.com",
         recipient_name="User",
@@ -88,12 +96,15 @@ async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
         template_id="tpl-1",
         template_vars={"x": 1},
     )
+
+    # Then
     assert ok is True
     assert mock_builder.bcc.call_count == 1
 
 
 @pytest.mark.asyncio
 async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
+    # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
 
     class LocalDummySettings:
@@ -119,14 +130,19 @@ async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
     monkeypatch.setattr(email_mod, "EmailBuilder", lambda *args, **kwargs: mock_builder)
     monkeypatch.setattr(email_mod, "MailerSendClient", lambda *args, **kwargs: mock_client_instance)
     notifier = email_mod()
+
+    # When
     ok = await notifier.send_custom_email(
         recipient_email="u@example.com", recipient_name="U", subject="S", template_id="T", template_vars={},
     )
+
+    # Then
     assert ok is False
 
 
 @pytest.mark.asyncio
 async def test_mailersend_send_offer_imported_email_delegates(monkeypatch):
+    # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
 
     class LocalDummySettings:
@@ -140,7 +156,10 @@ async def test_mailersend_send_offer_imported_email_delegates(monkeypatch):
     mock_send = AsyncMock(return_value=True)
     monkeypatch.setattr(notifier, "send_custom_email", mock_send)
 
+    # When
     ok = await notifier.send_offer_imported_email("to@example.com", "To", "uuid-123", extra=5)
+
+    # Then
     assert ok is True
 
     # Verify calls on mock_send
@@ -153,7 +172,12 @@ async def test_mailersend_send_offer_imported_email_delegates(monkeypatch):
 
 
 def test_email_factory_returns_cached_instance():
+    # Given
     from app.infrastructure.notifications.email.factory import get_email_notifier
+
+    # When
     n1 = get_email_notifier()
     n2 = get_email_notifier()
+
+    # Then
     assert n1 is n2

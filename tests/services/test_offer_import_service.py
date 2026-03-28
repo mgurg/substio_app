@@ -33,6 +33,7 @@ def import_service(offer_repo_mock):
 
 
 def test_parse_facebook_post_to_offer_success():
+    # Given
     post = FacebookPost(
         user_name="Test User",
         user_profile_url="https://fb.com/user",
@@ -40,13 +41,18 @@ def test_parse_facebook_post_to_offer_success():
         post_content="Content",
         date_posted="2025-01-01T10:00:00",
     )
+
+    # When
     offer = parse_facebook_post_to_offer(post, None)
+
+    # Then
     assert offer.author == "Test User"
     assert offer.timestamp == datetime.fromisoformat("2025-01-01T10:00:00")
     assert offer.source == SourceType.BOT
 
 
 def test_parse_facebook_post_to_offer_uses_filename_fallback():
+    # Given
     post = FacebookPost(
         user_name="Test User",
         user_profile_url="u",
@@ -55,12 +61,17 @@ def test_parse_facebook_post_to_offer_uses_filename_fallback():
         date_posted=None,
     )
     # filename with timestamp 20250819_110812
+
+    # When
     offer = parse_facebook_post_to_offer(post, "20250819_110812.json")
+
+    # Then
     assert offer.timestamp == datetime(2025, 8, 19, 11, 8, 12)
 
 
 @pytest.mark.asyncio
 async def test_create_raw_offer_success(import_service, offer_repo_mock):
+    # Given
     offer_repo_mock.get_by_offer_uid.return_value = None
     offer = OfferRawAdd(
         raw_data="Contact me at test@example.com",
@@ -71,8 +82,10 @@ async def test_create_raw_offer_success(import_service, offer_repo_mock):
         source=SourceType.BOT,
     )
 
+    # When
     await import_service.create_raw_offer(offer)
 
+    # Then
     offer_repo_mock.create.assert_awaited_once()
     args = offer_repo_mock.create.call_args.kwargs
     assert args["email"] == "test@example.com"
@@ -81,6 +94,7 @@ async def test_create_raw_offer_success(import_service, offer_repo_mock):
 
 @pytest.mark.asyncio
 async def test_create_raw_offer_duplicate(import_service, offer_repo_mock):
+    # Given
     offer_repo_mock.get_by_offer_uid.return_value = MagicMock(spec=Offer)
     offer = OfferRawAdd(
         raw_data="data",
@@ -91,6 +105,7 @@ async def test_create_raw_offer_duplicate(import_service, offer_repo_mock):
         source=SourceType.BOT,
     )
 
+    # When & Then
     with pytest.raises(HTTPException) as exc:
         await import_service.create_raw_offer(offer)
     assert exc.value.status_code == HTTP_409_CONFLICT
@@ -98,7 +113,10 @@ async def test_create_raw_offer_duplicate(import_service, offer_repo_mock):
 
 @pytest.mark.asyncio
 async def test_import_raw_offers_invalid_extension(import_service):
+    # Given
     file = _UploadFileStub(filename="test.txt", content=b"[]")
+
+    # When & Then
     with pytest.raises(HTTPException) as exc:
         await import_service.import_raw_offers(file)
     assert exc.value.status_code == 400
@@ -106,6 +124,7 @@ async def test_import_raw_offers_invalid_extension(import_service):
 
 @pytest.mark.asyncio
 async def test_import_raw_offers_full_flow(import_service, offer_repo_mock):
+    # Given
     posts = [
         {
             "User Name": "User 1",
@@ -125,8 +144,10 @@ async def test_import_raw_offers_full_flow(import_service, offer_repo_mock):
     file = _UploadFileStub(filename="data.json", content=json.dumps(posts).encode("utf-8"))
     offer_repo_mock.get_by_offer_uid.return_value = None
 
+    # When
     result = await import_service.import_raw_offers(file)
 
+    # Then
     assert result.total_records == 2
     assert result.imported_records == 1
     assert result.skipped_records == 1

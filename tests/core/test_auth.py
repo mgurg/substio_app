@@ -10,6 +10,7 @@ class Creds:
 
 
 def test_check_token_missing():
+    # When & Then
     with pytest.raises(HTTPException) as ei:
         check_token(Creds(None))
     assert ei.value.status_code == 401
@@ -17,6 +18,7 @@ def test_check_token_missing():
 
 
 def test_check_token_incorrect_length():
+    # When & Then
     with pytest.raises(HTTPException) as ei:
         check_token(Creds("short"))
     assert ei.value.status_code == 401
@@ -24,5 +26,8 @@ def test_check_token_incorrect_length():
 
 
 def test_check_token_ok():
+    # Given
     token = "x" * 31
+
+    # Then
     assert check_token(Creds(token)) is True

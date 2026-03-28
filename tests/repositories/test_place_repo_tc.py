@@ -36,25 +36,25 @@ async def test_place_repo_operations(db_session: AsyncSession):
     db_session.add(place)
     await db_session.commit()
 
-    # When & Then
+    # When
     # 1. Test get_by_uuid success
     fetched = await repo.get_by_uuid(place_uuid)
-    assert fetched.name == "Test Hospital"
-
-    # 2. Test get_by_uuid failure
-    with pytest.raises(NotFoundError):
-        await repo.get_by_uuid(uuid.uuid4())
-
     # 3. Test get_by_partial_name
     results = await repo.get_by_partial_name("test", place_type="hospital")
-    assert len(results) >= 1
-    assert results[0].name == "Test Hospital"
-
     # 4. Test get_by_name_and_distance
     # Same location
     nearby = await repo.get_by_name_and_distance("Test Hospital", 52.2297, 21.0122)
-    assert len(nearby) == 1
-
     # Far away
     far_away = await repo.get_by_name_and_distance("Test Hospital", 50.0, 20.0)
+
+    # Then
+    assert fetched.name == "Test Hospital"
+    assert len(results) >= 1
+    assert results[0].name == "Test Hospital"
+    assert len(nearby) == 1
     assert len(far_away) == 0
+
+    # When & Then (failure)
+    # 2. Test get_by_uuid failure
+    with pytest.raises(NotFoundError):
+        await repo.get_by_uuid(uuid.uuid4())

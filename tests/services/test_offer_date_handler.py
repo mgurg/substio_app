@@ -7,10 +7,15 @@ from app.services.offers.offer_date_handler import OfferDateHandler
 
 
 def test_parse_date_success():
-    assert OfferDateHandler.parse_date("2024-03-14") == date(2024, 3, 14)
+    # When
+    result = OfferDateHandler.parse_date("2024-03-14")
+
+    # Then
+    assert result == date(2024, 3, 14)
 
 
 def test_parse_date_invalid_format():
+    # When & Then
     with pytest.raises(HTTPException) as excinfo:
         OfferDateHandler.parse_date("14-03-2024")
     assert excinfo.value.status_code == 400
@@ -18,10 +23,15 @@ def test_parse_date_invalid_format():
 
 
 def test_parse_hour_success():
-    assert OfferDateHandler.parse_hour("15:30") == time(15, 30)
+    # When
+    result = OfferDateHandler.parse_hour("15:30")
+
+    # Then
+    assert result == time(15, 30)
 
 
 def test_parse_hour_invalid_format():
+    # When & Then
     with pytest.raises(HTTPException) as excinfo:
         OfferDateHandler.parse_hour("3:30 PM")
     assert excinfo.value.status_code == 400
@@ -29,6 +39,7 @@ def test_parse_hour_invalid_format():
 
 
 def test_compute_valid_to_with_date_and_hour():
+    # Given
     date_obj = date(2024, 3, 14)
     hour_obj = time(15, 30)
 
@@ -36,11 +47,15 @@ def test_compute_valid_to_with_date_and_hour():
     # 15:30 Warsaw should be 14:30 UTC
     expected_utc = datetime(2024, 3, 14, 14, 30, tzinfo=UTC)
 
+    # When
     result = OfferDateHandler.compute_valid_to(date_obj, hour_obj)
+
+    # Then
     assert result == expected_utc
 
 
 def test_compute_valid_to_with_date_and_hour_dst():
+    # Given
     # July is DST in Warsaw (UTC+2)
     date_obj = date(2024, 7, 14)
     hour_obj = time(15, 30)
@@ -48,12 +63,18 @@ def test_compute_valid_to_with_date_and_hour_dst():
     # 15:30 Warsaw should be 13:30 UTC
     expected_utc = datetime(2024, 7, 14, 13, 30, tzinfo=UTC)
 
+    # When
     result = OfferDateHandler.compute_valid_to(date_obj, hour_obj)
+
+    # Then
     assert result == expected_utc
 
 
 def test_compute_valid_to_none_returns_default():
+    # When
     result = OfferDateHandler.compute_valid_to(None, None)
+
+    # Then
     # Default is approx now + 7 days
     now = datetime.now(UTC)
     expected_min = now + timedelta(days=6, hours=23)
@@ -64,12 +85,18 @@ def test_compute_valid_to_none_returns_default():
 
 
 def test_parse_date_hour_both():
+    # When
     d, h = OfferDateHandler.parse_date_hour("2024-03-14", "15:30")
+
+    # Then
     assert d == date(2024, 3, 14)
     assert h == time(15, 30)
 
 
 def test_parse_date_hour_none():
+    # When
     d, h = OfferDateHandler.parse_date_hour(None, None)
+
+    # Then
     assert d is None
     assert h is None

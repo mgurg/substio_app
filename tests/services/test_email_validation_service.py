@@ -35,18 +35,22 @@ def _make_offers(email="test@example.com", status=OfferStatus.ACTIVE, source=Sou
     ("test@example.com", OfferStatus.NEW, True, False),
 ])
 def test_should_send_offer_email_parametrized(email_validator, prod_settings, updated_email, updated_status, submit_email, expected):
+    # Given
     updated_offer, original_offer = _make_offers(email=updated_email, status=updated_status)
 
+    # When
     result = email_validator.should_send_offer_email(
         updated_offer=updated_offer,
         original_offer=original_offer,
         submit_email=submit_email,
     )
 
+    # Then
     assert result is expected
 
 
 def test_should_send_offer_email_requires_prod(email_validator, monkeypatch):
+    # Given
     monkeypatch.setattr(
         email_validator,
         "settings",
@@ -55,12 +59,14 @@ def test_should_send_offer_email_requires_prod(email_validator, monkeypatch):
     )
     updated_offer, original_offer = _make_offers()
 
+    # When
     result = email_validator.should_send_offer_email(
         updated_offer=updated_offer,
         original_offer=original_offer,
         submit_email=True,
     )
 
+    # Then
     assert result is False
 
 
@@ -70,16 +76,20 @@ def test_should_send_offer_email_requires_prod(email_validator, monkeypatch):
     ("test@example.com", OfferStatus.NEW, SourceType.USER, False),
 ])
 def test_should_send_user_offer_creation_email_parametrized(email_validator, prod_settings, email, status, source, expected):
+    # Given
     offer = MagicMock(spec=Offer, email=email, status=status, source=source, uuid="test-uuid")
 
+    # When
     result = email_validator.should_send_user_offer_creation_email(
         offer=offer
     )
 
+    # Then
     assert result is expected
 
 
 def test_should_send_user_offer_creation_email_requires_prod(email_validator, monkeypatch):
+    # Given
     monkeypatch.setattr(
         email_validator,
         "settings",
@@ -88,8 +98,10 @@ def test_should_send_user_offer_creation_email_requires_prod(email_validator, mo
     )
     offer = MagicMock(spec=Offer, email="test@example.com", status=OfferStatus.ACTIVE, source=SourceType.USER, uuid="test-uuid")
 
+    # When
     result = email_validator.should_send_user_offer_creation_email(
         offer=offer
     )
 
+    # Then
     assert result is False

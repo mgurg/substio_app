@@ -12,23 +12,32 @@ from app.common.text_utils import (
 
 
 def test_generate_offer_management_token():
+    # Given
     offer_uuid = "123e4567-e89b-12d3-a456-426614174000"
     created_at = datetime(2025, 1, 1, 12, 0, 0)
 
+    # When
     token1 = generate_offer_management_token(offer_uuid, created_at)
     token2 = generate_offer_management_token(offer_uuid, created_at)
 
+    # Then
     # Same inputs should produce same token
     assert token1 == token2
     assert len(token1) == 64  # SHA-256 hex digest length
 
+    # When
     # Different UUID should produce different token
     token3 = generate_offer_management_token("different-uuid", created_at)
+
+    # Then
     assert token1 != token3
 
+    # When
     # Different created_at should produce different token
     created_at2 = datetime(2025, 1, 1, 12, 0, 1)
     token4 = generate_offer_management_token(offer_uuid, created_at2)
+
+    # Then
     assert token1 != token4
 
 
@@ -38,7 +47,11 @@ def test_generate_offer_management_token():
     ("No HTML", "No HTML"),
 ])
 def test_remove_html_tags(html, expected):
-    assert remove_html_tags(html) == expected
+    # When
+    result = remove_html_tags(html)
+
+    # Then
+    assert result == expected
 
 
 @pytest.mark.parametrize("raw, expected", [
@@ -46,7 +59,11 @@ def test_remove_html_tags(html, expected):
     ("<p>‘Ala’ i “kot”</p>", "'Ala' i \"kot\""),
 ])
 def test_sanitize_and_normalize_text(raw, expected):
-    assert sanitize_and_normalize_text(raw) == expected
+    # When
+    result = sanitize_and_normalize_text(raw)
+
+    # Then
+    assert result == expected
 
 
 @pytest.mark.parametrize("name, expected", [
@@ -55,7 +72,11 @@ def test_sanitize_and_normalize_text(raw, expected):
     ("Simple Name", "simple-name"),
 ])
 def test_sanitize_name(name, expected):
-    assert sanitize_name(name) == expected
+    # When
+    result = sanitize_name(name)
+
+    # Then
+    assert result == expected
 
 
 @pytest.mark.parametrize("street_input, expected_street, expected_number", [
@@ -69,4 +90,8 @@ def test_sanitize_name(name, expected):
     ("Street 123B/45", "Street", "123B/45"),
 ])
 def test_split_street_parametrized(street_input, expected_street, expected_number):
-    assert split_street(street_input) == (expected_street, expected_number)
+    # When
+    result = split_street(street_input)
+
+    # Then
+    assert result == (expected_street, expected_number)

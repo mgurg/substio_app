@@ -36,6 +36,9 @@ def test_create_and_search_cities(client):
 ])
 @pytest.mark.integration
 def test_search_length_validation(client, endpoint, search_term):
+    # Given
+    # Parameters from decorator
+
     # When
     res = client.get(endpoint.format(search_term))
 

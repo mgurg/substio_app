@@ -29,6 +29,7 @@ def notification_service(mock_slack_notifier, mock_email_notifier):
 
 @pytest.mark.asyncio
 async def test_notify_new_offer_slack_from_user(notification_service, mock_slack_notifier):
+    # Given
     offer_add = MagicMock(spec=OfferAdd)
     offer_add.source = SourceType.USER
     offer_add.author = "Test Author"
@@ -36,8 +37,10 @@ async def test_notify_new_offer_slack_from_user(notification_service, mock_slack
     offer_add.description = "Test Description"
     offer_uuid = str(uuid.uuid4())
 
+    # When
     await notification_service.notify_new_offer_slack(offer_add, offer_uuid)
 
+    # Then
     mock_slack_notifier.send_new_offer_notification.assert_called_once_with(
         author="Test Author", email="test@example.com", description="Test Description", offer_uuid=offer_uuid
     )
@@ -45,17 +48,21 @@ async def test_notify_new_offer_slack_from_user(notification_service, mock_slack
 
 @pytest.mark.asyncio
 async def test_notify_new_offer_slack_from_bot_no_notify(notification_service, mock_slack_notifier):
+    # Given
     offer_add = MagicMock(spec=OfferAdd)
     offer_add.source = SourceType.BOT
     offer_uuid = str(uuid.uuid4())
 
+    # When
     await notification_service.notify_new_offer_slack(offer_add, offer_uuid)
 
+    # Then
     mock_slack_notifier.send_new_offer_notification.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_send_user_offer_created_email_success(notification_service, mock_email_notifier):
+    # Given
     offer = MagicMock(spec=Offer)
     offer.uuid = uuid.uuid4()
     offer.email = "user@example.com"
@@ -65,11 +72,13 @@ async def test_send_user_offer_created_email_success(notification_service, mock_
 
     mock_email_notifier.send_user_offer_created_email.return_value = True
 
+    # When
     with patch("app.services.offers.offer_notification_service.generate_offer_management_token") as mock_gen_token:
         mock_gen_token.return_value = "fake-token"
 
         await notification_service.send_user_offer_created_email(offer)
 
+        # Then
         mock_gen_token.assert_called_once_with(str(offer.uuid), offer.created_at)
         mock_email_notifier.send_user_offer_created_email.assert_called_once_with(
             recipient_email="user@example.com",
@@ -82,6 +91,7 @@ async def test_send_user_offer_created_email_success(notification_service, mock_
 
 @pytest.mark.asyncio
 async def test_send_offer_imported_email_success(notification_service, mock_email_notifier):
+    # Given
     offer = MagicMock(spec=Offer)
     offer.email = "test@example.com"
     offer.author = "Test Author"
@@ -89,8 +99,10 @@ async def test_send_offer_imported_email_success(notification_service, mock_emai
 
     mock_email_notifier.send_offer_imported_email.return_value = True
 
+    # When
     await notification_service.send_offer_imported_email(offer, offer_uuid)
 
+    # Then
     mock_email_notifier.send_offer_imported_email.assert_called_once_with(
         recipient_email="test@example.com", recipient_name="Test Author", offer_uuid=str(offer_uuid)
     )
@@ -98,6 +110,7 @@ async def test_send_offer_imported_email_success(notification_service, mock_emai
 
 @pytest.mark.asyncio
 async def test_send_offer_imported_email_failure(notification_service, mock_email_notifier):
+    # Given
     offer = MagicMock(spec=Offer)
     offer.email = "test@example.com"
     offer.author = None  # test default name "User"
@@ -105,8 +118,10 @@ async def test_send_offer_imported_email_failure(notification_service, mock_emai
 
     mock_email_notifier.send_offer_imported_email.return_value = False
 
+    # When
     await notification_service.send_offer_imported_email(offer, offer_uuid)
 
+    # Then
     mock_email_notifier.send_offer_imported_email.assert_called_once_with(
         recipient_email="test@example.com", recipient_name="User", offer_uuid=str(offer_uuid)
     )
