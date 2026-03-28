@@ -19,8 +19,8 @@ async def db_session(client) -> AsyncSession:
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_city_repo_operations(db_session: AsyncSession):
+    # Given
     repo = CityRepo(db_session)
-
     city_uuid = uuid.uuid4()
     city = City(
         uuid=city_uuid,
@@ -33,6 +33,7 @@ async def test_city_repo_operations(db_session: AsyncSession):
     db_session.add(city)
     await db_session.commit()
 
+    # When & Then
     # Test get_by_uuid success
     fetched = await repo.get_by_uuid(city_uuid)
     assert fetched.name == "Warszawa"

@@ -32,25 +32,32 @@ def service(city_repo_mock, place_repo_mock):
 
 @pytest.mark.asyncio
 async def test_get_place_by_uuid_found(service, place_repo_mock):
+    # Given
     place_uuid = uuid4()
     fake_place = MagicMock(spec=Place, uuid=place_uuid, name="Test Place")
     place_repo_mock.get_by_uuid.return_value = fake_place
 
+    # When
     result = await service.get_place_by_uuid(place_uuid)
 
+    # Then
     assert result == fake_place
     place_repo_mock.get_by_uuid.assert_awaited_once_with(place_uuid)
 
 
 @pytest.mark.asyncio
 async def test_get_place_by_uuid_not_found(service, place_repo_mock):
+    # Given
     place_repo_mock.get_by_uuid.return_value = None
+
+    # When & Then
     with pytest.raises(NotFoundError):
         await service.get_place_by_uuid(uuid4())
 
 
 @pytest.mark.asyncio
 async def test_create_place_conflict(service, place_repo_mock):
+    # Given
     place_add = PlaceAdd(
         name="Sąd rejonowy",
         type="SR",
@@ -74,12 +81,14 @@ async def test_create_place_conflict(service, place_repo_mock):
         MagicMock(spec=Place, uuid=uuid4())
     ]
 
+    # When & Then
     with pytest.raises(ConflictError):
         await service.create(place_add)
 
 
 @pytest.mark.asyncio
 async def test_create_place_success(service, place_repo_mock):
+    # Given
     place_add = PlaceAdd(
         name="New Room",
         type="room",
@@ -100,6 +109,8 @@ async def test_create_place_success(service, place_repo_mock):
     place_repo_mock.get_by_name_and_distance.return_value = []
     place_repo_mock.create.return_value = None
 
+    # When
     await service.create(place_add)
 
+    # Then
     place_repo_mock.create.assert_awaited_once()

@@ -6,15 +6,18 @@ from tests.utils.test_helpers import make_city_payload, make_place_payload
 
 @pytest.mark.integration
 def test_create_and_search_cities(client):
-    # create two cities
-    r1 = client.post("/places/city", json=make_city_payload("Warszawa", teryt="SIMC-1"))
-    assert r1.status_code == 200
+    # Given
+    city1_payload = make_city_payload("Warszawa", teryt="SIMC-1")
+    city2_payload = make_city_payload("Warka", teryt="SIMC-2", lat=51.78, lon=21.19)
 
-    r2 = client.post("/places/city", json=make_city_payload("Warka", teryt="SIMC-2", lat=51.78, lon=21.19))
-    assert r2.status_code == 200
-
-    # search by partial name
+    # When
+    r1 = client.post("/places/city", json=city1_payload)
+    r2 = client.post("/places/city", json=city2_payload)
     res = client.get("/places/city/war")
+
+    # Then
+    assert r1.status_code == 200
+    assert r2.status_code == 200
     assert res.status_code == 200
     data = res.json()
     assert isinstance(data, list)
@@ -33,7 +36,10 @@ def test_create_and_search_cities(client):
 ])
 @pytest.mark.integration
 def test_search_length_validation(client, endpoint, search_term):
+    # When
     res = client.get(endpoint.format(search_term))
+
+    # Then
     # Note: If there's no explicit validation in FastAPI router (like Query(min_length=2)),
     # it might return 200 with empty list or just work.
     # But usually we want to enforce some limits.
@@ -44,35 +50,36 @@ def test_search_length_validation(client, endpoint, search_term):
 
 @pytest.mark.integration
 def test_duplicate_city_returns_409(client):
+    # Given
     payload = make_city_payload("Radom", teryt="SIMC-DUP")
+    client.post("/places/city", json=payload)
 
-    r1 = client.post("/places/city", json=payload)
-    assert r1.status_code == 200
-
+    # When
     r2 = client.post("/places/city", json=payload)
+
+    # Then
     assert r2.status_code == 409
     assert "already exists" in r2.json()["detail"].lower()
 
 
 @pytest.mark.integration
 def test_create_place_and_get_by_uuid(client):
-    # Ensure city exists (optional for the endpoint but realistic)
+    # Given
     client.post("/places/city", json=make_city_payload("Alpha City", teryt="SIMC-A1"))
+    place_payload = make_place_payload("Test Place Alpha", city="Alpha City")
 
-    # create a place
-    pr = client.post("/places/", json=make_place_payload("Test Place Alpha", city="Alpha City"))
-    assert pr.status_code == 200
-
-    # search facilities by partial name
+    # When
+    pr = client.post("/places/", json=place_payload)
     res = client.get("/places/facility/test place")
-    assert res.status_code == 200
     facilities = res.json()
-    assert isinstance(facilities, list)
-    assert any("test place" in f["name"].lower() for f in facilities)
-
-    # pick one and fetch by uuid
     place_uuid = facilities[0]["uuid"]
     got = client.get(f"/places/facility/uuid/{place_uuid}")
+
+    # Then
+    assert pr.status_code == 200
+    assert res.status_code == 200
+    assert isinstance(facilities, list)
+    assert any("test place" in f["name"].lower() for f in facilities)
     assert got.status_code == 200
     body = got.json()
     assert body["uuid"] == place_uuid
@@ -82,30 +89,32 @@ def test_create_place_and_get_by_uuid(client):
 
 @pytest.mark.integration
 def test_duplicate_place_returns_409(client):
+    # Given
     payload = make_place_payload("Duplicate Court", lat=52.23, lon=21.01)
+    client.post("/places/", json=payload)
 
-    r1 = client.post("/places/", json=payload)
-    assert r1.status_code == 200
-
+    # When
     r2 = client.post("/places/", json=payload)
+
+    # Then
     assert r2.status_code == 409
     assert "already exists" in r2.json()["detail"].lower()
 
 
 @pytest.mark.integration
 def test_get_city_by_uuid(client):
-    # create city
+    # Given
     client.post("/places/city", json=make_city_payload("Gamma", teryt="SIMC-G1"))
-
-    # find via search
     res = client.get("/places/city/gam")
-    assert res.status_code == 200
     cities = res.json()
-    assert cities, "City search should return at least one item"
     city_uuid = cities[0]["uuid"]
 
-    # get by uuid
+    # When
     got = client.get(f"/places/city/uuid/{city_uuid}")
+
+    # Then
+    assert res.status_code == 200
+    assert cities, "City search should return at least one item"
     assert got.status_code == 200
     body = got.json()
     assert body["uuid"] == city_uuid
@@ -114,9 +123,7 @@ def test_get_city_by_uuid(client):
 
 @pytest.mark.integration
 def test_place_index_response_fields(client):
-    # This test ensures that the fields added to PlaceIndexResponse are present and correctly populated
-    # city, street_name, street_number
-
+    # Given
     city_name = "Rawicz"
     street_name = "ul. Ignacego Buszy"
     street_number = "5"
@@ -128,17 +135,17 @@ def test_place_index_response_fields(client):
     payload["address"]["street_name"] = street_name
     payload["address"]["street_number"] = street_number
 
+    # When
     create_res = client.post("/places/", json=payload)
-    assert create_res.status_code == 200
-
     search_res = client.get(f"/places/facility/{place_name[:10].lower()}")
-    assert search_res.status_code == 200
-
     facilities = search_res.json()
-    assert len(facilities) > 0
-
     # Find our specific place in the results
     place = next((f for f in facilities if f["name"] == place_name), None)
+
+    # Then
+    assert create_res.status_code == 200
+    assert search_res.status_code == 200
+    assert len(facilities) > 0
     assert place is not None, f"Place '{place_name}' not found in search results"
 
     # Verify new fields
