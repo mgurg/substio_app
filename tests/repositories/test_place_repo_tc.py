@@ -19,7 +19,7 @@ async def db_session(client) -> AsyncSession:
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_place_repo_operations(db_session: AsyncSession):
+async def test_should_perform_place_repo_operations(db_session: AsyncSession):
     # Given
     repo = PlaceRepo(db_session)
     place_uuid = uuid.uuid4()

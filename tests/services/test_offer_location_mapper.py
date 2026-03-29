@@ -12,7 +12,7 @@ class MockEntity:
         self.name = name
 
 
-def test_assign_place_to_data():
+def test_should_assign_place_to_data_successfully():
     # Given
     offer_data = {}
     place = MockEntity(id=1, lat=52.2297, lon=21.0122, name="Place 1")
@@ -26,7 +26,7 @@ def test_assign_place_to_data():
     assert offer_data["lon"] == 21.0122
 
 
-def test_assign_city_to_data():
+def test_should_assign_city_to_data_successfully():
     # Given
     offer_data = {}
     city = MockEntity(id=2, lat=50.0647, lon=19.9450, name="City 2")
@@ -40,7 +40,7 @@ def test_assign_city_to_data():
     assert offer_data["lon"] == 19.9450
 
 
-def test_assign_place_to_offer():
+def test_should_assign_place_to_offer_successfully():
     # Given
     db_offer = MagicMock(spec=Offer)
     place = MockEntity(id=1, lat=52.2297, lon=21.0122, name="Place 1")
@@ -54,7 +54,7 @@ def test_assign_place_to_offer():
     assert db_offer.place == place
 
 
-def test_assign_city_to_offer():
+def test_should_assign_city_to_offer_successfully():
     # Given
     db_offer = MagicMock(spec=Offer)
     city = MockEntity(id=2, lat=50.0647, lon=19.9450, name="City 2")
@@ -68,7 +68,7 @@ def test_assign_city_to_offer():
     assert db_offer.city == city
 
 
-def test_assign_place_to_data_none():
+def test_should_handle_none_when_assigning_place_to_data():
     # Given
     offer_data = {}
 
@@ -81,7 +81,7 @@ def test_assign_place_to_data_none():
     assert "lon" not in offer_data
 
 
-def test_assign_city_to_data_none():
+def test_should_handle_none_when_assigning_city_to_data():
     # Given
     offer_data = {}
 
@@ -94,7 +94,7 @@ def test_assign_city_to_data_none():
     assert "lon" not in offer_data
 
 
-def test_assign_place_to_offer_none():
+def test_should_handle_none_when_assigning_place_to_offer():
     # Given
     db_offer = MagicMock(spec=Offer)
     db_offer.lat = 1.0
@@ -107,7 +107,7 @@ def test_assign_place_to_offer_none():
     assert db_offer.lat == 1.0
 
 
-def test_assign_city_to_offer_none():
+def test_should_handle_none_when_assigning_city_to_offer():
     # Given
     db_offer = MagicMock(spec=Offer)
     db_offer.lat = 1.0

@@ -32,7 +32,7 @@ def import_service(offer_repo_mock):
     return OfferImportService(offer_repo=offer_repo_mock)
 
 
-def test_parse_facebook_post_to_offer_success():
+def test_should_successfully_parse_facebook_post_to_offer():
     # Given
     post = FacebookPost(
         user_name="Test User",
@@ -51,7 +51,7 @@ def test_parse_facebook_post_to_offer_success():
     assert offer.source == SourceType.BOT
 
 
-def test_parse_facebook_post_to_offer_uses_filename_fallback():
+def test_should_use_filename_fallback_when_parsing_facebook_post_to_offer():
     # Given
     post = FacebookPost(
         user_name="Test User",
@@ -70,7 +70,7 @@ def test_parse_facebook_post_to_offer_uses_filename_fallback():
 
 
 @pytest.mark.asyncio
-async def test_create_raw_offer_sets_email_and_status_new(import_service, offer_repo_mock, monkeypatch):
+async def test_should_set_email_and_status_new_when_creating_raw_offer(import_service, offer_repo_mock, monkeypatch):
     from app.services.offers import offer_import_service as offer_import_service_module
     monkeypatch.setattr(offer_import_service_module, "extract_and_fix_email", lambda _: "user@example.com")
     offer_repo_mock.get_by_offer_uid.return_value = None
@@ -93,7 +93,7 @@ async def test_create_raw_offer_sets_email_and_status_new(import_service, offer_
 
 
 @pytest.mark.asyncio
-async def test_create_raw_offer_duplicate(import_service, offer_repo_mock):
+async def test_should_raise_conflict_when_creating_duplicate_raw_offer(import_service, offer_repo_mock):
     # Given
     offer_repo_mock.get_by_offer_uid.return_value = MagicMock(spec=Offer)
     offer = OfferRawAdd(
@@ -112,7 +112,7 @@ async def test_create_raw_offer_duplicate(import_service, offer_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_import_raw_offers_invalid_extension(import_service):
+async def test_should_reject_import_with_invalid_extension(import_service):
     # Given
     file = _UploadFileStub(filename="test.txt", content=b"[]")
 
@@ -123,7 +123,7 @@ async def test_import_raw_offers_invalid_extension(import_service):
 
 
 @pytest.mark.asyncio
-async def test_import_raw_offers_full_flow(import_service, offer_repo_mock):
+async def test_should_successfully_perform_full_import_flow(import_service, offer_repo_mock):
     # Given
     posts = [
         {
@@ -154,7 +154,7 @@ async def test_import_raw_offers_full_flow(import_service, offer_repo_mock):
     offer_repo_mock.create.assert_awaited_once()
 
 
-def test_parse_facebook_post_to_offer_uses_filename_when_invalid_date():
+def test_should_use_filename_when_facebook_post_has_invalid_date():
     post = FacebookPost(
         user_name="Test User",
         user_profile_url="https://example.com/user",
@@ -171,7 +171,7 @@ def test_parse_facebook_post_to_offer_uses_filename_when_invalid_date():
 
 
 @pytest.mark.asyncio
-async def test_import_raw_offers_rejects_invalid_json(import_service):
+async def test_should_reject_import_with_invalid_json(import_service):
     file = _UploadFileStub(filename="offers.json", content=b"{not-json")
     with pytest.raises(HTTPException) as exc:
         await import_service.import_raw_offers(file)
@@ -179,7 +179,7 @@ async def test_import_raw_offers_rejects_invalid_json(import_service):
 
 
 @pytest.mark.asyncio
-async def test_import_raw_offers_rejects_non_list_json(import_service):
+async def test_should_reject_import_with_non_list_json(import_service):
     file = _UploadFileStub(filename="offers.json", content=b'{"a":1}')
     with pytest.raises(HTTPException) as exc:
         await import_service.import_raw_offers(file)
@@ -187,7 +187,7 @@ async def test_import_raw_offers_rejects_non_list_json(import_service):
 
 
 @pytest.mark.asyncio
-async def test_import_raw_offers_handles_skips_and_conflicts(import_service, offer_repo_mock, monkeypatch):
+async def test_should_handle_skips_and_conflicts_during_import(import_service, offer_repo_mock, monkeypatch):
     from app.services.offers import offer_import_service as offer_import_service_module
     offer_repo_mock.get_by_offer_uid.return_value = None
     monkeypatch.setattr(offer_import_service_module, "extract_and_fix_email", lambda _: None)

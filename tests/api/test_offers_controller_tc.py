@@ -62,7 +62,7 @@ def client_with_overrides(client):
 
 
 @pytest.mark.integration
-def test_create_and_list_raw_offers(client):
+def test_should_create_and_list_raw_offers(client):
     """Test creating and listing raw offers"""
     # Given
     payload1 = make_offer_payload("o-1")
@@ -91,7 +91,7 @@ def test_create_and_list_raw_offers(client):
 
 
 @pytest.mark.integration
-def test_duplicate_offer_returns_409(client):
+def test_should_return_409_on_duplicate_raw_offer(client):
     """Test that duplicate raw offers return 409 conflict"""
     # Given
     payload = make_offer_payload("o-dup")
@@ -106,7 +106,7 @@ def test_duplicate_offer_returns_409(client):
 
 
 @pytest.mark.integration
-def test_get_nonexistent_raw_offer_returns_404(client):
+def test_should_return_404_on_nonexistent_raw_offer(client):
     """Test fetching a raw offer that doesn't exist"""
     # Given
     fake_uuid = uuid4()
@@ -119,7 +119,7 @@ def test_get_nonexistent_raw_offer_returns_404(client):
 
 
 @pytest.mark.integration
-def test_accept_raw_offer_and_status_changes(client):
+def test_should_accept_raw_offer_and_change_status(client):
     """Test accepting a raw offer changes its status to active"""
     # Given
     client.post("/offers/raw", json=make_offer_payload("o-acc"))
@@ -140,7 +140,7 @@ def test_accept_raw_offer_and_status_changes(client):
 
 
 @pytest.mark.integration
-def test_reject_raw_offer_and_status_changes(client):
+def test_should_reject_raw_offer_and_change_status(client):
     """Test rejecting a raw offer changes its status to rejected"""
     # Given
     client.post("/offers/raw", json=make_offer_payload("o-rej"))
@@ -161,7 +161,7 @@ def test_reject_raw_offer_and_status_changes(client):
 
 
 @pytest.mark.integration
-def test_accept_already_accepted_offer_idempotent(client):
+def test_should_be_idempotent_when_accepting_already_accepted_offer(client):
     """Test that accepting an already accepted offer is idempotent"""
     # Given
     client.post("/offers/raw", json=make_offer_payload("o-double-accept"))
@@ -180,7 +180,7 @@ def test_accept_already_accepted_offer_idempotent(client):
 
 
 @pytest.mark.integration
-def test_cannot_accept_rejected_offer(client):
+def test_should_not_allow_accepting_rejected_offer(client):
     """Test that accepting a rejected offer fails appropriately"""
     # Given
     client.post("/offers/raw", json=make_offer_payload("o-reject-then-accept"))
@@ -198,7 +198,7 @@ def test_cannot_accept_rejected_offer(client):
 
 
 @pytest.mark.integration
-def test_accept_nonexistent_raw_offer_returns_404(client):
+def test_should_return_404_when_accepting_nonexistent_raw_offer(client):
     """Test accepting a raw offer that doesn't exist"""
     # Given
     fake_uuid = uuid4()
@@ -211,7 +211,7 @@ def test_accept_nonexistent_raw_offer_returns_404(client):
 
 
 @pytest.mark.integration
-def test_reject_nonexistent_raw_offer_returns_404(client):
+def test_should_return_404_when_rejecting_nonexistent_raw_offer(client):
     """Test rejecting a raw offer that doesn't exist"""
     # Given
     fake_uuid = uuid4()
@@ -229,7 +229,7 @@ def test_reject_nonexistent_raw_offer_returns_404(client):
 
 
 @pytest.mark.integration
-def test_list_offers(client_with_overrides):
+def test_should_list_offers(client_with_overrides):
     """Test listing offers with filters"""
     # Given
     city_uuid = setup_test_city(client_with_overrides, "ListCity")
@@ -269,7 +269,7 @@ def test_list_offers(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_offer_without_city_uuid_succeeds(client_with_overrides):
+def test_should_create_offer_without_city_uuid_successfully(client_with_overrides):
     """Test that creating an offer without city_uuid succeeds if facility_uuid is provided"""
     # Given
     # Create a facility first
@@ -305,7 +305,7 @@ def test_create_offer_without_city_uuid_succeeds(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_offer_without_both_city_and_facility_fails(client_with_overrides):
+def test_should_fail_to_create_offer_without_both_city_and_facility(client_with_overrides):
     """Test that creating an offer without both city_uuid and facility_uuid fails"""
     # Given
     description = f"no-location-{uuid4().hex[:8]}"
@@ -321,7 +321,7 @@ def test_create_offer_without_both_city_and_facility_fails(client_with_overrides
 
 
 @pytest.mark.integration
-def test_update_offer_with_null_location_fails(client_with_overrides):
+def test_should_fail_to_update_offer_with_null_location(client_with_overrides):
     """Test that updating an offer to have both city_uuid and facility_uuid as null fails"""
     offer_uuid = create_test_offer(client_with_overrides, description="update-loc")
 
@@ -335,7 +335,7 @@ def test_update_offer_with_null_location_fails(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_get_nonexistent_offer_returns_404(client_with_overrides):
+def test_should_return_404_on_nonexistent_offer(client_with_overrides):
     """Test fetching an offer that doesn't exist"""
     fake_uuid = uuid4()
     response = client_with_overrides.get(f"/offers/{fake_uuid}")
@@ -343,7 +343,7 @@ def test_get_nonexistent_offer_returns_404(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_update_nonexistent_offer_returns_404(client_with_overrides):
+def test_should_return_404_when_updating_nonexistent_offer(client_with_overrides):
     """Test updating an offer that doesn't exist"""
     fake_uuid = uuid4()
     response = client_with_overrides.patch(f"/offers/{fake_uuid}", json={"description": "updated"})
@@ -351,7 +351,7 @@ def test_update_nonexistent_offer_returns_404(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_offer_and_verify_all_fields(client_with_overrides):
+def test_should_create_offer_and_verify_all_fields(client_with_overrides):
     """Verify all fields are correctly stored and retrieved"""
     city_uuid = setup_test_city(client_with_overrides, "VerifyCity")
 
@@ -386,7 +386,7 @@ def test_create_offer_and_verify_all_fields(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_list_get_update_offer_and_email_similar(client_with_overrides):
+def test_should_perform_full_crud_and_verify_similar_offers(client_with_overrides):
     """Test full CRUD operations on offers"""
     description = f"offer-{uuid4().hex[:8]}"
     email = "offer@example.com"
@@ -434,7 +434,7 @@ def test_create_list_get_update_offer_and_email_similar(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_offer_for_court_with_facility_and_place_name(client_with_overrides):
+def test_should_create_offer_for_court_with_facility_and_place_name(client_with_overrides):
     """Verify offer creation with facility_uuid and place_name (mimics court request)"""
     from app.database.models.enums import PlaceCategory
     facility_name = f"court-{uuid4().hex[:8]}"
@@ -473,7 +473,7 @@ def test_create_offer_for_court_with_facility_and_place_name(client_with_overrid
 
 
 @pytest.mark.integration
-def test_create_offer_for_other_place_with_city_and_custom_names(client_with_overrides):
+def test_should_create_offer_for_other_place_with_city_and_custom_names(client_with_overrides):
     """Verify offer creation with city_uuid, city_name, and place_name (mimics other place request)"""
     city_uuid = setup_test_city(client_with_overrides, "Winne")
 
@@ -505,7 +505,7 @@ def test_create_offer_for_other_place_with_city_and_custom_names(client_with_ove
 
 
 @pytest.mark.integration
-def test_create_and_update_offer_with_custom_names(client_with_overrides):
+def test_should_create_and_update_offer_with_custom_names(client_with_overrides):
     """Verify place_name and city_name are correctly stored and retrieved including overrides"""
     city_uuid = setup_test_city(client_with_overrides, "NameCity")
 
@@ -587,7 +587,7 @@ def test_create_and_update_offer_with_custom_names(client_with_overrides):
         (51, 422),  # Exceeding max length
     ],
 )
-def test_list_offers_search_length_validation(client_with_overrides, search_len, expected_status):
+def test_should_validate_offer_list_search_length(client_with_overrides, search_len, expected_status):
     """Test search length validation for /offers"""
     response = client_with_overrides.get("/offers", params={"search": "x" * search_len})
     assert response.status_code == expected_status
@@ -608,7 +608,7 @@ def test_list_offers_search_length_validation(client_with_overrides, search_len,
         (0, 0, 1001, 422),  # Invalid distance (must be <= 1000)
     ],
 )
-def test_list_offers_location_validation(client_with_overrides, lat, lon, distance, expected_status):
+def test_should_validate_offer_list_location_params(client_with_overrides, lat, lon, distance, expected_status):
     """Test location parameter validation for /offers"""
     params = {}
     if lat is not None:
@@ -623,7 +623,7 @@ def test_list_offers_location_validation(client_with_overrides, lat, lon, distan
 
 
 @pytest.mark.integration
-def test_pagination_consistency(client_with_overrides):
+def test_should_maintain_pagination_consistency(client_with_overrides):
     """Test that pagination returns consistent non-overlapping results"""
     city_uuid = setup_test_city(client_with_overrides, "PageCity")
 
@@ -642,7 +642,7 @@ def test_pagination_consistency(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_filter_by_invoice_only_returns_invoice_offers(client_with_overrides):
+def test_should_filter_offers_by_invoice(client_with_overrides):
     """Test invoice filtering works correctly"""
     city_uuid = setup_test_city(client_with_overrides, "InvoiceCity")
     role_uuid = client_with_overrides.get("/offers/legal_roles").json()[0]["uuid"]
@@ -665,7 +665,7 @@ def test_filter_by_invoice_only_returns_invoice_offers(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_sorting_order_asc_vs_desc(client_with_overrides):
+def test_should_sort_offers_correctly(client_with_overrides):
     """Test that sorting order affects results correctly"""
     city_uuid = setup_test_city(client_with_overrides, "SortCity")
 
@@ -690,7 +690,7 @@ def test_sorting_order_asc_vs_desc(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_legal_roles_and_count(client_with_overrides):
+def test_should_list_legal_roles_and_count_offers(client_with_overrides):
     """Test listing legal roles and counting offers"""
     roles = client_with_overrides.get("/offers/legal_roles")
     assert roles.status_code == 200
@@ -717,7 +717,7 @@ def test_list_legal_roles_and_count(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_map_offers(client_with_overrides):
+def test_should_list_map_offers(client_with_overrides):
     """Test retrieving offers for map display"""
     city_uuid = setup_test_city(client_with_overrides, "MapCity")
 
@@ -737,7 +737,7 @@ def test_list_map_offers(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_import_and_parse_raw_offer(client_with_overrides):
+def test_should_import_and_parse_raw_offer(client_with_overrides):
     """Test importing and parsing raw offers"""
     created = client_with_overrides.post("/offers/raw", json=make_offer_payload(f"o-parse-{uuid4().hex[:6]}"))
     assert created.status_code == 201
@@ -777,7 +777,7 @@ def test_import_and_parse_raw_offer(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_parse_nonexistent_raw_offer_returns_404(client_with_overrides):
+def test_should_return_404_when_parsing_nonexistent_raw_offer(client_with_overrides):
     """Test parsing a raw offer that doesn't exist"""
     fake_uuid = uuid4()
     response = client_with_overrides.get(f"/offers/raw/{fake_uuid}/parse")
@@ -785,7 +785,7 @@ def test_parse_nonexistent_raw_offer_returns_404(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_import_invalid_json_format(client_with_overrides):
+def test_should_fail_to_import_invalid_json_format(client_with_overrides):
     """Test importing malformed JSON"""
     invalid_json = b"{ this is not valid json }"
     files = {"file": ("bad.json", invalid_json, "application/json")}
@@ -795,7 +795,7 @@ def test_import_invalid_json_format(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_import_empty_file(client_with_overrides):
+def test_should_handle_import_empty_file(client_with_overrides):
     """Test importing empty JSON array"""
     files = {"file": ("empty.json", b"[]", "application/json")}
 
@@ -805,7 +805,7 @@ def test_import_empty_file(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_import_with_missing_required_fields(client_with_overrides):
+def test_should_handle_import_with_missing_required_fields(client_with_overrides):
     """Test importing records with missing required fields"""
     import_payload = [
         {
@@ -826,7 +826,7 @@ def test_import_with_missing_required_fields(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_get_offer_email_nonexistent_returns_404(client_with_overrides):
+def test_should_return_404_when_getting_email_for_nonexistent_offer(client_with_overrides):
     """Test getting email for nonexistent offer"""
     fake_uuid = uuid4()
     response = client_with_overrides.get(f"/offers/{fake_uuid}/email")
@@ -834,7 +834,7 @@ def test_get_offer_email_nonexistent_returns_404(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_get_similar_offers_nonexistent_returns_404(client_with_overrides):
+def test_should_return_404_when_getting_similar_offers_for_nonexistent_offer(client_with_overrides):
     """Test getting similar offers for nonexistent offer"""
     fake_uuid = uuid4()
     response = client_with_overrides.get(f"/offers/{fake_uuid}/similar")
@@ -842,7 +842,7 @@ def test_get_similar_offers_nonexistent_returns_404(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_similar_offers_same_email(client_with_overrides):
+def test_should_find_similar_offers_with_same_email(client_with_overrides):
     """Test that offers with the same email are considered similar"""
     city_uuid = setup_test_city(client_with_overrides, "SimilarCity")
     shared_email = f"shared-{uuid4().hex[:6]}@example.com"
@@ -872,7 +872,7 @@ def test_similar_offers_same_email(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_raw_offers_with_status_filter(client):
+def test_should_list_raw_offers_with_status_filter(client):
     """Test filtering raw offers by status"""
     offer_uid = f"o-status-{uuid4().hex[:6]}"
     client.post("/offers/raw", json=make_offer_payload(offer_uid))
@@ -894,7 +894,7 @@ def test_list_raw_offers_with_status_filter(client):
 
 
 @pytest.mark.integration
-def test_list_raw_offers_sorting_by_name(client):
+def test_should_sort_raw_offers_by_name(client):
     """Test sorting raw offers by name"""
     response_asc = client.get("/offers/raw", params={"field": "name", "order": "asc", "limit": 5})
     assert response_asc.status_code == 200
@@ -911,14 +911,14 @@ def test_list_raw_offers_sorting_by_name(client):
         (51, 422),  # Exceeding max length
     ],
 )
-def test_list_raw_offers_search_length_validation(client, search_len, expected_status):
+def test_should_validate_raw_offer_list_search_length(client, search_len, expected_status):
     """Test search length validation for /offers/raw"""
     response = client.get("/offers/raw", params={"search": "x" * search_len})
     assert response.status_code == expected_status
 
 
 @pytest.mark.integration
-def test_list_raw_offers_with_search(client):
+def test_should_search_raw_offers(client):
     """Test searching raw offers"""
     unique_text = f"searchable-{uuid4().hex[:8]}"
     client.post("/offers/raw", json=make_offer_payload(f"o-{unique_text}"))
@@ -946,7 +946,7 @@ def test_list_raw_offers_with_search(client):
         ({"roles": [str(uuid4())]}, 422),  # Non-existent role UUID
     ],
 )
-def test_create_offer_validation(client_with_overrides, payload_updates, expected_status):
+def test_should_validate_offer_creation_payload(client_with_overrides, payload_updates, expected_status):
     """Test offer creation payload validation"""
     city_uuid = None
     if "city_uuid" not in payload_updates:
@@ -973,7 +973,7 @@ def test_create_offer_validation(client_with_overrides, payload_updates, expecte
 
 
 @pytest.mark.integration
-def test_location_filtering_finds_nearby_offers(client_with_overrides):
+def test_should_find_nearby_offers_with_location_filtering(client_with_overrides):
     """Test that location filtering correctly finds nearby offers"""
     # Create city at specific coordinates
     city_name = f"LocationCity-{uuid4().hex[:6]}"
@@ -1002,7 +1002,7 @@ def test_location_filtering_finds_nearby_offers(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_complete_raw_offer_workflow(client_with_overrides):
+def test_should_complete_raw_offer_workflow_successfully(client_with_overrides):
     """Test complete workflow: create -> list -> get -> parse -> accept"""
     offer_uid = f"o-workflow-{uuid4().hex[:6]}"
 
@@ -1035,7 +1035,7 @@ def test_complete_raw_offer_workflow(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_multiple_offers_with_same_author(client_with_overrides):
+def test_should_handle_multiple_offers_with_same_author(client_with_overrides):
     """Test creating multiple offers from the same author"""
     city_uuid = setup_test_city(client_with_overrides, "MultiCity")
     author = f"author-{uuid4().hex[:6]}"
@@ -1054,7 +1054,7 @@ def test_multiple_offers_with_same_author(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_offer_with_multiple_legal_roles(client_with_overrides):
+def test_should_create_offer_with_multiple_legal_roles(client_with_overrides):
     """Test creating offer with multiple legal roles"""
     city_uuid = setup_test_city(client_with_overrides, "MultiRoleCity")
 
@@ -1078,7 +1078,7 @@ def test_offer_with_multiple_legal_roles(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_offers_with_zero_limit(client_with_overrides):
+def test_should_handle_listing_offers_with_zero_limit(client_with_overrides):
     """Test listing with limit=0"""
     response = client_with_overrides.get("/offers", params={"limit": 0})
     # Should either return empty array or validation error
@@ -1086,7 +1086,7 @@ def test_list_offers_with_zero_limit(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_list_offers_with_large_offset(client_with_overrides):
+def test_should_handle_listing_offers_with_large_offset(client_with_overrides):
     """Test listing with offset beyond available records"""
     response = client_with_overrides.get("/offers", params={"offset": 999999})
     assert response.status_code == 200
@@ -1095,7 +1095,7 @@ def test_list_offers_with_large_offset(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_update_offer_with_empty_payload(client_with_overrides):
+def test_should_handle_updating_offer_with_empty_payload(client_with_overrides):
     """Test updating offer with empty JSON"""
     offer_uuid = create_test_offer(client_with_overrides)
 
@@ -1105,7 +1105,7 @@ def test_update_offer_with_empty_payload(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_create_offer_with_very_long_description(client_with_overrides):
+def test_should_handle_creating_offer_with_very_long_description(client_with_overrides):
     """Test creating offer with extremely long description"""
     city_uuid = setup_test_city(client_with_overrides, "LongDescCity")
 
@@ -1119,7 +1119,7 @@ def test_create_offer_with_very_long_description(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_special_characters_in_description(client_with_overrides):
+def test_should_handle_special_characters_in_description(client_with_overrides):
     """Test creating offer with special characters"""
     city_uuid = setup_test_city(client_with_overrides, "SpecialCity")
 
@@ -1138,7 +1138,7 @@ def test_special_characters_in_description(client_with_overrides):
 
 
 @pytest.mark.integration
-def test_concurrent_duplicate_prevention(client):
+def test_should_prevent_concurrent_duplicates(client):
     """Test that duplicate prevention works"""
     payload = make_offer_payload(f"o-concurrent-{uuid4().hex[:6]}")
 

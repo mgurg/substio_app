@@ -28,7 +28,7 @@ def notification_service(mock_slack_notifier, mock_email_notifier):
 
 
 @pytest.mark.asyncio
-async def test_notify_new_offer_slack_from_user(notification_service, mock_slack_notifier):
+async def test_should_notify_slack_when_new_offer_created_by_user(notification_service, mock_slack_notifier):
     # Given
     offer_add = MagicMock(spec=OfferAdd)
     offer_add.source = SourceType.USER
@@ -47,7 +47,7 @@ async def test_notify_new_offer_slack_from_user(notification_service, mock_slack
 
 
 @pytest.mark.asyncio
-async def test_notify_new_offer_slack_from_bot_no_notify(notification_service, mock_slack_notifier):
+async def test_should_not_notify_slack_when_new_offer_created_by_bot(notification_service, mock_slack_notifier):
     # Given
     offer_add = MagicMock(spec=OfferAdd)
     offer_add.source = SourceType.BOT
@@ -61,7 +61,7 @@ async def test_notify_new_offer_slack_from_bot_no_notify(notification_service, m
 
 
 @pytest.mark.asyncio
-async def test_send_user_offer_created_email_success(notification_service, mock_email_notifier):
+async def test_should_send_user_offer_created_email_successfully(notification_service, mock_email_notifier):
     # Given
     offer = MagicMock(spec=Offer)
     offer.uuid = uuid.uuid4()
@@ -90,7 +90,7 @@ async def test_send_user_offer_created_email_success(notification_service, mock_
 
 
 @pytest.mark.asyncio
-async def test_send_offer_imported_email_success(notification_service, mock_email_notifier):
+async def test_should_send_offer_imported_email_successfully(notification_service, mock_email_notifier):
     # Given
     offer = MagicMock(spec=Offer)
     offer.email = "test@example.com"
@@ -109,7 +109,7 @@ async def test_send_offer_imported_email_success(notification_service, mock_emai
 
 
 @pytest.mark.asyncio
-async def test_send_offer_imported_email_failure(notification_service, mock_email_notifier):
+async def test_should_handle_failure_when_sending_offer_imported_email(notification_service, mock_email_notifier):
     # Given
     offer = MagicMock(spec=Offer)
     offer.email = "test@example.com"

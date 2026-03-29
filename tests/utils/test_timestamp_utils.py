@@ -9,7 +9,7 @@ from app.utils.timestamp_utils import extract_timestamp_from_filename
     ("20250819_110812.json", datetime(2025, 8, 19, 11, 8, 12)),
     ("report-foo_20240102_030405_backup.json", datetime(2024, 1, 2, 3, 4, 5)),
 ])
-def test_extract_timestamp_from_filename_parses_correctly(filename, expected):
+def test_should_successfully_extract_timestamp_from_filename(filename, expected):
     # When
     dt = extract_timestamp_from_filename(filename)
 
@@ -25,7 +25,7 @@ def test_extract_timestamp_from_filename_parses_correctly(filename, expected):
     "data.txt",
     "",
 ])
-def test_extract_timestamp_missing_pattern_returns_aware_now(filename):
+def test_should_return_now_when_extracting_timestamp_from_filename_without_pattern(filename):
     # Given
     before = datetime.now(UTC)
 
@@ -40,7 +40,7 @@ def test_extract_timestamp_missing_pattern_returns_aware_now(filename):
     assert before <= dt <= after
 
 
-def test_extract_timestamp_handles_bad_input_types():
+def test_should_handle_bad_input_types_when_extracting_timestamp():
     # Given
     before = datetime.now(UTC)
 

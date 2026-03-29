@@ -96,7 +96,7 @@ def service(
 
 
 @pytest.mark.asyncio
-async def test_create_offer_triggers_email_notification(service, offer_repo_mock, email_validator_mock, notification_service_mock):
+async def test_should_trigger_email_notification_when_offer_created(service, offer_repo_mock, email_validator_mock, notification_service_mock):
     # Given
     offer_add = OfferAdd(
         source=SourceType.USER,
@@ -130,7 +130,7 @@ async def test_create_offer_triggers_email_notification(service, offer_repo_mock
 
 
 @pytest.mark.asyncio
-async def test_create_offer_no_email_if_validator_returns_false(service, offer_repo_mock, email_validator_mock, notification_service_mock):
+async def test_should_not_send_email_if_validator_returns_false_during_offer_creation(service, offer_repo_mock, email_validator_mock, notification_service_mock):
     # Given
     offer_add = OfferAdd(
         source=SourceType.USER,
@@ -158,7 +158,7 @@ async def test_create_offer_no_email_if_validator_returns_false(service, offer_r
 
 
 @pytest.mark.asyncio
-async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mock, city_repo_mock, notification_service_mock):
+async def test_should_set_valid_to_and_notify_slack_on_offer_creation(service, offer_repo_mock, city_repo_mock, notification_service_mock):
     city_uuid = uuid4()
     city_repo_mock.get_by_uuid.return_value = MagicMock(spec=City, id=12, lat=52.1, lon=21.0, name="City 12")
 
@@ -185,7 +185,7 @@ async def test_create_offer_sets_valid_to_and_sends_slack(service, offer_repo_mo
 
 
 @pytest.mark.asyncio
-async def test_create_offer_raises_when_legal_roles_missing(service, legal_role_repo_mock):
+async def test_should_raise_404_when_creating_offer_with_missing_legal_roles(service, legal_role_repo_mock):
     role_uuid = uuid4()
     legal_role_repo_mock.get_by_uuids.return_value = []
 
@@ -204,7 +204,7 @@ async def test_create_offer_raises_when_legal_roles_missing(service, legal_role_
 
 
 @pytest.mark.asyncio
-async def test_create_offer_defaults_valid_to_when_no_date_or_hour(service, offer_repo_mock, city_repo_mock):
+async def test_should_default_valid_to_when_no_date_or_hour_provided(service, offer_repo_mock, city_repo_mock):
     city_repo_mock.get_by_uuid.return_value = MagicMock(spec=City, id=2, lat=50.0, lon=20.0, name="City 2")
     offer_add = OfferAdd(
         author="Author",
@@ -222,7 +222,7 @@ async def test_create_offer_defaults_valid_to_when_no_date_or_hour(service, offe
 
 
 @pytest.mark.asyncio
-async def test_update_offers_rejects_invalid_date(service, offer_repo_mock):
+async def test_should_reject_offer_update_with_invalid_date(service, offer_repo_mock):
     offer_uuid = uuid4()
     db_offer = MagicMock(
         spec=Offer,
@@ -245,7 +245,7 @@ async def test_update_offers_rejects_invalid_date(service, offer_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_parse_raw_offer_raises_when_no_raw_data(service, offer_repo_mock):
+async def test_should_raise_404_when_parsing_offer_without_raw_data(service, offer_repo_mock):
     offer_uuid = uuid4()
     offer_repo_mock.get_by_uuid.return_value = MagicMock(spec=Offer, raw_data=None)
 
@@ -255,7 +255,7 @@ async def test_parse_raw_offer_raises_when_no_raw_data(service, offer_repo_mock)
 
 
 @pytest.mark.asyncio
-async def test_accept_raw_offer_skips_when_active(service, offer_repo_mock):
+async def test_should_skip_accepting_raw_offer_when_already_active(service, offer_repo_mock):
     offer_uuid = uuid4()
     offer_repo_mock.get_by_uuid.return_value = MagicMock(spec=Offer, id=1, status=OfferStatus.ACTIVE)
 
@@ -265,7 +265,7 @@ async def test_accept_raw_offer_skips_when_active(service, offer_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_update_offers_sends_email_when_validator_allows(
+async def test_should_send_email_on_offer_update_when_validator_allows(
     service,
     offer_repo_mock,
     legal_role_repo_mock,
@@ -311,7 +311,7 @@ async def test_update_offers_sends_email_when_validator_allows(
 
 
 @pytest.mark.asyncio
-async def test_update_offers_ignores_null_status(service, offer_repo_mock):
+async def test_should_ignore_null_status_during_offer_update(service, offer_repo_mock):
     offer_uuid = uuid4()
     db_offer = MagicMock(
         spec=Offer,

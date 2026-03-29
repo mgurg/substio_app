@@ -21,7 +21,7 @@ def service(city_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_city_by_uuid_returns_city(service, city_repo_mock):
+async def test_should_return_city_when_getting_city_by_uuid(service, city_repo_mock):
     # Given
     city_uuid = uuid4()
     fake_city = MagicMock(spec=City, uuid=city_uuid, name="Test City")
@@ -36,7 +36,7 @@ async def test_get_city_by_uuid_returns_city(service, city_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_city_by_uuid_propagates_not_found(service, city_repo_mock):
+async def test_should_propagate_not_found_error_when_city_missing(service, city_repo_mock):
     # Given
     city_uuid = uuid4()
     city_repo_mock.get_by_uuid.side_effect = NotFoundError("City", str(city_uuid))

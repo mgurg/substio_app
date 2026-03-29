@@ -8,7 +8,7 @@ from app.services.places.city_mapper import CityMapper
 from app.services.places.place_mapper import PlaceMapper
 
 
-def test_place_mapper_to_db_dict():
+def test_should_map_place_add_to_db_dict():
     # Given
     place_add = PlaceAdd(
         category=PlaceCategory.COURT,
@@ -35,7 +35,7 @@ def test_place_mapper_to_db_dict():
     assert result["name_ascii"] == "test-court"
 
 
-def test_city_mapper_to_db_dict():
+def test_should_map_city_add_to_db_dict():
     # Given
     city_add = CityAdd(
         city_name="Warszawa",

@@ -5,7 +5,7 @@ from tests.utils.test_helpers import make_city_payload, make_place_payload
 
 
 @pytest.mark.integration
-def test_create_and_search_cities(client):
+def test_should_create_and_search_cities(client):
     # Given
     city1_payload = make_city_payload("Warszawa", teryt="SIMC-1")
     city2_payload = make_city_payload("Warka", teryt="SIMC-2", lat=51.78, lon=21.19)
@@ -35,7 +35,7 @@ def test_create_and_search_cities(client):
     ("/places/facility/{}", "a" * 101),  # too long
 ])
 @pytest.mark.integration
-def test_search_length_validation(client, endpoint, search_term):
+def test_should_validate_search_length(client, endpoint, search_term):
     # Given
     # Parameters from decorator
 
@@ -52,7 +52,7 @@ def test_search_length_validation(client, endpoint, search_term):
 
 
 @pytest.mark.integration
-def test_duplicate_city_returns_409(client):
+def test_should_return_409_on_duplicate_city(client):
     # Given
     payload = make_city_payload("Radom", teryt="SIMC-DUP")
     client.post("/places/city", json=payload)
@@ -66,7 +66,7 @@ def test_duplicate_city_returns_409(client):
 
 
 @pytest.mark.integration
-def test_create_place_and_get_by_uuid(client):
+def test_should_create_place_and_get_by_uuid(client):
     # Given
     client.post("/places/city", json=make_city_payload("Alpha City", teryt="SIMC-A1"))
     place_payload = make_place_payload("Test Place Alpha", city="Alpha City")
@@ -91,7 +91,7 @@ def test_create_place_and_get_by_uuid(client):
 
 
 @pytest.mark.integration
-def test_duplicate_place_returns_409(client):
+def test_should_return_409_on_duplicate_place(client):
     # Given
     payload = make_place_payload("Duplicate Court", lat=52.23, lon=21.01)
     client.post("/places/", json=payload)
@@ -105,7 +105,7 @@ def test_duplicate_place_returns_409(client):
 
 
 @pytest.mark.integration
-def test_get_city_by_uuid(client):
+def test_should_get_city_by_uuid(client):
     # Given
     client.post("/places/city", json=make_city_payload("Gamma", teryt="SIMC-G1"))
     res = client.get("/places/city/gam")
@@ -125,7 +125,7 @@ def test_get_city_by_uuid(client):
 
 
 @pytest.mark.integration
-def test_place_index_response_fields(client):
+def test_should_return_correct_fields_in_place_index(client):
     # Given
     city_name = "Rawicz"
     street_name = "ul. Ignacego Buszy"

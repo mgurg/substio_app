@@ -37,7 +37,7 @@ def prod_env(client, monkeypatch):
 
 
 @pytest.mark.integration
-def test_user_offer_creation_triggers_email_in_prod(client, mock_email_notifier, prod_env):
+def test_should_trigger_email_on_user_offer_creation_in_prod(client, mock_email_notifier, prod_env):
     """
     Test that creating an offer with source=USER triggers an email notification when in PROD.
     """
@@ -64,7 +64,7 @@ def test_user_offer_creation_triggers_email_in_prod(client, mock_email_notifier,
 
 
 @pytest.mark.integration
-def test_user_offer_creation_no_email_in_dev(client, mock_email_notifier):
+def test_should_not_trigger_email_on_user_offer_creation_in_dev(client, mock_email_notifier):
     """
     Test that creating an offer with source=USER does NOT trigger an email notification when in DEV.
     """
@@ -90,7 +90,7 @@ def test_user_offer_creation_no_email_in_dev(client, mock_email_notifier):
 
 
 @pytest.mark.integration
-def test_imported_offer_patch_triggers_email_in_prod(client, mock_email_notifier, prod_env):
+def test_should_trigger_email_on_imported_offer_patch_in_prod(client, mock_email_notifier, prod_env):
     """
     Test that updating an imported (BOT) offer with submit_email=True triggers an email in PROD.
     """

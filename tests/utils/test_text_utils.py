@@ -11,7 +11,7 @@ from app.common.text_utils import (
 )
 
 
-def test_generate_offer_management_token():
+def test_should_generate_consistent_offer_management_token():
     # Given
     offer_uuid = "123e4567-e89b-12d3-a456-426614174000"
     created_at = datetime(2025, 1, 1, 12, 0, 0)
@@ -46,7 +46,7 @@ def test_generate_offer_management_token():
     ("<p>Test</p>", "Test"),
     ("No HTML", "No HTML"),
 ])
-def test_remove_html_tags(html, expected):
+def test_should_remove_html_tags(html, expected):
     # When
     result = remove_html_tags(html)
 
@@ -58,7 +58,7 @@ def test_remove_html_tags(html, expected):
     ("  Hello\u00A0\tWorld\n\r\nThis   is  “quoted”  text  ", 'Hello World This is "quoted" text'),
     ("<p>‘Ala’ i “kot”</p>", "'Ala' i \"kot\""),
 ])
-def test_sanitize_and_normalize_text(raw, expected):
+def test_should_sanitize_and_normalize_text(raw, expected):
     # When
     result = sanitize_and_normalize_text(raw)
 
@@ -71,7 +71,7 @@ def test_sanitize_and_normalize_text(raw, expected):
     ("  ---Hello   World---  ", "hello-world"),
     ("Simple Name", "simple-name"),
 ])
-def test_sanitize_name(name, expected):
+def test_should_sanitize_name_correctly(name, expected):
     # When
     result = sanitize_name(name)
 
@@ -89,7 +89,7 @@ def test_sanitize_name(name, expected):
     ("Pola Mokotowskie", "Pola Mokotowskie", None),
     ("Street 123B/45", "Street", "123B/45"),
 ])
-def test_split_street_parametrized(street_input, expected_street, expected_number):
+def test_should_split_street_correctly(street_input, expected_street, expected_number):
     # When
     result = split_street(street_input)
 

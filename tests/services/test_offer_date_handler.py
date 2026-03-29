@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from app.services.offers.offer_date_handler import OfferDateHandler
 
 
-def test_parse_date_success():
+def test_should_successfully_parse_valid_date():
     # When
     result = OfferDateHandler.parse_date("2024-03-14")
 
@@ -14,7 +14,7 @@ def test_parse_date_success():
     assert result == date(2024, 3, 14)
 
 
-def test_parse_date_invalid_format():
+def test_should_fail_to_parse_invalid_date_format():
     # When & Then
     with pytest.raises(HTTPException) as excinfo:
         OfferDateHandler.parse_date("14-03-2024")
@@ -22,7 +22,7 @@ def test_parse_date_invalid_format():
     assert "Invalid date format" in excinfo.value.detail
 
 
-def test_parse_hour_success():
+def test_should_successfully_parse_valid_hour():
     # When
     result = OfferDateHandler.parse_hour("15:30")
 
@@ -30,7 +30,7 @@ def test_parse_hour_success():
     assert result == time(15, 30)
 
 
-def test_parse_hour_invalid_format():
+def test_should_fail_to_parse_invalid_hour_format():
     # When & Then
     with pytest.raises(HTTPException) as excinfo:
         OfferDateHandler.parse_hour("3:30 PM")
@@ -38,7 +38,7 @@ def test_parse_hour_invalid_format():
     assert "Invalid hour format" in excinfo.value.detail
 
 
-def test_compute_valid_to_with_date_and_hour():
+def test_should_compute_valid_to_with_date_and_hour():
     # Given
     date_obj = date(2024, 3, 14)
     hour_obj = time(15, 30)
@@ -54,7 +54,7 @@ def test_compute_valid_to_with_date_and_hour():
     assert result == expected_utc
 
 
-def test_compute_valid_to_with_date_and_hour_dst():
+def test_should_compute_valid_to_with_date_and_hour_in_dst():
     # Given
     # July is DST in Warsaw (UTC+2)
     date_obj = date(2024, 7, 14)
@@ -70,7 +70,7 @@ def test_compute_valid_to_with_date_and_hour_dst():
     assert result == expected_utc
 
 
-def test_compute_valid_to_none_returns_default():
+def test_should_return_default_when_computing_valid_to_with_none():
     # When
     result = OfferDateHandler.compute_valid_to(None, None)
 
@@ -84,7 +84,7 @@ def test_compute_valid_to_none_returns_default():
     assert result.tzinfo == UTC
 
 
-def test_parse_date_hour_both():
+def test_should_parse_date_and_hour_when_both_provided():
     # When
     d, h = OfferDateHandler.parse_date_hour("2024-03-14", "15:30")
 
@@ -93,7 +93,7 @@ def test_parse_date_hour_both():
     assert h == time(15, 30)
 
 
-def test_parse_date_hour_none():
+def test_should_return_none_when_parsing_null_date_and_hour():
     # When
     d, h = OfferDateHandler.parse_date_hour(None, None)
 

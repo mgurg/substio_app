@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_fake_slack_notifier_captures_messages():
+async def test_should_capture_messages_in_fake_slack_notifier():
     # Given
     from app.infrastructure.notifications.slack.fake_slack_notifier import FakeSlackNotifier
 
@@ -32,7 +32,7 @@ async def test_fake_slack_notifier_captures_messages():
 
 
 @pytest.mark.asyncio
-async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
+async def test_should_send_simple_and_rich_messages_via_slack_notifier(monkeypatch):
     # Given
     # Import after monkeypatch setup
     from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
@@ -88,7 +88,7 @@ async def test_slack_notifier_sends_simple_and_rich(monkeypatch):
     assert "uuid-y" in payload_str
 
 
-def test_slack_notifier_requires_webhook(monkeypatch):
+def test_should_require_webhook_for_slack_notifier(monkeypatch):
     # Given
     from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod
 
@@ -103,7 +103,7 @@ def test_slack_notifier_requires_webhook(monkeypatch):
         slack_mod()
 
 
-def test_slack_factory_returns_instance(monkeypatch):
+def test_should_return_instance_from_slack_factory(monkeypatch):
     # Given
     from app.infrastructure.notifications.slack.factory import get_slack_notifier
     from app.infrastructure.notifications.slack.slack_notifier import SlackNotifier as slack_mod

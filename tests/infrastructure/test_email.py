@@ -11,7 +11,7 @@ class DummySettings:
 
 
 @pytest.mark.asyncio
-async def test_mailersend_send_custom_email_success(monkeypatch):
+async def test_should_successfully_send_custom_email_via_mailersend(monkeypatch):
     # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
     monkeypatch.setattr(email_mod, "settings", DummySettings)
@@ -64,7 +64,7 @@ async def test_mailersend_send_custom_email_success(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
+async def test_should_send_custom_email_with_bcc_via_mailersend(monkeypatch):
     # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
     monkeypatch.setattr(email_mod, "settings", DummySettings)
@@ -103,7 +103,7 @@ async def test_mailersend_send_custom_email_with_bcc(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
+async def test_should_return_false_when_mailersend_custom_email_fails(monkeypatch):
     # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
 
@@ -141,7 +141,7 @@ async def test_mailersend_send_custom_email_failure_returns_false(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_mailersend_send_offer_imported_email_delegates(monkeypatch):
+async def test_should_delegate_to_send_custom_email_when_sending_offer_imported_email(monkeypatch):
     # Given
     from app.infrastructure.notifications.email.mailer_send_notifier import MailerSendNotifier as email_mod
 
@@ -171,7 +171,7 @@ async def test_mailersend_send_offer_imported_email_delegates(monkeypatch):
     assert kwargs["subject"].startswith("Substytucja")
 
 
-def test_email_factory_returns_cached_instance():
+def test_should_return_cached_instance_from_email_factory():
     # Given
     from app.infrastructure.notifications.email.factory import get_email_notifier
 
