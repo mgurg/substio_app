@@ -8,7 +8,8 @@ from app.services.places.city_mapper import CityMapper
 from app.services.places.place_mapper import PlaceMapper
 
 
-def test_place_mapper_to_db_dict():
+def test_should_map_place_add_to_db_dict():
+    # Given
     place_add = PlaceAdd(
         category=PlaceCategory.COURT,
         name="Test Court",
@@ -19,8 +20,10 @@ def test_place_mapper_to_db_dict():
         )
     )
 
+    # When
     result = PlaceMapper.map_to_db_dict(place_add)
 
+    # Then
     assert "uuid" in result
     assert isinstance(UUID(result["uuid"]), UUID)
     assert result["name"] == "Test Court"
@@ -32,7 +35,8 @@ def test_place_mapper_to_db_dict():
     assert result["name_ascii"] == "test-court"
 
 
-def test_city_mapper_to_db_dict():
+def test_should_map_city_add_to_db_dict():
+    # Given
     city_add = CityAdd(
         city_name="Warszawa",
         coordinates=Coordinates(lat=Decimal("52.2297"), lon=Decimal("21.0122")),
@@ -42,8 +46,10 @@ def test_city_mapper_to_db_dict():
         teryt_simc="1234567"
     )
 
+    # When
     result = CityMapper.map_to_db_dict(city_add)
 
+    # Then
     assert "uuid" in result
     assert isinstance(UUID(result["uuid"]), UUID)
     assert result["name"] == "Warszawa"

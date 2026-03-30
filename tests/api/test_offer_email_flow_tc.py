@@ -5,12 +5,13 @@ import pytest
 
 from app.core.config import get_settings
 from app.core.dependencies import get_email_notifier
-from tests.api.test_offers_controller_tc import make_offer_create_payload, setup_test_city
+from app.infrastructure.notifications.email.email_notifier_base import EmailNotifierBase
+from tests.utils.test_helpers import make_offer_create_payload, setup_test_city
 
 
 @pytest.fixture
 def mock_email_notifier(client):
-    mock = AsyncMock()
+    mock = AsyncMock(spec=EmailNotifierBase)
     # Mock send methods to return True (success)
     mock.send_user_offer_created_email.return_value = True
     mock.send_offer_imported_email.return_value = True
@@ -36,30 +37,25 @@ def prod_env(client, monkeypatch):
 
 
 @pytest.mark.integration
-def test_user_offer_creation_triggers_email_in_prod(client, mock_email_notifier, prod_env):
+def test_should_trigger_email_on_user_offer_creation_in_prod(client, mock_email_notifier, prod_env):
     """
     Test that creating an offer with source=USER triggers an email notification when in PROD.
     """
+    # Given
     city_uuid = setup_test_city(client, "EmailProdCity")
-
     description = f"test-email-flow-{uuid4().hex[:8]}"
     email = "user@example.com"
     payload = make_offer_create_payload(description, email=email)
     payload["city_uuid"] = city_uuid
     payload["source"] = "user"
-
-    # Need to provide other required fields for /offers POST if any,
-    # but based on OfferAdd schema it seems minimal.
-    # Actually OfferService.create_offer expects many fields in relations.
     payload.update({"date_str": "2026-12-01", "hour_str": "12:00", "roles_uuids": []})
 
+    # When
     response = client.post("/offers", json=payload)
+
+    # Then
     assert response.status_code == 201
-
-    # Verify that the email notifier was called
     assert mock_email_notifier.send_user_offer_created_email.called
-
-    # Check arguments
     args, kwargs = mock_email_notifier.send_user_offer_created_email.call_args
     assert kwargs["recipient_email"] == email
     assert kwargs["offer_text"] == description
@@ -68,16 +64,16 @@ def test_user_offer_creation_triggers_email_in_prod(client, mock_email_notifier,
 
 
 @pytest.mark.integration
-def test_user_offer_creation_no_email_in_dev(client, mock_email_notifier):
+def test_should_not_trigger_email_on_user_offer_creation_in_dev(client, mock_email_notifier):
     """
     Test that creating an offer with source=USER does NOT trigger an email notification when in DEV.
     """
+    # Given
     # By default APP_ENV is DEV in tests (set in conftest.py)
     settings = get_settings()
     assert settings.APP_ENV == "DEV"
 
     city_uuid = setup_test_city(client, "EmailDevCity")
-
     description = f"test-no-email-dev-{uuid4().hex[:8]}"
     email = "user@example.com"
     payload = make_offer_create_payload(description, email=email)
@@ -85,18 +81,20 @@ def test_user_offer_creation_no_email_in_dev(client, mock_email_notifier):
     payload["source"] = "user"
     payload.update({"date_str": "2026-12-01", "hour_str": "12:00", "roles_uuids": []})
 
+    # When
     response = client.post("/offers", json=payload)
-    assert response.status_code == 201
 
-    # Verify that the email notifier was NOT called
+    # Then
+    assert response.status_code == 201
     assert not mock_email_notifier.send_user_offer_created_email.called
 
 
 @pytest.mark.integration
-def test_imported_offer_patch_triggers_email_in_prod(client, mock_email_notifier, prod_env):
+def test_should_trigger_email_on_imported_offer_patch_in_prod(client, mock_email_notifier, prod_env):
     """
     Test that updating an imported (BOT) offer with submit_email=True triggers an email in PROD.
     """
+    # Given
     # 1. Create a BOT offer first (imported raw offer)
     offer_uid = f"bot-offer-{uuid4().hex[:8]}"
     email = "bot-user@example.com"
@@ -109,17 +107,14 @@ def test_imported_offer_patch_triggers_email_in_prod(client, mock_email_notifier
         "timestamp": "2026-03-15T12:00:00Z",
     }
     res = client.post("/offers/raw", json=raw_payload)
-    assert res.status_code == 201, f"Failed to create raw offer: {res.text}"
+    assert res.status_code == 201
 
     # Get the UUID of the created raw offer
-    # Search for it specifically. Since it's NEW or POSTPONED, it should appear in /offers/raw
     raw_list = client.get("/offers/raw", params={"search": offer_uid})
-    assert raw_list.status_code == 200, f"Failed to list raw offers: {raw_list.text}"
     data = raw_list.json()["data"]
-    assert len(data) > 0, f"Raw offer not found: {offer_uid}"
     offer_uuid = data[0]["uuid"]
 
-    # 2. Update/Patch the offer to trigger the email
+    # 2. Update/Patch data
     city_uuid = setup_test_city(client, "PatchCity")
     update_payload = {
         "description": "Updated description",
@@ -131,12 +126,12 @@ def test_imported_offer_patch_triggers_email_in_prod(client, mock_email_notifier
         "roles_uuids": [],
     }
 
+    # When
     response = client.patch(f"/offers/{offer_uuid}", json=update_payload)
+
+    # Then
     assert response.status_code == 204
-
-    # 3. Verify that the email notifier was called
     assert mock_email_notifier.send_offer_imported_email.called
-
     args, kwargs = mock_email_notifier.send_offer_imported_email.call_args
     assert kwargs["recipient_email"] == email
     assert kwargs["offer_uuid"] == str(offer_uuid)

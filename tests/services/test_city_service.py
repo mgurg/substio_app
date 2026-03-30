@@ -1,17 +1,18 @@
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 
 from app.core.exceptions import NotFoundError
+from app.database.models.models import City
+from app.repositories.city_repo import CityRepo
 from app.services.city_service import CityService
 
 
 @pytest_asyncio.fixture
 def city_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=CityRepo)
 
 
 @pytest_asyncio.fixture
@@ -20,21 +21,26 @@ def service(city_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_city_by_uuid_returns_city(service, city_repo_mock):
+async def test_should_return_city_when_getting_city_by_uuid(service, city_repo_mock):
+    # Given
     city_uuid = uuid4()
-    fake_city = SimpleNamespace(uuid=city_uuid, name="Test City")
+    fake_city = MagicMock(spec=City, uuid=city_uuid, name="Test City")
     city_repo_mock.get_by_uuid.return_value = fake_city
 
+    # When
     result = await service.get_city_by_uuid(city_uuid)
 
+    # Then
     assert result == fake_city
     city_repo_mock.get_by_uuid.assert_awaited_once_with(city_uuid)
 
 
 @pytest.mark.asyncio
-async def test_get_city_by_uuid_propagates_not_found(service, city_repo_mock):
+async def test_should_propagate_not_found_error_when_city_missing(service, city_repo_mock):
+    # Given
     city_uuid = uuid4()
     city_repo_mock.get_by_uuid.side_effect = NotFoundError("City", str(city_uuid))
 
+    # When & Then
     with pytest.raises(NotFoundError):
         await service.get_city_by_uuid(city_uuid)

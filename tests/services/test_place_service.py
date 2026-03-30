@@ -1,6 +1,5 @@
 # tests/service/test_place_service.py
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -8,6 +7,9 @@ import pytest_asyncio
 
 from app.core.exceptions import ConflictError, NotFoundError
 from app.database.models.enums import PlaceCategory
+from app.database.models.models import Place
+from app.repositories.city_repo import CityRepo
+from app.repositories.place_repo import PlaceRepo
 from app.schemas.domain.common import Coordinates
 from app.schemas.domain.place import Address, PlaceAdd
 from app.services.place_service import PlaceService
@@ -15,12 +17,12 @@ from app.services.place_service import PlaceService
 
 @pytest_asyncio.fixture
 def city_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=CityRepo)
 
 
 @pytest_asyncio.fixture
 def place_repo_mock():
-    return AsyncMock()
+    return AsyncMock(spec=PlaceRepo)
 
 
 @pytest_asyncio.fixture
@@ -29,26 +31,33 @@ def service(city_repo_mock, place_repo_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_place_by_uuid_found(service, place_repo_mock):
+async def test_should_return_place_when_found_by_uuid(service, place_repo_mock):
+    # Given
     place_uuid = uuid4()
-    fake_place = {"uuid": str(place_uuid), "name": "Test Place"}
+    fake_place = MagicMock(spec=Place, uuid=place_uuid, name="Test Place")
     place_repo_mock.get_by_uuid.return_value = fake_place
 
+    # When
     result = await service.get_place_by_uuid(place_uuid)
 
+    # Then
     assert result == fake_place
     place_repo_mock.get_by_uuid.assert_awaited_once_with(place_uuid)
 
 
 @pytest.mark.asyncio
-async def test_get_place_by_uuid_not_found(service, place_repo_mock):
+async def test_should_raise_not_found_when_place_missing_by_uuid(service, place_repo_mock):
+    # Given
     place_repo_mock.get_by_uuid.return_value = None
+
+    # When & Then
     with pytest.raises(NotFoundError):
         await service.get_place_by_uuid(uuid4())
 
 
 @pytest.mark.asyncio
-async def test_create_place_conflict(service, place_repo_mock):
+async def test_should_raise_conflict_when_creating_duplicate_place(service, place_repo_mock):
+    # Given
     place_add = PlaceAdd(
         name="Sąd rejonowy",
         type="SR",
@@ -69,15 +78,17 @@ async def test_create_place_conflict(service, place_repo_mock):
 
     # ✅ Return something with a .uuid attribute (like ORM model would)
     place_repo_mock.get_by_name_and_distance.return_value = [
-        SimpleNamespace(uuid=uuid4())
+        MagicMock(spec=Place, uuid=uuid4())
     ]
 
+    # When & Then
     with pytest.raises(ConflictError):
         await service.create(place_add)
 
 
 @pytest.mark.asyncio
-async def test_create_place_success(service, place_repo_mock):
+async def test_should_successfully_create_new_place(service, place_repo_mock):
+    # Given
     place_add = PlaceAdd(
         name="New Room",
         type="room",
@@ -98,6 +109,8 @@ async def test_create_place_success(service, place_repo_mock):
     place_repo_mock.get_by_name_and_distance.return_value = []
     place_repo_mock.create.return_value = None
 
+    # When
     await service.create(place_add)
 
+    # Then
     place_repo_mock.create.assert_awaited_once()

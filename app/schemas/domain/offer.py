@@ -30,6 +30,8 @@ class OfferAdd(BaseModel):
     author: str
     facility_uuid: UUID | None = None
     city_uuid: UUID | None = None
+    place_name: str | None = None
+    city_name: str | None = None
     roles: list[UUID] | None = None
     date: str | None = None
     hour: str | None = None
@@ -52,6 +54,8 @@ class OfferUpdate(BaseModel):
     author: str | None = None
     facility_uuid: UUID | None = None
     city_uuid: UUID | None = None
+    place_name: str | None = None
+    city_name: str | None = None
     roles: list[UUID] | None = None
     date: str | None = None
     hour: str | None = None
@@ -61,6 +65,9 @@ class OfferUpdate(BaseModel):
     submit_email: bool | None = False
     status: OfferStatus | None = None
     email: EmailStr | None = None
+    place_name: str | None = None
+    lat: float | None = None
+    lon: float | None = None
 
     @model_validator(mode="after")
     def check_location(self) -> "OfferUpdate":
@@ -100,6 +107,43 @@ class OfferIndexResponse(BaseResponse):
 class OfferMapResponse(BaseResponse):
     uuid: UUID
     coordinates: Coordinates | None = None
+    place_name: str | None = None
+    description: str | None = None
+    date: dt_date | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def map_fields(cls, data):
+        # Handle lat/lon conversion to string, preferring direct fields if available
+        lat = getattr(data, "lat", None)
+        lon = getattr(data, "lon", None)
+        place_name = getattr(data, "place_name", None)
+
+        # If direct fields are missing, try to get them from place or city relations
+        if lat is None:
+            if hasattr(data, "place") and data.place and data.place.lat is not None:
+                lat = data.place.lat
+            elif hasattr(data, "city") and data.city and data.city.lat is not None:
+                lat = data.city.lat
+
+        if lon is None:
+            if hasattr(data, "place") and data.place and data.place.lon is not None:
+                lon = data.place.lon
+            elif hasattr(data, "city") and data.city and data.city.lon is not None:
+                lon = data.city.lon
+
+        if place_name is None:
+            if hasattr(data, "place") and data.place and data.place.name is not None:
+                place_name = data.place.name
+            elif hasattr(data, "city") and data.city and data.city.name is not None:
+                place_name = data.city.name
+
+        if lat is not None and lon is not None:
+            data.coordinates = Coordinates(lat=lat, lon=lon)
+        if place_name is not None:
+            data.place_name = place_name
+
+        return data
 
 
 class OfferEmail(BaseResponse):

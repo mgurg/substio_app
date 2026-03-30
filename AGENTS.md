@@ -41,3 +41,19 @@ Follow the standard Layered Architecture:
 - New features should include appropriate tests in the `tests/` directory.
 - Use `conftest.py` for shared fixtures.
 - API and Repository tests often require a running database (handled automatically via `Testcontainers` in `tests/conftest.py`).
+
+### Testing Standards
+- **Naming Convention**:
+    - Unit tests (no database required): `test_*.py`
+    - Integration tests (database/Testcontainers required): `test_*_tc.py`
+- **Markers**:
+    - All tests requiring a database MUST be marked with `@pytest.mark.integration`.
+    - Async tests MUST be marked with `@pytest.mark.asyncio`.
+- **Fixtures**:
+    - Use the `client` fixture for API tests.
+    - Use the `db_session` fixture for Repository tests.
+- **Location**:
+    - `tests/api/`: Controller/Route tests.
+    - `tests/services/`: Business logic tests (prefer unit tests with mocks).
+    - `tests/repositories/`: Data access tests (usually integration tests with `_tc.py`).
+    - `tests/infrastructure/`: External service integrations.
