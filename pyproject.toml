@@ -74,3 +74,6 @@ exclude = ["migrations"]
 [tool.ruff.lint.isort]
 combine-as-imports = true
 known-third-party = ["fastapi", "pydantic", "starlette", "sqlalchemy"]
+
+[tool.uv]
+exclude-newer = "P3D"
