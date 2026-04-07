@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.core.dependencies import get_offer_service
@@ -11,7 +11,6 @@ from app.repositories.filters.offer_filters import OfferFilters
 from app.schemas.domain.ai import ParseResponse
 from app.schemas.domain.common import Coordinates
 from app.schemas.domain.offer import (
-    ImportResult,
     OfferAdd,
     OfferEmail,
     OfferIndexResponse,
@@ -147,11 +146,6 @@ async def create_raw_offer(offer_service: offerServiceDependency, offer_add: Off
     await offer_service.create_raw_offer(offer_add)
 
     return None
-
-
-@offer_router.post("/raw/import")
-async def import_raw_offers(offer_service: offerServiceDependency, file: Annotated[UploadFile, File(...)]) -> ImportResult:
-    return await offer_service.import_raw_offers(file)
 
 
 @offer_router.get("/raw/{offer_uuid}")

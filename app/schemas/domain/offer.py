@@ -9,14 +9,6 @@ from app.schemas.domain.common import BaseResponse, Coordinates
 from app.schemas.domain.place import LegalRoleIndexResponse
 
 
-class FacebookPost(BaseModel):
-    user_name: str = Field(validation_alias=AliasChoices("user_name", "User Name"))
-    post_content: str = Field(validation_alias=AliasChoices("post_content", "Post Content"))
-    user_profile_url: str = Field(validation_alias=AliasChoices("user_profile_url", "User Profile URL"))
-    post_url: str = Field(validation_alias=AliasChoices("post_url", "Post URL"))
-    date_posted: str | None = Field(None, validation_alias=AliasChoices("date_posted", "Date Posted"))
-
-
 class OfferRawAdd(BaseModel):
     raw_data: str
     author: str
@@ -191,18 +183,3 @@ class RawOffersPaginated(BaseResponse):
 class SimilarOfferIndexResponse(BaseResponse):
     uuid: UUID
     author: str
-
-
-class ImportResult(BaseModel):
-    total_records: int
-    imported_records: int
-    skipped_records: int
-    errors: list[str]
-
-    @property
-    def success(self) -> bool:
-        return True
-
-    @property
-    def count(self) -> int:
-        return self.imported_records

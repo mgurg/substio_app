@@ -15,7 +15,6 @@ from app.repositories.offer_repo import OfferRepo
 from app.repositories.place_repo import PlaceRepo
 from app.services.email_validation_service import EmailValidationService
 from app.services.offer_service import OfferService
-from app.services.offers.offer_import_service import OfferImportService
 from app.services.offers.offer_notification_service import OfferNotificationService
 from app.services.place_service import PlaceService
 
@@ -47,12 +46,6 @@ def get_place_service(
     return PlaceService(city_repo=city_repo, place_repo=place_repo)
 
 
-def get_offer_import_service(
-    offer_repo: OfferRepo = Depends(get_offer_repo),
-) -> OfferImportService:
-    return OfferImportService(offer_repo=offer_repo)
-
-
 def get_offer_notification_service(
     slack_notifier: SlackNotifierBase = Depends(get_slack_notifier),
     email_notifier: EmailNotifierBase = Depends(get_email_notifier),
@@ -70,7 +63,6 @@ def get_offer_service(
         legal_role_repo: LegalRoleRepo = Depends(get_legal_role_repo),
         ai_parser: AIParser = Depends(get_ai_parser),
         email_validator: EmailValidationService = Depends(get_email_validator),
-        offer_import_service: OfferImportService = Depends(get_offer_import_service),
         notification_service: OfferNotificationService = Depends(get_offer_notification_service),
 ) -> OfferService:
     return OfferService(
@@ -80,6 +72,5 @@ def get_offer_service(
         legal_role_repo=legal_role_repo,
         ai_parser=ai_parser,
         email_validator=email_validator,
-        offer_import_service=offer_import_service,
         notification_service=notification_service,
     )
