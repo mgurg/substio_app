@@ -9,17 +9,15 @@ import pytest_asyncio
 from fastapi import HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-import app.services.offers.offer_import_service as offer_import_service_module
 from app.database.models.enums import OfferStatus, SourceType
 from app.database.models.models import City, LegalRole, Offer
 from app.repositories.city_repo import CityRepo
 from app.repositories.legal_role_repo import LegalRoleRepo
 from app.repositories.offer_repo import OfferRepo
 from app.repositories.place_repo import PlaceRepo
-from app.schemas.domain.offer import FacebookPost, OfferAdd, OfferRawAdd, OfferUpdate
+from app.schemas.domain.offer import OfferAdd, OfferRawAdd, OfferUpdate
 from app.services.email_validation_service import EmailValidationService
 from app.services.offer_service import OfferService
-from app.services.offers.offer_import_service import OfferImportService, parse_facebook_post_to_offer
 from app.services.offers.offer_notification_service import OfferNotificationService
 
 
@@ -82,7 +80,6 @@ def service(
     email_validator_mock,
     notification_service_mock,
 ):
-    offer_import_service = OfferImportService(offer_repo=offer_repo_mock)
     return OfferService(
         offer_repo=offer_repo_mock,
         place_repo=place_repo_mock,
@@ -90,7 +87,6 @@ def service(
         legal_role_repo=legal_role_repo_mock,
         ai_parser=ai_parser_mock,
         email_validator=email_validator_mock,
-        offer_import_service=offer_import_service,
         notification_service=notification_service_mock,
     )
 

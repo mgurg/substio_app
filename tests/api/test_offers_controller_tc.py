@@ -757,24 +757,6 @@ def test_should_import_and_parse_raw_offer(client_with_overrides):
     parsed_body = parsed.json()
     assert parsed_body["success"] is True
 
-    post_url = f"https://fb.test/{uuid4().hex}"
-    import_payload = [
-        {
-            "User Name": "Importer",
-            "User Profile URL": "https://fb.test/user",
-            "Post URL": post_url,
-            "Post Content": "Need substitution mail@test.local",
-            "Date Posted": "2024-01-01T10:00:00",
-        }
-    ]
-    files = {"file": ("offers.json", json.dumps(import_payload).encode("utf-8"), "application/json")}
-
-    imported = client_with_overrides.post("/offers/raw/import", files=files)
-    assert imported.status_code == 200
-    imported_body = imported.json()
-    assert imported_body["total_records"] == 1
-    assert imported_body["imported_records"] == 1
-
 
 @pytest.mark.integration
 def test_should_return_404_when_parsing_nonexistent_raw_offer(client_with_overrides):
@@ -782,42 +764,6 @@ def test_should_return_404_when_parsing_nonexistent_raw_offer(client_with_overri
     fake_uuid = uuid4()
     response = client_with_overrides.get(f"/offers/raw/{fake_uuid}/parse")
     assert response.status_code == 404
-
-
-@pytest.mark.integration
-def test_should_fail_to_import_invalid_json_format(client_with_overrides):
-    """Test importing malformed JSON"""
-    invalid_json = b"{ this is not valid json }"
-    files = {"file": ("bad.json", invalid_json, "application/json")}
-
-    response = client_with_overrides.post("/offers/raw/import", files=files)
-    assert response.status_code in [400, 422]
-
-
-@pytest.mark.integration
-def test_should_handle_import_empty_file(client_with_overrides):
-    """Test importing empty JSON array"""
-    files = {"file": ("empty.json", b"[]", "application/json")}
-
-    response = client_with_overrides.post("/offers/raw/import", files=files)
-    assert response.status_code == 200
-    assert response.json()["total_records"] == 0
-
-
-@pytest.mark.integration
-def test_should_handle_import_with_missing_required_fields(client_with_overrides):
-    """Test importing records with missing required fields"""
-    import_payload = [
-        {
-            "User Name": "Importer",
-            # Missing other required fields
-        }
-    ]
-    files = {"file": ("incomplete.json", json.dumps(import_payload).encode("utf-8"), "application/json")}
-
-    response = client_with_overrides.post("/offers/raw/import", files=files)
-    # Should either skip invalid records or return error
-    assert response.status_code in [200, 400, 422]
 
 
 # ============================================================================

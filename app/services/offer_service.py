@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime, time
 from uuid import UUID, uuid4
 
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException
 from loguru import logger
 from sqlalchemy import Sequence
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
@@ -16,10 +16,9 @@ from app.repositories.legal_role_repo import LegalRoleRepo
 from app.repositories.offer_repo import OfferRepo
 from app.repositories.place_repo import PlaceRepo
 from app.schemas.domain.ai import ParseResponse
-from app.schemas.domain.offer import ImportResult, OfferAdd, OfferRawAdd, OfferUpdate
+from app.schemas.domain.offer import OfferAdd, OfferRawAdd, OfferUpdate
 from app.services.email_validation_service import EmailValidationService
 from app.services.offers.offer_date_handler import OfferDateHandler
-from app.services.offers.offer_import_service import OfferImportService
 from app.services.offers.offer_location_mapper import OfferLocationMapper
 from app.services.offers.offer_notification_service import OfferNotificationService
 from app.services.offers.offer_role_mapper import OfferRoleMapper
@@ -36,7 +35,6 @@ class OfferService:
         legal_role_repo: LegalRoleRepo,
         ai_parser: AIParser,
         email_validator: EmailValidationService,
-        offer_import_service: OfferImportService,
         notification_service: OfferNotificationService,
     ) -> None:
         self.offer_repo = offer_repo
@@ -45,14 +43,36 @@ class OfferService:
         self.legal_role_repo = legal_role_repo
         self.ai_parser = ai_parser
         self.email_validator = email_validator
-        self.offer_import_service = offer_import_service
         self.notification_service = notification_service
 
-    async def import_raw_offers(self, file: UploadFile) -> ImportResult:
-        return await self.offer_import_service.import_raw_offers(file)
-
     async def create_raw_offer(self, offer: OfferRawAdd) -> None:
-        return await self.offer_import_service.create_raw_offer(offer)
+        db_offer = await self.offer_repo.get_by_offer_uid(offer.offer_uid)
+        if db_offer:
+            raise HTTPException(status_code=HTTP_409_CONFLICT, detail=f"Offer with {offer.offer_uid} already exists")
+
+        from app.utils.email_utils import extract_and_fix_email
+
+        email = None
+        if isinstance(offer.raw_data, str):
+            email = extract_and_fix_email(offer.raw_data)
+
+        offer_data = {
+            "uuid": str(uuid4()),
+            "author": offer.author,
+            "author_uid": offer.author_uid,
+            "offer_uid": offer.offer_uid,
+            "raw_data": offer.raw_data,
+            "added_at": offer.timestamp,
+            "source": offer.source,
+            "status": OfferStatus.POSTPONED,
+        }
+
+        if email:
+            offer_data["email"] = email
+            offer_data["status"] = OfferStatus.NEW
+
+        await self.offer_repo.create(**offer_data)
+        return None
 
     async def create_offer(self, offer_add: OfferAdd):
         offer_uuid = str(uuid4())
