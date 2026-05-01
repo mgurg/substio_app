@@ -8,13 +8,6 @@ from app.database.models.models import City
 from app.repositories.city_repo import CityRepo
 
 
-@pytest.fixture
-async def db_session(client) -> AsyncSession:
-    from app.core.database import get_db
-    async for session in get_db():
-        yield session
-
-
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_should_perform_city_repo_operations(db_session: AsyncSession):

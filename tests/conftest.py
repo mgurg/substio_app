@@ -8,6 +8,7 @@ import pytest
 from alembic import command
 from alembic.config import Config as AlembicConfig
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 from testcontainers.postgres import PostgresContainer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -96,3 +97,11 @@ def client(app) -> Generator[TestClient, None, None]:
     with TestClient(app, base_url="http://testserver") as c:
         c.headers.update(headers)
         yield c
+
+
+@pytest.fixture
+async def db_session(client) -> AsyncSession:
+    # client fixture already sets up the app and DB via apply_migrations
+    from app.core.database import get_db
+    async for session in get_db():
+        yield session
