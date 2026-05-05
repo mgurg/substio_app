@@ -7,14 +7,6 @@ from app.database.models.models import LegalRole
 from app.repositories.generics import GenericRepo
 
 
-@pytest.fixture
-async def db_session(client) -> AsyncSession:
-    # client fixture in conftest.py already sets up the app and DB
-    from app.core.database import get_db
-    async for session in get_db():
-        yield session
-
-
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_should_perform_generic_repo_operations(db_session: AsyncSession):

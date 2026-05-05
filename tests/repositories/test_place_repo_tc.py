@@ -9,14 +9,6 @@ from app.database.models.models import Place
 from app.repositories.place_repo import PlaceRepo
 
 
-@pytest.fixture
-async def db_session(client) -> AsyncSession:
-    from app.core.database import _init_engine_if_needed, get_db
-    _init_engine_if_needed()
-    async for session in get_db():
-        yield session
-
-
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_should_perform_place_repo_operations(db_session: AsyncSession):
