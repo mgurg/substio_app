@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bullseye
+FROM python:3.12-slim-bookworm
 
 # Install system dependencies in a single layer
 RUN apt-get update && \
