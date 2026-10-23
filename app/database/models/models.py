@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date as py_date
+from datetime import datetime, time as py_time
 
 import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Numeric, String, Table, Text, Time, func
@@ -113,8 +114,8 @@ class Offer(BaseModel):
 
     email: Mapped[str | None] = mapped_column(Text(), index=True)
     url: Mapped[str | None] = mapped_column(Text())
-    date: Mapped[Date | None] = mapped_column(Date())
-    hour: Mapped[Time | None] = mapped_column(Time())
+    date: Mapped[py_date | None] = mapped_column(Date())
+    hour: Mapped[py_time | None] = mapped_column(Time())
     price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     description: Mapped[str | None] = mapped_column(Text())
     invoice: Mapped[bool | None] = mapped_column(Boolean())
@@ -122,8 +123,8 @@ class Offer(BaseModel):
     visible: Mapped[bool | None] = mapped_column(Boolean())
     added_at: Mapped[datetime | None] = mapped_column(DateTime())
     valid_to: Mapped[datetime | None] = mapped_column(DateTime(), index=True)
-    updated_at: Mapped[DateTime | None] = mapped_column(DateTime(), default=func.now(), onupdate=func.now())
-    created_at: Mapped[DateTime | None] = mapped_column(DateTime(), default=func.now(), index=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(), default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(), default=func.now(), index=True)
 
     legal_roles: Mapped[list[LegalRole]] = relationship(
         back_populates="offers",

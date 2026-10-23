@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import get_settings
 
@@ -44,4 +44,5 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
